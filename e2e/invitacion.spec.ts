@@ -17,7 +17,8 @@ test("crear un grupo, invitar por link y ver la lista en los dos lados", async (
   await a.page.getByRole("link", { name: "crear un grupo" }).click();
 
   await a.page.getByPlaceholder("tu nombre").fill("Vale");
-  await a.page.getByRole("radio", { name: "#5BC0BE" }).click();
+  await a.page.getByRole("tab", { name: "fondo" }).click();
+  await a.page.getByRole("radio", { name: "fondo #5BC0BE" }).click();
   await a.page.getByRole("button", { name: "seguir" }).click();
 
   await a.page.getByPlaceholder("los del barrio").fill("los pibes");

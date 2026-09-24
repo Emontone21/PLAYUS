@@ -71,3 +71,23 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 31. **Tipos de la base escritos a mano.** `supabase gen types` necesita el stack en Docker. `src/lib/supabase/types.ts` refleja las migraciones; se regenera y compara cuando haya Docker.
 
 32. **Fuentes del sistema por ahora.** `next/font` con Bricolage Grotesque e Instrument Sans llega en la etapa 7 (pasada de diseño); la paleta ya está como tokens en `globals.css`.
+
+## Etapa 3
+
+33. **Ids de piezas 1-based y estables.** `base`, `hair`, `eyes`, `mouth` y `accessory` guardan un entero que es la posición (desde 1) en las listas de `src/avatar/pieces.tsx`. Las piezas nuevas se agregan al final; nunca se reordenan ni se borran, porque el número queda persistido en `profiles.avatar`. `accessory` admite null ("sin extra").
+
+34. **Dos esquemas zod: estricto para guardar, tolerante para leer.** `avatarSchema` rechaza cualquier cosa fuera de rango antes de escribir. `parseAvatar` usa un esquema con `.catch()` por campo: lo que falte o esté mal cae a un default, así los perfiles de la etapa 2 (que solo tenían `bg`) y cualquier dato viejo se siguen dibujando.
+
+35. **Avatar al azar para las cuentas nuevas.** La pantalla de alta arranca con un avatar aleatorio (y un botón "al azar") en lugar de uno neutro: da ganas de tocar y evita que todos queden iguales. Usa `Math.random`; la semilla determinística es solo para los juegos.
+
+36. **Las miniaturas del editor muestran la opción aplicada al avatar actual**, no la pieza suelta. Cuesta más render (ocho SVG por categoría) pero se entiende de un vistazo cómo queda.
+
+37. **Los colores fijos de los extras llevan contorno oscuro.** La gorra y la vincha usan rosa y agua, que también son fondos posibles; el contorno evita que desaparezcan sobre el mismo color.
+
+38. **El apodo se edita en Perfil, con un campo por grupo.** Guarda al salir del campo o con Enter, sobre `group_members.nickname` (la única columna de la membresía que el cliente puede tocar, decisión 11). El brief lo ponía como editable del perfil y acá quedan todos los grupos juntos.
+
+39. **Vincular email con `updateUser({ email })`, escondido en un `<details>`.** Supabase manda un magic link y deja el email pendiente en `new_email` hasta confirmarlo; la interfaz lo dice y muestra el estado. No hay contraseña y nada depende de esto. El emulador local lo guarda directo, sin confirmación.
+
+40. **Las estadísticas del perfil son un componente con datos en null.** `ProfileStats` recibe `{roundsPlayed, wins, bestStreak, seasonsWon, bestGame}` y muestra "—" y un texto de invitación mientras todo sea null. La etapa 5 solo tiene que calcular el objeto.
+
+41. **`data-avatar` en el SVG.** El renderizador escribe el JSON normalizado del avatar como atributo. Es lo que usa el test E2E para comprobar que el avatar guardado en un navegador es exactamente el que ve el otro.

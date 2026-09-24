@@ -2,7 +2,7 @@
 
 PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
 
-Estado: **etapa 2** (auth anónima, grupos e invitaciones). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
+Estado: **etapa 3** (avatar y perfiles). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 
 ## Qué hay
 
@@ -12,12 +12,14 @@ src/
     page.tsx                landing: crear grupo o entrar con código
     g/[code]/               link de invitación → sesión anónima → nombre + avatar → adentro
     crear/                  crear un grupo
-    (app)/hoy|grupo|perfil  las tres pestañas (hoy y perfil son placeholders)
-  components/               avatar provisorio, formulario de nombre, botón de invitar, barra
+    (app)/hoy|grupo|perfil  las tres pestañas (hoy es placeholder hasta la etapa 5)
+    (app)/perfil/editar     nombre visible y editor de avatar
+  avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
+  components/               avatar, formulario de alta, invitar, barra, estadísticas
   lib/supabase/             clientes (browser, server, middleware) y tipos de la base
   lib/groups*.ts            grupo actual (cookie) y acción de servidor
   middleware.ts             refresca la sesión en cada petición
-e2e/invitacion.spec.ts      test Playwright del flujo completo
+e2e/                        tests Playwright (invitación, perfil y avatar)
 supabase/
   config.toml               configuración del stack local (auth anónima habilitada)
   migrations/

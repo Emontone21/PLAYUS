@@ -5,13 +5,13 @@ import { createClient } from "@/lib/supabase/client";
 import { ensureAnonymousUser } from "@/lib/session";
 import { selectGroup } from "@/lib/groups-actions";
 import { friendlyError } from "@/lib/errors";
-import { parseAvatar, type ProvisionalAvatar } from "@/lib/avatar";
+import { avatarFromProfile, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { CodeForm } from "@/components/code-form";
 
 type State =
   | { step: "loading" }
-  | { step: "onboarding"; userId: string; name: string; avatar: ProvisionalAvatar }
+  | { step: "onboarding"; userId: string; name: string; avatar: Avatar }
   | { step: "joining" }
   | { step: "error"; message: string };
 
@@ -40,7 +40,7 @@ export function JoinFlow({ code }: { code: string }) {
         if (name.trim().length > 0) {
           await join();
         } else {
-          setState({ step: "onboarding", userId: user.id, name, avatar: parseAvatar(profile?.avatar) });
+          setState({ step: "onboarding", userId: user.id, name, avatar: avatarFromProfile(profile?.avatar) });
         }
       } catch (e) {
         if (!cancelled) setState({ step: "error", message: friendlyError((e as Error).message) });
@@ -64,7 +64,7 @@ export function JoinFlow({ code }: { code: string }) {
     await selectGroup(data.id, "/grupo");
   }
 
-  async function saveProfileAndJoin(userId: string, values: { name: string; avatar: ProvisionalAvatar }) {
+  async function saveProfileAndJoin(userId: string, values: { name: string; avatar: Avatar }) {
     setState({ step: "joining" });
     const { error } = await supabase
       .from("profiles")

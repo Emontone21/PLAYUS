@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMyGroups, pickCurrentGroup } from "@/lib/groups";
-import { parseAvatar } from "@/lib/avatar";
+import { parseAvatar } from "@/avatar/schema";
 import { Avatar } from "@/components/avatar";
 import { InviteButton } from "@/components/invite-button";
 import { GroupSwitcher } from "./group-switcher";

@@ -6,12 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { ensureAnonymousUser } from "@/lib/session";
 import { selectGroup } from "@/lib/groups-actions";
 import { friendlyError } from "@/lib/errors";
-import { parseAvatar, type ProvisionalAvatar } from "@/lib/avatar";
+import { avatarFromProfile, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
 
 type State =
   | { step: "loading" }
-  | { step: "onboarding"; userId: string; name: string; avatar: ProvisionalAvatar }
+  | { step: "onboarding"; userId: string; name: string; avatar: Avatar }
   | { step: "group" }
   | { step: "creating" }
   | { step: "error"; message: string };
@@ -40,7 +40,7 @@ export function CreateFlow() {
         if (name.trim().length > 0) {
           setState({ step: "group" });
         } else {
-          setState({ step: "onboarding", userId: user.id, name, avatar: parseAvatar(profile?.avatar) });
+          setState({ step: "onboarding", userId: user.id, name, avatar: avatarFromProfile(profile?.avatar) });
         }
       } catch (e) {
         if (!cancelled) setState({ step: "error", message: friendlyError((e as Error).message) });
@@ -53,7 +53,7 @@ export function CreateFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function saveProfile(userId: string, values: { name: string; avatar: ProvisionalAvatar }) {
+  async function saveProfile(userId: string, values: { name: string; avatar: Avatar }) {
     setState({ step: "creating" });
     const { error } = await supabase
       .from("profiles")

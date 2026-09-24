@@ -197,12 +197,19 @@ async function handleAuth(req, res, url, path) {
     if (method === "GET") return send(res, 200, userJson(user));
     if (method === "PUT") {
       const body = (await readJson(req)) ?? {};
-      if (body.email !== undefined || body.password !== undefined || body.phone !== undefined) {
-        throw new HttpError(501, { code: 501, msg: "mini-supabase no soporta vincular email; usá Supabase real" });
+      if (body.password !== undefined || body.phone !== undefined) {
+        throw new HttpError(501, { code: 501, msg: "mini-supabase no soporta contraseña ni teléfono" });
       }
+      // Vincular email: Supabase real manda un magic link y deja el email
+      // pendiente en new_email hasta confirmarlo. Acá se guarda directo.
       const { rows } = await pool.query(
-        "update auth.users set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || $2::jsonb, updated_at = now() where id = $1 returning *",
-        [claims.sub, JSON.stringify(body.data ?? {})],
+        `update auth.users
+            set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || $2::jsonb,
+                email = coalesce($3, email),
+                is_anonymous = case when $3 is null then is_anonymous else false end,
+                updated_at = now()
+          where id = $1 returning *`,
+        [claims.sub, JSON.stringify(body.data ?? {}), body.email ?? null],
       );
       return send(res, 200, userJson(rows[0]));
     }
