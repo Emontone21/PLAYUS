@@ -6,6 +6,8 @@ import { formatShortDate } from "@/lib/time";
 import { Ranking, type RankingRow } from "@/components/ranking";
 import { Avatar } from "@/components/avatar";
 import { LiveRefresh } from "./live-refresh";
+import { PushCard } from "@/components/push-card";
+import { InstallCard } from "@/components/install-card";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +142,9 @@ export default async function TodayPage() {
             se actualiza solo cuando alguien termina una partida. +10, +7, +5, +3 para los cuatro primeros; +1 para el resto.
           </p>
           <LiveRefresh roundId={t.round.id} />
+          {/* el permiso de notificaciones se ofrece después de la primera partida, nunca al entrar */}
+          <PushCard userId={user.id} variant="offer" />
+          <InstallCard />
         </section>
       )}
     </main>

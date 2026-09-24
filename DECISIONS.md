@@ -139,3 +139,27 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 62. **El test de intentos corre contra la base que haya.** `src/lib/attempts.test.ts` usa el stack de `SUPABASE_TEST_URL` (default `http://127.0.0.1:54321`, sea Supabase real o el emulador) y se saltea si no responde. Inyecta `now` en `finishAttempt` para no esperar 15 segundos reales por partida.
 
 63. **El emulador devuelve `date` como texto y responde después del commit.** Dos diferencias con PostgREST que salieron en esta etapa: `pg` convertía las columnas `date` a `Date` (y salían como timestamp ISO), y el `INSERT` respondía antes del `commit`, con lo que una lectura inmediata por otra conexión no veía la fila. Las dos están corregidas; `MINI_DEBUG=1` imprime cada petición.
+
+## Etapa 6
+
+64. **Serwist solo en el build; en desarrollo no hay service worker.** El plugin corre con webpack (`next build`); `next dev --turbopack` no lo ejecuta y, además, un SW en desarrollo confunde (cachea chunks viejos). Consecuencia: instalación y push solo se prueban con `next build && next start` (o en un deploy). `e2e/pwa.spec.ts` corre solo con `E2E_PROD=1`.
+
+65. **Páginas y datos, siempre de la red; el fallback es una pantalla, no un ranking viejo.** En el SW, `/api/*`, cualquier URL de Supabase (`/rest|auth|realtime|storage|functions/v1/`), las navegaciones y los payloads RSC son `NetworkOnly`. Se cachean solo `/_next/static/` (CacheFirst, inmutable por hash) y assets (imágenes, fuentes, estilos, scripts). Sin red, una navegación cae a `/~offline`, precacheada. Es más estricto que el `defaultCache` de Serwist (que sirve páginas con NetworkFirst) y cumple "nunca sirvas puntajes desde caché".
+
+66. **Manifest generado con `app/manifest.ts`.** Se sirve en `/manifest.webmanifest`; `start_url` e `id` son `/hoy`. Los íconos se renderizan desde dos SVG del repo (normal y maskable con más margen) con Chromium, y las capturas del manifest son las de los E2E.
+
+67. **Instalación: botón propio en Android/Chrome, instrucciones ilustradas en iOS/Safari.** `InstallCard` captura `beforeinstallprompt`; en iOS detecta Safari y muestra tres pasos (compartir → agregar a inicio → abrir desde el ícono, que es lo que habilita las notificaciones). Si la app ya corre standalone, no aparece. En Hoy se puede descartar (localStorage); en Perfil está siempre.
+
+68. **El permiso de notificaciones se ofrece después de la primera partida, nunca al entrar.** `PushCard` en la vista de ranking de Hoy (descartable) y como interruptor en Perfil. `Notification.requestPermission` se llama solo al tocar "activar avisos". Cada navegador guarda su propia fila en `push_subscriptions` (RLS: solo la propia) con `upsert` por `endpoint`.
+
+69. **Las suscripciones vencidas se borran al mandar.** Un 404 o 410 del push service borra la fila; otros errores se registran y se cuentan. Sin claves VAPID el envío no hace nada y lo dice.
+
+70. **Recordatorio diario: `reminder_time` por grupo, un endpoint y un scheduler cada 15 minutos.** `groups.reminder_time` (hora local del grupo, default 20:00, null = apagado) la edita el owner desde la pestaña Grupo. `/api/push/reminders` (Bearer `CRON_SECRET`) recorre los grupos "en hora" (ventana `[hora, hora + 15 min)` en la zona del grupo), reserva el envío del día en `group_reminders` (clave primaria `(group_id, play_date)`: la segunda corrida no repite), asegura la ronda para saber el juego, y avisa solo a quienes no completaron una partida. El scheduler es `pg_cron` + `pg_net` (decisión 7): la migración los crea solo si están disponibles y lee la URL y el secreto de `app.settings.reminder_url` y `app.settings.cron_secret`, que se configuran una vez con `alter database`.
+
+71. **Cron de Vercel: alcanza solo en el plan Pro.** Verificado para la decisión 7: en el plan Hobby los cron jobs corren como mucho una vez por día, y el recordatorio necesita una corrida cada 15 minutos para respetar la hora de cada grupo. En Pro se puede reemplazar `pg_cron` por un `vercel.json` con `{"crons":[{"path":"/api/push/reminders","schedule":"*/15 * * * *"}]}` (Vercel manda `CRON_SECRET` solo). No lo incluí por defecto para no romper el deploy en Hobby.
+
+72. **"te pasaron" se calcula en `/finish` con el ranking antes y después.** `overtakenBy(before, after, finisher)` (pura, con tests) devuelve a quienes tenían mejor puesto y quedaron detrás; a cada uno le llega un push con el nombre en el grupo, el juego y el puntaje. Falla silenciosamente: un error de push nunca hace fallar el guardado del puntaje.
+
+73. **El envío se prueba de verdad contra un push service falso.** `src/lib/push.test.ts` levanta un servidor HTTPS local con certificado autofirmado, inserta suscripciones con claves ECDH válidas y comprueba que llega un cuerpo cifrado `aes128gcm` con cabecera `vapid`, que un 410 borra la fila, y que el endpoint de recordatorios avisa una vez por día y exige el secreto. Lo único que no se puede probar acá es un teléfono real recibiendo la notificación.
+
+74. **`server-only` se aliasa a un módulo vacío en vitest.** El paquete tira al importarse fuera de React Server; los tests importan `push.ts` y el endpoint, que lo usan como guarda.

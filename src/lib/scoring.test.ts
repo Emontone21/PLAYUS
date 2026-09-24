@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestScores, champion, rankRound, standings } from "./scoring";
+import { bestScores, champion, overtakenBy, rankRound, standings } from "./scoring";
 
 describe("rankRound", () => {
   it("reparte 10/7/5/3 y 1 para el resto", () => {
@@ -112,5 +112,49 @@ describe("standings y campeón", () => {
     ]);
     expect(champion(table)).toBe("a");
     expect(champion([])).toBeNull();
+  });
+});
+
+describe("overtakenBy", () => {
+  const before = rankRound(
+    [
+      { profileId: "a", bestScore: 90 },
+      { profileId: "b", bestScore: 80 },
+      { profileId: "c", bestScore: 70 },
+    ],
+    "high",
+  );
+
+  it("avisa a los que quedaron detrás por el puntaje nuevo", () => {
+    const after = rankRound(
+      [
+        { profileId: "a", bestScore: 90 },
+        { profileId: "b", bestScore: 80 },
+        { profileId: "c", bestScore: 70 },
+        { profileId: "d", bestScore: 85 },
+      ],
+      "high",
+    );
+    expect(overtakenBy(before, after, "d").sort()).toEqual(["b", "c"]);
+  });
+
+  it("si el nuevo queda último, nadie recibe aviso; si empata, tampoco", () => {
+    const last = rankRound([...before.map(({ profileId, bestScore }) => ({ profileId, bestScore })), { profileId: "d", bestScore: 10 }], "high");
+    expect(overtakenBy(before, last, "d")).toEqual([]);
+    const tie = rankRound([...before.map(({ profileId, bestScore }) => ({ profileId, bestScore })), { profileId: "d", bestScore: 80 }], "high");
+    // d empata con b en el 2º: c pasa de 3º a 4º; b sigue 2º
+    expect(overtakenBy(before, tie, "d")).toEqual(["c"]);
+  });
+
+  it("mejorar el propio puntaje también puede pasar a alguien", () => {
+    const after = rankRound(
+      [
+        { profileId: "a", bestScore: 90 },
+        { profileId: "b", bestScore: 80 },
+        { profileId: "c", bestScore: 95 },
+      ],
+      "high",
+    );
+    expect(overtakenBy(before, after, "c").sort()).toEqual(["a", "b"]);
   });
 });

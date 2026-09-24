@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "playus",
   description: "un minijuego por día, con tu grupo",
+  applicationName: "playus",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "playus" },
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {

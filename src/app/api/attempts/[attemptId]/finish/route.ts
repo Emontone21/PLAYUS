@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { finishAttempt } from "@/lib/attempts";
+import { rankedRound } from "@/lib/rounds";
+import { notifyOvertaken } from "@/lib/overtake";
 import { currentUserId, handleApiError, jsonError } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +23,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ attemptId: str
     } catch {
       body = null;
     }
-    const result = await finishAttempt(createAdminClient(), userId, attemptId, body);
+    const admin = createAdminClient();
+    const result = await finishAttempt(admin, userId, attemptId, body, {
+      // el ranking antes y después del puntaje nuevo alimenta el aviso "te pasaron"
+      afterSave: async (round, before) => {
+        const { ranked: after } = await rankedRound(admin, round);
+        try {
+          await notifyOvertaken(admin, round, userId, before, after);
+        } catch (e) {
+          console.error("aviso te pasaron:", e);
+        }
+      },
+    });
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     return handleApiError(e);

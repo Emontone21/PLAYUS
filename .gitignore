@@ -19,3 +19,8 @@ playwright-report/
 
 # generado por next
 next-env.d.ts
+
+# service worker generado por serwist en el build
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js

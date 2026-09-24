@@ -7,6 +7,8 @@ import { computeStats } from "@/lib/stats";
 import { getMyGroups } from "@/lib/groups";
 import { Nicknames } from "./nicknames";
 import { LinkEmail } from "./link-email";
+import { PushCard } from "@/components/push-card";
+import { InstallCard } from "@/components/install-card";
 
 export const dynamic = "force-dynamic";
 
@@ -62,9 +64,8 @@ export default async function ProfilePage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm text-tinta-suave">ajustes</h2>
-        <p className="rounded-md bg-superficie px-4 py-3 text-sm text-tinta-suave">
-          las notificaciones llegan en la etapa 6.
-        </p>
+        <PushCard userId={user.id} variant="settings" />
+        <InstallCard dismissable={false} />
         <LinkEmail currentEmail={user.email ?? null} pendingEmail={user.new_email ?? null} />
       </section>
     </main>

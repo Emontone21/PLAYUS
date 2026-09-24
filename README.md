@@ -2,7 +2,7 @@
 
 PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
 
-Estado: **etapa 5** (rondas, intentos, puntos, rankings y temporadas). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
+Estado: **etapa 6** (PWA y notificaciones). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 
 ## Qué hay
 
@@ -16,7 +16,9 @@ src/
     (app)/grupo             tabla de la temporada, historial, integrantes (+ /integrante/[id]) e invitar
     (app)/perfil            nombre, avatar, estadísticas, apodos y email
     api/rounds/[id]/start   consume el intento y devuelve la semilla
-    api/attempts/[id]/finish valida tiempo, cotas y traza, y guarda el puntaje
+    api/attempts/[id]/finish valida tiempo, cotas y traza, guarda el puntaje y avisa "te pasaron"
+    api/push/reminders      recordatorio diario (lo llama el scheduler con CRON_SECRET)
+    manifest.ts, sw.ts, ~offline  PWA: manifest, service worker (Serwist) y pantalla sin conexión
     dev/juego/[id]          solo desarrollo: probar un juego con una semilla, sin servidor
     dev/hoy                 solo desarrollo: simular el día siguiente
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
@@ -24,6 +26,9 @@ src/
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
+  lib/push.ts, push-client.ts, reminders.ts  Web Push: envío (VAPID), suscripción y recordatorios
+  components/install-card.tsx, push-card.tsx  instalar la app y activar avisos
+public/icons, screenshots   íconos (normal y maskable) y capturas del manifest
   components/               avatar, formulario de alta, invitar, barra, estadísticas
   lib/supabase/             clientes (browser, server, middleware) y tipos de la base
   lib/groups*.ts            grupo actual (cookie) y acción de servidor
@@ -66,6 +71,21 @@ npm run e2e                 # tests Playwright (con la app y Supabase levantados
 ```
 
 Para probar un juego suelto: `http://localhost:3000/dev/juego/reflejo?seed=abc`. Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
+
+## PWA y notificaciones
+
+El service worker se genera solo en el build (`npm run build` → `public/sw.js`); en `npm run dev` no hay SW, así que instalación y push se prueban con `npm run build && npm run start` o en un deploy con HTTPS. Los datos nunca se sirven desde caché: `/api/*`, Supabase y las páginas van siempre a la red; sin conexión aparece `/~offline`.
+
+Web Push necesita claves VAPID en `.env.local` (`npx web-push generate-vapid-keys`, una sola vez: cambiarlas invalida las suscripciones) y `CRON_SECRET`. El recordatorio diario lo dispara un scheduler cada 15 minutos llamando a `/api/push/reminders` con `Authorization: Bearer <CRON_SECRET>`:
+
+- **Supabase (default):** la migración crea el job de `pg_cron` si la extensión está disponible. Falta configurar la URL y el secreto, una sola vez, en el SQL Editor:
+  ```sql
+  alter database postgres set app.settings.reminder_url = 'https://<tu-app>/api/push/reminders';
+  alter database postgres set app.settings.cron_secret = '<CRON_SECRET>';
+  ```
+- **Vercel Pro:** alternativa sin `pg_cron`: un `vercel.json` con `{"crons":[{"path":"/api/push/reminders","schedule":"*/15 * * * *"}]}`. En el plan Hobby no alcanza (una corrida por día como máximo).
+
+Para probar la PWA sin teléfono: `npm run build`, `npm run start -- --port 3001` y `E2E_PROD=1 E2E_BASE_URL=http://127.0.0.1:3001 npm run e2e -- e2e/pwa.spec.ts`.
 
 ## Sin Docker
 

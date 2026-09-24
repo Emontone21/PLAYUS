@@ -9,6 +9,7 @@ import { Crown } from "@/components/crown";
 import { InviteButton } from "@/components/invite-button";
 import { Ranking, type RankingRow } from "@/components/ranking";
 import { GroupSwitcher } from "./group-switcher";
+import { ReminderTime } from "./reminder-time";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +143,13 @@ export default async function GroupPage() {
         <h2 className="text-sm text-tinta-suave">invitar a alguien</h2>
         <InviteButton code={group.invite_code} groupName={group.name} />
       </section>
+
+      {rows.some((r) => r.profile_id === user.id && r.role === "owner") ? (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm text-tinta-suave">ajustes del grupo</h2>
+          <ReminderTime groupId={group.id} value={group.reminder_time} timezone={group.timezone} />
+        </section>
+      ) : null}
     </main>
   );
 }

@@ -22,7 +22,27 @@ export type GroupRow = {
   created_by: string;
   timezone: string;
   max_attempts: number;
+  /** hora local del grupo "HH:MM:SS" del recordatorio; null = sin recordatorio */
+  reminder_time: string | null;
   created_at: string;
+}
+
+export type PushSubscriptionRow = {
+  id: string;
+  profile_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+}
+
+export type GroupReminderRow = {
+  group_id: string;
+  play_date: string;
+  sent_at: string;
+  sent_count: number;
 }
 
 export type GroupMemberRow = {
@@ -77,7 +97,7 @@ export type Database = {
         Row: GroupRow;
         // sin escritura desde el cliente salvo estas columnas (ver RLS)
         Insert: Record<string, never>;
-        Update: Partial<Pick<GroupRow, "name" | "timezone" | "max_attempts">>;
+        Update: Partial<Pick<GroupRow, "name" | "timezone" | "max_attempts" | "reminder_time">>;
         Relationships: [];
       };
       group_members: {
@@ -104,6 +124,18 @@ export type Database = {
         Row: AttemptRow;
         Insert: Partial<AttemptRow> & Pick<AttemptRow, "round_id" | "profile_id" | "attempt_number">;
         Update: Partial<AttemptRow>;
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: PushSubscriptionRow;
+        Insert: Partial<PushSubscriptionRow> & Pick<PushSubscriptionRow, "profile_id" | "endpoint" | "p256dh" | "auth">;
+        Update: Partial<PushSubscriptionRow>;
+        Relationships: [];
+      };
+      group_reminders: {
+        Row: GroupReminderRow;
+        Insert: Partial<GroupReminderRow> & Pick<GroupReminderRow, "group_id" | "play_date">;
+        Update: Partial<GroupReminderRow>;
         Relationships: [];
       };
     };

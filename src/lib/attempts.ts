@@ -2,7 +2,8 @@ import type { AdminClient } from "@/lib/supabase/admin";
 import type { AttemptRow, GroupRow, RoundRow } from "@/lib/supabase/types";
 import { getGame } from "@/games";
 import { gameLimits, type GameResult } from "@/games/types";
-import { abandonStale, groupToday } from "./rounds";
+import { abandonStale, groupToday, rankedRound } from "./rounds";
+import type { RankedEntry } from "./scoring";
 import type { DateString } from "./time";
 
 // Antitrampas del brief: el intento se consume al empezar, no al terminar.
@@ -126,7 +127,11 @@ export async function finishAttempt(
   userId: string,
   attemptId: string,
   body: unknown,
-  opts: { now?: Date } = {},
+  opts: {
+    now?: Date;
+    /** se llama con el ranking previo al puntaje nuevo, ya guardado el intento */
+    afterSave?: (round: RoundRow, rankingBefore: RankedEntry[]) => Promise<void>;
+  } = {},
 ): Promise<FinishResult> {
   const now = opts.now ?? new Date();
 
@@ -163,6 +168,8 @@ export async function finishAttempt(
     throw await reject("invalid_events", "la partida no pasó la validación. el intento se perdió.");
   }
 
+  const before = opts.afterSave ? (await rankedRound(admin, round)).ranked : [];
+
   const { data: updated, error: upErr } = await admin
     .from("attempts")
     .update({ status: "completed", score: result.score, finished_at: now.toISOString() })
@@ -171,6 +178,8 @@ export async function finishAttempt(
     .select();
   if (upErr) throw new Error(`guardar intento: ${upErr.message}`);
   if (!updated || updated.length === 0) throw new AttemptError(409, "already_finished", "ese intento ya terminó.");
+
+  if (opts.afterSave) await opts.afterSave(round, before);
 
   return { attemptId: attempt.id, score: result.score, elapsedMs };
 }

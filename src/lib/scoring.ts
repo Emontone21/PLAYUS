@@ -95,3 +95,21 @@ export function standings(rounds: readonly RankedEntry[][]): StandingRow[] {
 export function champion(rows: readonly StandingRow[]): string | null {
   return rows[0]?.profileId ?? null;
 }
+
+/**
+ * Quiénes quedaron atrás por un puntaje nuevo: estaban por delante del
+ * jugador (o el jugador no figuraba) y ahora tienen peor puesto. Sirve para
+ * el aviso "te pasaron".
+ */
+export function overtakenBy(before: readonly RankedEntry[], after: readonly RankedEntry[], profileId: string): string[] {
+  const rankBefore = new Map(before.map((e) => [e.profileId, e.rank]));
+  const meAfter = after.find((e) => e.profileId === profileId);
+  if (!meAfter) return [];
+  return after
+    .filter((e) => e.profileId !== profileId && e.rank > meAfter.rank)
+    .filter((e) => {
+      const prev = rankBefore.get(e.profileId);
+      return prev !== undefined && prev < e.rank;
+    })
+    .map((e) => e.profileId);
+}
