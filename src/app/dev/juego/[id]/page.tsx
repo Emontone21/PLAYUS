@@ -28,7 +28,7 @@ export default async function DevGamePage({
         <Link href="/dev/juego" className="text-agua">
           ← juegos
         </Link>{" "}
-        · modo desarrollo · {game.id} · semilla “{seed}” · {game.scoring} · máx {game.maxPlausibleScore}
+        {" "}modo desarrollo. {game.id}, semilla “{seed}”, {game.scoring}, máximo {game.maxPlausibleScore}
       </p>
       <DevGame id={game.id} seed={seed} />
     </main>

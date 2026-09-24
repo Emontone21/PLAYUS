@@ -33,7 +33,7 @@ export function ReminderTime({ groupId, value, timezone }: { groupId: string; va
             setTime(e.target.value);
             void save(e.target.value);
           }}
-          className="rounded-md bg-superficie px-3 py-2 font-bold text-tinta tabular-nums"
+          className="btn-quiet tabular-nums"
           aria-label="hora del recordatorio"
         />
       </label>

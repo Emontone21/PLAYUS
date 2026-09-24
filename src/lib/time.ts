@@ -38,9 +38,10 @@ export function daysBetween(from: DateString, to: DateString): number {
   return Math.round((b - a) / 86_400_000);
 }
 
-/** "mié 24 sep" para mostrar. */
+/** "mié 24 set" para mostrar (sin la coma que mete Intl después del día de la semana). */
 export function formatShortDate(date: DateString, tz = "UTC"): string {
-  return new Intl.DateTimeFormat("es-UY", { timeZone: tz, weekday: "short", day: "numeric", month: "short" }).format(
-    new Date(`${date}T12:00:00Z`),
-  );
+  return new Intl.DateTimeFormat("es-UY", { timeZone: tz, weekday: "short", day: "numeric", month: "short" })
+    .format(new Date(`${date}T12:00:00Z`))
+    .replace(",", "")
+    .replace(/\.$/, "");
 }

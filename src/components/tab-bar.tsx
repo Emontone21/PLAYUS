@@ -24,7 +24,7 @@ export function TabBar() {
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
-                className={`block py-4 text-center text-base font-extrabold ${
+                className={`display-bold block py-4 text-center text-base ${
                   active ? "text-oro" : "text-tinta-suave"
                 }`}
               >

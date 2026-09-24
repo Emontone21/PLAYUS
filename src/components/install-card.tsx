@@ -76,16 +76,16 @@ export function InstallCard({ dismissable = true }: { dismissable?: boolean }) {
 
   if (mode === "hidden") return null;
   if (mode === "installed") {
-    return dismissable ? null : <p className="text-sm text-tinta-suave">la app ya está instalada en este teléfono.</p>;
+    return dismissable ? null : <p className="eyebrow">la app ya está instalada en este teléfono.</p>;
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-md bg-superficie px-4 py-4" data-testid="install-card">
+    <div className="panel" data-testid="install-card">
       <p className="font-extrabold">instalá playus en el teléfono</p>
       {mode === "android" ? (
         <>
-          <p className="text-sm text-tinta-suave">queda con ícono propio, abre a pantalla completa y puede avisarte.</p>
-          <button type="button" onClick={install} className="rounded-md bg-oro px-4 py-3 font-extrabold text-fondo">
+          <p className="eyebrow">queda con ícono propio, abre a pantalla completa y puede avisarte.</p>
+          <button type="button" onClick={install} className="btn-primary-sm">
             instalar la app
           </button>
         </>

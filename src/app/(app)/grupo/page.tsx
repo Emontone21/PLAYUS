@@ -38,7 +38,7 @@ export default async function GroupPage() {
       rank: s.rank,
       value: s.points,
       unit: "pts",
-      detail: s.wins > 0 ? `${s.wins}×1º` : undefined,
+      detail: s.wins > 0 ? `${s.wins} ${s.wins === 1 ? "victoria" : "victorias"}` : undefined,
       isMe: s.profileId === user.id,
       champion: s.profileId === championId,
     };
@@ -52,16 +52,16 @@ export default async function GroupPage() {
         {groups.length > 1 ? (
           <GroupSwitcher groups={groups.map((g) => ({ id: g.id, name: g.name }))} currentId={group.id} />
         ) : null}
-        <h1 className="text-4xl font-extrabold tracking-tight" data-testid="group-name">
+        <h1 className="display text-4xl" data-testid="group-name">
           {group.name}
         </h1>
       </header>
 
       <section className="flex flex-col gap-3" data-testid="season-table">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm text-tinta-suave">temporada {summary.season.number}</h2>
+          <h2 className="eyebrow">temporada {summary.season.number}</h2>
           <span className="text-xs text-tinta-suave">
-            {formatShortDate(summary.season.starts_on)} → {summary.season.ends_on ? formatShortDate(summary.season.ends_on) : "…"}
+            del {formatShortDate(summary.season.starts_on)} al {summary.season.ends_on ? formatShortDate(summary.season.ends_on) : "…"}
           </span>
         </div>
         <Ranking
@@ -75,9 +75,9 @@ export default async function GroupPage() {
       </section>
 
       <section className="flex flex-col gap-3" data-testid="history">
-        <h2 className="text-sm text-tinta-suave">días anteriores</h2>
+        <h2 className="eyebrow">días anteriores</h2>
         {summary.history.length === 0 ? (
-          <p className="rounded-md bg-superficie px-4 py-3 text-tinta-suave">
+          <p className="note">
             todavía no hay días cerrados. jugá hoy y mañana aparece acá.
           </p>
         ) : (
@@ -91,13 +91,13 @@ export default async function GroupPage() {
                     <span className="font-extrabold">{h.gameName}</span>
                     <span className="truncate text-sm text-tinta-suave">
                       {winner
-                        ? `${h.tied ? "empate arriba: " : "ganó "}${winner.name} con ${h.winnerScore}${h.scoring === "low" ? " ms" : ""} · ${h.players} jugaron`
+                        ? `${h.tied ? "empate arriba: " : "ganó "}${winner.name} con ${h.winnerScore}${h.scoring === "low" ? " ms" : ""}. jugaron ${h.players}.`
                         : "nadie jugó"}
                     </span>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-xs text-tinta-suave">vos</span>
-                    <span className="text-xl font-extrabold tabular-nums">
+                    <span className="display text-xl">
                       {h.myScore !== null ? `${h.myScore}${h.scoring === "low" ? " ms" : ""}` : "—"}
                     </span>
                     {h.myRank ? <span className="text-xs text-tinta-suave">{h.myRank}º</span> : null}
@@ -110,7 +110,7 @@ export default async function GroupPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-tinta-suave">
+        <h2 className="eyebrow">
           {rows.length === 1 ? "por ahora sos vos" : `${rows.length} integrantes`}
         </h2>
         <ul className="flex flex-col" data-testid="members">
@@ -140,13 +140,13 @@ export default async function GroupPage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-tinta-suave">invitar a alguien</h2>
+        <h2 className="eyebrow">invitar a alguien</h2>
         <InviteButton code={group.invite_code} groupName={group.name} />
       </section>
 
       {rows.some((r) => r.profile_id === user.id && r.role === "owner") ? (
         <section className="flex flex-col gap-3">
-          <h2 className="text-sm text-tinta-suave">ajustes del grupo</h2>
+          <h2 className="eyebrow">ajustes del grupo</h2>
           <ReminderTime groupId={group.id} value={group.reminder_time} timezone={group.timezone} />
         </section>
       ) : null}

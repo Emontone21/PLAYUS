@@ -67,9 +67,9 @@ export function PushCard({ userId, variant }: { userId: string; variant: "offer"
   const enabled = status === "subscribed";
 
   return (
-    <div className="flex flex-col gap-3 rounded-md bg-superficie px-4 py-4" data-testid={`push-${variant}`}>
+    <div className="panel" data-testid={`push-${variant}`}>
       <p className="font-extrabold">{variant === "offer" ? "¿te avisamos cuando te pasen?" : "notificaciones"}</p>
-      <p className="text-sm text-tinta-suave">
+      <p className="eyebrow">
         {status === "unsupported"
           ? "este navegador no puede mandar notificaciones. en iPhone hace falta instalar la app primero."
           : enabled
@@ -79,11 +79,11 @@ export function PushCard({ userId, variant }: { userId: string; variant: "offer"
       {status !== "unsupported" ? (
         <div className="flex flex-wrap gap-2">
           {enabled ? (
-            <button type="button" disabled={busy} onClick={disable} className="rounded-md border-2 border-agua px-4 py-2 font-bold text-agua disabled:opacity-40">
+            <button type="button" disabled={busy} onClick={disable} className="btn-secondary">
               {busy ? "un segundo…" : "desactivar"}
             </button>
           ) : (
-            <button type="button" disabled={busy} onClick={enable} className="rounded-md bg-oro px-4 py-3 font-extrabold text-fondo disabled:opacity-40" data-testid="push-enable">
+            <button type="button" disabled={busy} onClick={enable} className="btn-primary-sm" data-testid="push-enable">
               {busy ? "un segundo…" : "activar avisos"}
             </button>
           )}

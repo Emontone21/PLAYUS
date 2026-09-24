@@ -21,6 +21,7 @@ export default async function PlayPage() {
   return (
     <main className="px-5 py-6">
       <Play
+        myRank={t.ranking.find((r) => r.profileId === user.id)?.rank ?? null}
         roundId={t.round.id}
         gameId={t.game.id}
         seed={t.round.seed}

@@ -163,3 +163,19 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 73. **El envío se prueba de verdad contra un push service falso.** `src/lib/push.test.ts` levanta un servidor HTTPS local con certificado autofirmado, inserta suscripciones con claves ECDH válidas y comprueba que llega un cuerpo cifrado `aes128gcm` con cabecera `vapid`, que un 410 borra la fila, y que el endpoint de recordatorios avisa una vez por día y exige el secreto. Lo único que no se puede probar acá es un teléfono real recibiendo la notificación.
 
 74. **`server-only` se aliasa a un módulo vacío en vitest.** El paquete tira al importarse fuera de React Server; los tests importan `push.ts` y el endpoint, que lo usan como guarda.
+
+## Etapa 7
+
+75. **Fuentes con `next/font/google`, servidas desde el propio dominio.** Bricolage Grotesque 700/800 para puntajes, nombres y títulos (clase `.display`: tracking cerrado, interlínea 0.95) e Instrument Sans 400/600/700 para el resto. Dos familias, no más. Se descargan en el build, así que un build sin salida a Google Fonts falla; si alguna vez hace falta, el fallback es `next/font/local` con los archivos en el repo.
+
+76. **Un sistema de clases chico en `globals.css`, no un framework de componentes.** `btn-primary`, `btn-primary-sm`, `btn-secondary`, `btn-secondary-sm`, `btn-quiet`, `input`, `input-sm`, `note`, `note-alert`, `note-ok`, `panel`, `chip`, `eyebrow`, `display` y `display-bold`, con `@apply` de Tailwind 4. Antes las mismas cadenas de clases estaban repetidas en 45 lugares; ahora un cambio de diseño se hace en un archivo.
+
+77. **Radios distintos según la pieza.** El CTA principal es la única forma muy redondeada (`rounded-2xl`); botones secundarios e inputs son `rounded-lg`; chips, redondos; los bloques de texto (notas, avisos, paneles) son planos, sin radio, como tiza sobre el pizarrón. Es la respuesta a "todo con el mismo border-radius" de la lista de evitá.
+
+78. **Sin puntos medios ni flechas en la interfaz.** Los metadatos van en frases separadas por comas o puntos ("los del barrio, jue 24 set", "tu mejor: 286 ms. te quedan 2 intentos."); los links de volver dicen "volver", "volver al perfil", "volver a los del barrio", sin flechita. Las etiquetas de sección (`.eyebrow`) van en minúscula, nunca en mayúsculas.
+
+79. **La animación FLIP vive en un componente de cliente que envuelve al ranking.** Al volver de una partida, la URL trae `?reveal=1`; `RankingReveal` muestra el orden viejo (tu fila donde estaba antes, según el puesto guardado en `sessionStorage` antes de jugar, o abajo de todo si es tu primera), mide, cambia al orden real y anima los `translateY` con una transición de 600 ms. Con `prefers-reduced-motion` se muestra el orden final directo. Después del reveal, las filas que llegan por el refresco en vivo se toman tal cual. Nada más se anima en la app.
+
+80. **El puntaje es el héroe.** En el resultado ocupa 7rem en display; en las filas del ranking va en display 4xl con la unidad chica al lado y los puntos (+10) más chicos todavía. Los puestos se distinguen por peso y color (el 1º en oro, del 2º al 3º en tinta, el resto en tinta suave), sin medallas ni emojis; la única excepción es la corona del campeón, que pide el brief.
+
+81. **La revisión visual en un teléfono real queda para vos.** Lo que se pudo hacer acá fue revisar cada pantalla en capturas de un Pixel 7 emulado (viewport, fuentes y tamaños reales). El criterio "listo cuando" de la etapa pide un teléfono de verdad.

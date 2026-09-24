@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyGroups, pickCurrentGroup } from "@/lib/groups";
 import { loadToday } from "@/lib/today";
 import { formatShortDate } from "@/lib/time";
-import { Ranking, type RankingRow } from "@/components/ranking";
+import type { RankingRow } from "@/components/ranking";
+import { RankingReveal } from "@/components/ranking-reveal";
 import { Avatar } from "@/components/avatar";
 import { LiveRefresh } from "./live-refresh";
 import { PushCard } from "@/components/push-card";
@@ -13,7 +14,8 @@ export const dynamic = "force-dynamic";
 
 // Hoy: el juego del día grande si todavía no jugaste (con los puntajes de los
 // demás tapados), el ranking en vivo si ya jugaste, y arriba quién ganó ayer.
-export default async function TodayPage() {
+export default async function TodayPage({ searchParams }: { searchParams: Promise<{ reveal?: string }> }) {
+  const { reveal } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,8 +47,8 @@ export default async function TodayPage() {
   return (
     <main className="flex flex-col gap-8 px-5 py-8">
       <header className="flex flex-col gap-1">
-        <p className="text-sm text-tinta-suave">
-          {group.name} · {formatShortDate(t.today)}
+        <p className="eyebrow">
+          {group.name}, {formatShortDate(t.today)}
         </p>
         {t.yesterday ? (
           <p className="text-sm" data-testid="yesterday-winner">
@@ -61,7 +63,7 @@ export default async function TodayPage() {
         <section className="flex flex-col gap-5" data-testid="today-game">
           <div className="flex flex-col gap-2">
             <p className="text-sm text-oro">el juego de hoy</p>
-            <h1 className="text-5xl font-extrabold tracking-tight" data-testid="today-game-name">
+            <h1 className="display text-5xl" data-testid="today-game-name">
               {t.game.name}
             </h1>
             <p className="text-lg text-tinta-suave">{t.game.tagline}</p>
@@ -77,19 +79,19 @@ export default async function TodayPage() {
           {t.attemptsLeft > 0 ? (
             <Link
               href="/hoy/jugar"
-              className="rounded-md bg-oro px-4 py-4 text-center text-xl font-extrabold text-fondo"
+              className="btn-primary"
               data-testid="play-link"
             >
               jugar
             </Link>
           ) : (
-            <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" data-testid="no-attempts">
+            <p className="note-alert" data-testid="no-attempts">
               se te fueron los {group.max_attempts} intentos sin terminar ninguna partida. mañana hay revancha.
             </p>
           )}
-          <p className="text-sm text-tinta-suave" data-testid="attempts-left">
+          <p className="eyebrow" data-testid="attempts-left">
             {attemptsText}
-            {t.attemptsUsed > 0 && t.attemptsLeft > 0 ? " · las partidas que no terminaste se contaron igual." : ""}
+            {t.attemptsUsed > 0 && t.attemptsLeft > 0 ? ". las partidas que no terminaste se contaron igual." : ""}
           </p>
 
           <div className="flex flex-col gap-2" data-testid="participants">
@@ -97,7 +99,7 @@ export default async function TodayPage() {
               <p className="text-tinta-suave">todavía nadie jugó hoy. sé quien abre el ranking.</p>
             ) : (
               <>
-                <p className="text-sm text-tinta-suave">
+                <p className="eyebrow">
                   ya jugaron {t.participants.length}. los puntajes se destapan cuando termines tu primera partida.
                 </p>
                 <ul className="flex flex-wrap gap-2">
@@ -121,25 +123,25 @@ export default async function TodayPage() {
         <section className="flex flex-col gap-4" data-testid="today-ranking">
           <div className="flex items-end justify-between gap-3">
             <div className="flex flex-col">
-              <p className="text-sm text-oro">ranking de hoy · {t.game.name}</p>
-              <p className="text-sm text-tinta-suave" data-testid="attempts-left">
-                tu mejor: <span className="font-extrabold text-tinta tabular-nums">{t.myBest}</span>
-                {unit ? ` ${unit}` : ""} · {attemptsText}
+              <p className="text-sm text-oro">ranking de hoy: {t.game.name}</p>
+              <p className="eyebrow" data-testid="attempts-left">
+                tu mejor: <span className="display-bold text-tinta">{t.myBest}</span>
+                {unit ? ` ${unit}` : ""}. {attemptsText}.
               </p>
             </div>
             {t.attemptsLeft > 0 ? (
               <Link
                 href="/hoy/jugar"
-                className="shrink-0 rounded-md bg-oro px-4 py-3 font-extrabold text-fondo"
+                className="btn-primary-sm shrink-0"
                 data-testid="play-again-link"
               >
                 jugar de nuevo
               </Link>
             ) : null}
           </div>
-          <Ranking rows={rows} emptyText="todavía no hay puntajes." />
+          <RankingReveal rows={rows} myId={user.id} reveal={reveal === "1"} />
           <p className="text-xs text-tinta-suave">
-            se actualiza solo cuando alguien termina una partida. +10, +7, +5, +3 para los cuatro primeros; +1 para el resto.
+            se actualiza solo cuando alguien termina una partida. los cuatro primeros suman 10, 7, 5 y 3; el resto, 1.
           </p>
           <LiveRefresh roundId={t.round.id} />
           {/* el permiso de notificaciones se ofrece después de la primera partida, nunca al entrar */}

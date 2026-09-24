@@ -2,7 +2,7 @@
 
 PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
 
-Estado: **etapa 6** (PWA y notificaciones). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
+Estado: **etapa 7** (pasada de diseño). Las siete etapas del brief están hechas; falta la verificación en teléfonos reales de las etapas 6 y 7. Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 
 ## Qué hay
 
@@ -108,6 +108,10 @@ PW_CHROMIUM_PATH=/ruta/a/chromium npm run e2e     # opcional: usar un Chromium y
 Con el emulador, `npm test` corre también `src/lib/attempts.test.ts` (consumo de intentos contra la base); sin stack, ese archivo se saltea.
 
 `scripts/db-test-local.sh` crea una base efímera, aplica `scripts/supabase-shim.sql` (roles, `auth.uid()`, `auth.users`, privilegios por defecto), las migraciones y el seed, y corre `pg_prove` sobre `supabase/tests`. `KEEP_DB=1` deja la base para mirarla; `SKIP_SEED=1` la deja sin seed. `scripts/dev-local.sh --reset` rehace la base de desarrollo.
+
+## Diseño
+
+Paleta del brief como tokens en `src/app/globals.css` (`--fondo`, `--superficie`, `--oro`, `--rosa`, `--agua`, `--tinta`), dos familias vía `next/font` (Bricolage Grotesque para puntajes, nombres y títulos; Instrument Sans para el resto), cifras tabulares en todo, y un sistema chico de clases (`btn-primary`, `input`, `note`, `panel`, `chip`, `eyebrow`, `display`, ver `globals.css`). El único movimiento es el FLIP del ranking al volver de una partida (`src/components/ranking-reveal.tsx`), que respeta `prefers-reduced-motion`.
 
 ## Modelo de datos en dos líneas
 

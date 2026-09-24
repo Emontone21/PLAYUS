@@ -85,10 +85,10 @@ export function CreateFlow() {
   return (
     <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
       <header className="flex flex-col gap-1">
-        <Link href="/" className="text-sm text-tinta-suave">
-          ← volver
+        <Link href="/" className="eyebrow">
+          volver
         </Link>
-        <h1 className="text-4xl font-extrabold tracking-tight">crear un grupo</h1>
+        <h1 className="display text-4xl">crear un grupo</h1>
       </header>
 
       {state.step === "loading" ? <p className="text-tinta-suave">abriendo…</p> : null}
@@ -112,7 +112,7 @@ export function CreateFlow() {
           }}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-sm text-tinta-suave">¿cómo se llama el grupo?</span>
+            <span className="eyebrow">¿cómo se llama el grupo?</span>
             <input
               name="groupName"
               autoFocus
@@ -120,13 +120,13 @@ export function CreateFlow() {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="los del barrio"
-              className="rounded-md border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold text-tinta outline-none focus:border-agua"
+              className="input"
             />
           </label>
           <button
             type="submit"
             disabled={groupName.trim().length === 0}
-            className="rounded-md bg-oro px-4 py-4 text-lg font-extrabold text-fondo disabled:opacity-40"
+            className="btn-primary"
           >
             crear grupo
           </button>
@@ -135,13 +135,13 @@ export function CreateFlow() {
 
       {state.step === "error" ? (
         <div className="flex flex-col gap-4">
-          <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" role="alert" data-testid="flow-error">
+          <p className="note-alert" role="alert" data-testid="flow-error">
             {state.message}
           </p>
           <button
             type="button"
             onClick={() => setState({ step: "group" })}
-            className="rounded-md border-2 border-agua px-4 py-3 font-extrabold text-agua"
+            className="btn-secondary"
           >
             probar de nuevo
           </button>

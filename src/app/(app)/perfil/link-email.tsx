@@ -35,7 +35,7 @@ export function LinkEmail({
   }
 
   return (
-    <details className="rounded-md bg-superficie px-4 py-3" data-testid="link-email">
+    <details className="bg-superficie px-4 py-3" data-testid="link-email">
       <summary className="cursor-pointer text-sm font-bold">¿cambiás de teléfono? vinculá un email</summary>
       <div className="flex flex-col gap-3 pt-3">
         {currentEmail ? (
@@ -43,16 +43,16 @@ export function LinkEmail({
             tu cuenta ya está vinculada a <span className="font-bold">{currentEmail}</span>.
           </p>
         ) : (
-          <p className="text-sm text-tinta-suave">
+          <p className="eyebrow">
             sin esto, la cuenta vive solo en este teléfono. con un email podés recuperarla desde otro.
             no hay contraseña: te mandamos un link.
           </p>
         )}
         {pendingEmail && pendingEmail !== currentEmail ? (
-          <p className="text-sm text-tinta-suave">falta confirmar {pendingEmail}: tocá el link que te mandamos.</p>
+          <p className="eyebrow">falta confirmar {pendingEmail}: tocá el link que te mandamos.</p>
         ) : null}
         {state.kind === "sent" ? (
-          <p className="rounded-md border-l-4 border-agua bg-fondo px-3 py-2 text-sm" role="status">
+          <p className="note-ok text-sm" role="status">
             te mandamos un link a {state.to}. abrilo desde este teléfono y listo.
           </p>
         ) : (
@@ -71,12 +71,12 @@ export function LinkEmail({
               onChange={(e) => setEmail(e.target.value)}
               placeholder={currentEmail ? "otro email" : "tu email"}
               aria-label="email"
-              className="min-w-0 flex-1 rounded-md border-2 border-fondo bg-fondo px-3 py-2 font-bold text-tinta outline-none focus:border-agua"
+              className="input-sm min-w-0 flex-1 border-fondo bg-fondo"
             />
             <button
               type="submit"
               disabled={state.kind === "sending"}
-              className="rounded-md border-2 border-agua px-3 py-2 text-sm font-bold text-agua disabled:opacity-40"
+              className="btn-secondary-sm"
             >
               {state.kind === "sending" ? "enviando…" : "vincular"}
             </button>

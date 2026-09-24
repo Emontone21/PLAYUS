@@ -51,10 +51,10 @@ export function ProfileEditor({
   return (
     <main className="flex flex-col gap-6 px-5 py-8">
       <header className="flex flex-col gap-1">
-        <Link href="/perfil" className="text-sm text-tinta-suave">
-          ← perfil
+        <Link href="/perfil" className="eyebrow">
+          volver al perfil
         </Link>
-        <h1 className="text-3xl font-extrabold tracking-tight">tu nombre y tu avatar</h1>
+        <h1 className="display text-3xl">tu nombre y tu avatar</h1>
       </header>
 
       <form
@@ -65,21 +65,21 @@ export function ProfileEditor({
         }}
       >
         <label className="flex flex-col gap-1">
-          <span className="text-sm text-tinta-suave">nombre visible</span>
+          <span className="eyebrow">nombre visible</span>
           <input
             name="name"
             maxLength={40}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="tu nombre"
-            className="rounded-md border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold text-tinta outline-none focus:border-agua"
+            className="input"
           />
         </label>
 
         <AvatarEditor value={avatar} onChange={setAvatar} />
 
         {error ? (
-          <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" role="status" data-testid="flow-error">
+          <p className="note-alert" role="status" data-testid="flow-error">
             {error}
           </p>
         ) : null}
@@ -87,7 +87,7 @@ export function ProfileEditor({
         <button
           type="submit"
           disabled={!valid || busy}
-          className="rounded-md bg-oro px-4 py-4 text-lg font-extrabold text-fondo disabled:opacity-40"
+          className="btn-primary"
         >
           {busy ? "guardando…" : "guardar cambios"}
         </button>

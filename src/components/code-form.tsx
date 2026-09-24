@@ -27,12 +27,12 @@ export function CodeForm() {
         maxLength={8}
         placeholder="código"
         aria-label="código de invitación"
-        className="min-w-0 flex-1 rounded-md border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold uppercase tracking-[0.2em] text-tinta outline-none focus:border-agua"
+        className="input min-w-0 flex-1 uppercase tracking-[0.2em]"
       />
       <button
         type="submit"
         disabled={clean.length !== 6}
-        className="rounded-md border-2 border-agua px-4 py-3 font-extrabold text-agua disabled:opacity-40"
+        className="btn-secondary"
       >
         entrar
       </button>

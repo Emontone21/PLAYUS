@@ -36,7 +36,7 @@ function TapRace({ onReady, onProgress }: GameProps) {
       className="flex h-full w-full select-none flex-col items-center justify-center gap-2 bg-superficie"
       data-testid="tap-area"
     >
-      <span className="text-8xl font-extrabold tabular-nums" data-testid="tap-count">
+      <span className="display text-8xl" data-testid="tap-count">
         {taps}
       </span>
       <span className="text-tinta-suave">tocá, tocá, tocá</span>

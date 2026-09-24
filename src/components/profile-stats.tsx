@@ -32,12 +32,12 @@ export function ProfileStats({ stats }: { stats: ProfileStatsData }) {
         {items.map((item) => (
           <div key={item.label} className="flex flex-col border-b border-superficie py-3">
             <dt className="text-xs text-tinta-suave">{item.label}</dt>
-            <dd className="text-2xl font-extrabold">{item.value}</dd>
+            <dd className="display text-2xl">{item.value}</dd>
           </div>
         ))}
       </dl>
       {empty ? (
-        <p className="text-sm text-tinta-suave">se llenan con tu primera partida. no hay apuro.</p>
+        <p className="eyebrow">se llenan con tu primera partida. no hay apuro.</p>
       ) : null}
     </div>
   );

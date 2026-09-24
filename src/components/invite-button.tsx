@@ -42,21 +42,21 @@ export function InviteButton({ code, groupName }: { code: string; groupName: str
       <button
         type="button"
         onClick={share}
-        className="rounded-md bg-oro px-4 py-4 text-lg font-extrabold text-fondo"
+        className="btn-primary"
       >
         invitar
       </button>
-      <div className="flex items-center justify-between gap-3 rounded-md bg-superficie px-4 py-3">
+      <div className="flex items-center justify-between gap-3 bg-superficie px-4 py-3">
         <div className="flex flex-col">
           <span className="text-xs text-tinta-suave">código para dictar</span>
-          <span className="text-2xl font-extrabold tracking-[0.2em]" data-testid="invite-code">
+          <span className="display-bold text-2xl tracking-[0.2em]" data-testid="invite-code">
             {code}
           </span>
         </div>
         <button
           type="button"
           onClick={copy}
-          className="rounded-md border-2 border-agua px-3 py-2 text-sm font-bold text-agua"
+          className="btn-secondary-sm"
         >
           {status === "copied" ? "copiado" : status === "failed" ? "no se pudo" : "copiar link"}
         </button>

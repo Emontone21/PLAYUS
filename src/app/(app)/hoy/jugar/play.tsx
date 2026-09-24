@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { PREV_RANK_KEY } from "@/components/ranking-reveal";
 import { getGame } from "@/games";
 import { GameContainer, type SubmitOutcome } from "@/games/container";
 import type { GameResult } from "@/games/types";
@@ -10,12 +11,14 @@ import type { GameResult } from "@/games/types";
 // intento en /start (antes de la cuenta regresiva) y el resultado va a
 // /finish, que valida tiempo, cotas y traza.
 export function Play({
+  myRank,
   roundId,
   gameId,
   seed,
   attemptsLeft,
   firstTime,
 }: {
+  myRank: number | null;
   roundId: string;
   gameId: string;
   seed: string;
@@ -24,6 +27,16 @@ export function Play({
 }) {
   const router = useRouter();
   const attemptId = useRef<string | null>(null);
+  // el puesto de antes de jugar, para que el ranking se anime desde ahí al volver
+  useEffect(() => {
+    try {
+      if (myRank) sessionStorage.setItem(PREV_RANK_KEY, String(myRank));
+      else sessionStorage.removeItem(PREV_RANK_KEY);
+    } catch {
+      /* sin storage */
+    }
+  }, [myRank]);
+
   const game = getGame(gameId);
   if (!game) return <p className="text-rosa">el juego de hoy no está en esta versión de la app. actualizala.</p>;
 
@@ -47,7 +60,7 @@ export function Play({
   }
 
   function onDone() {
-    router.push("/hoy");
+    router.push("/hoy?reveal=1");
     router.refresh();
   }
 

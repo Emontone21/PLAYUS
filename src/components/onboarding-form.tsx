@@ -33,7 +33,7 @@ export function OnboardingForm({
       }}
     >
       <label className="flex flex-col gap-1">
-        <span className="text-sm text-tinta-suave">¿cómo te llamás?</span>
+        <span className="eyebrow">¿cómo te llamás?</span>
         <input
           name="name"
           autoFocus
@@ -42,19 +42,19 @@ export function OnboardingForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="tu nombre"
-          className="rounded-md border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold text-tinta outline-none focus:border-agua"
+          className="input"
         />
       </label>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm text-tinta-suave">armá tu avatar</span>
+        <span className="eyebrow">armá tu avatar</span>
         <AvatarEditor value={avatar} onChange={setAvatar} previewSize={120} />
       </div>
 
       <button
         type="submit"
         disabled={!valid || busy}
-        className="rounded-md bg-oro px-4 py-4 text-lg font-extrabold text-fondo disabled:opacity-40"
+        className="btn-primary"
       >
         {busy ? "un segundo…" : submitLabel}
       </button>

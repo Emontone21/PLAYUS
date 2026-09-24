@@ -40,7 +40,7 @@ export default async function ProfilePage() {
       <header className="flex items-center gap-4">
         <Avatar avatar={avatar} name={name} size={80} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h1 className="truncate text-3xl font-extrabold tracking-tight" data-testid="profile-name">
+          <h1 className="truncate display text-3xl" data-testid="profile-name">
             {name || "sin nombre"}
           </h1>
           <Link href="/perfil/editar" className="text-sm font-bold text-agua">
@@ -50,20 +50,20 @@ export default async function ProfilePage() {
       </header>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-tinta-suave">tus números</h2>
+        <h2 className="eyebrow">tus números</h2>
         <ProfileStats stats={stats} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-tinta-suave">apodo por grupo</h2>
-        <p className="text-sm text-tinta-suave">
+        <h2 className="eyebrow">apodo por grupo</h2>
+        <p className="eyebrow">
           en cada grupo te pueden conocer distinto. si lo dejás vacío, se usa tu nombre.
         </p>
         <Nicknames groups={groupsWithNickname} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-tinta-suave">ajustes</h2>
+        <h2 className="eyebrow">ajustes</h2>
         <PushCard userId={user.id} variant="settings" />
         <InstallCard dismissable={false} />
         <LinkEmail currentEmail={user.email ?? null} pendingEmail={user.new_email ?? null} />

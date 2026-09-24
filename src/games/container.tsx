@@ -135,8 +135,8 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     return (
       <section className="flex min-h-[70dvh] flex-col justify-between gap-6" data-testid="game-intro">
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-tinta-suave">el juego de hoy</p>
-          <h1 className="text-5xl font-extrabold tracking-tight">{game.name}</h1>
+          <p className="eyebrow">el juego de hoy</p>
+          <h1 className="display text-5xl">{game.name}</h1>
           <p className="text-lg text-tinta-suave">{game.tagline}</p>
           <ol className="mt-2 flex flex-col gap-2">
             {game.howTo.map((step, i) => (
@@ -146,22 +146,22 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
               </li>
             ))}
           </ol>
-          <p className="text-sm text-tinta-suave">
+          <p className="eyebrow">
             dura {Math.round(game.durationMs / 1000)} segundos como máximo.{" "}
             {game.scoring === "low" ? "gana el más bajo." : "gana el más alto."}
           </p>
         </div>
         <div className="flex flex-col gap-3">
           {warning ? (
-            <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3 text-sm" data-testid="game-warning">
+            <p className="note-alert text-sm" data-testid="game-warning">
               {warning}
             </p>
           ) : null}
-          {note ? <p className="text-sm text-tinta-suave">{note}</p> : null}
+          {note ? <p className="eyebrow">{note}</p> : null}
           <button
             type="button"
             onClick={() => void start()}
-            className="rounded-md bg-oro px-4 py-4 text-xl font-extrabold text-fondo"
+            className="btn-primary"
             data-testid="game-play"
           >
             jugar
@@ -174,7 +174,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   if (state.step === "countdown") {
     return (
       <section className="flex min-h-[70dvh] flex-col items-center justify-center gap-2" data-testid="game-countdown">
-        <span className="text-[9rem] font-extrabold leading-none text-oro tabular-nums">{state.n}</span>
+        <span className="display text-[9rem] text-oro">{state.n}</span>
         <span className="text-tinta-suave">preparate</span>
       </section>
     );
@@ -185,15 +185,15 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
       <section className="flex min-h-[80dvh] flex-col gap-3" data-testid="game-playing">
         <header className="flex items-baseline justify-between">
           <span className="font-extrabold">{game.name}</span>
-          <span className="text-3xl font-extrabold tabular-nums" data-testid="game-timer" aria-live="off">
+          <span className="display text-4xl" data-testid="game-timer" aria-live="off">
             {formatSeconds(timeLeftMs)}
           </span>
         </header>
         {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
-        <div className="flex min-h-[60dvh] flex-1 flex-col overflow-hidden rounded-md [&>*]:min-h-0 [&>*]:flex-1">
+        <div className="flex min-h-[60dvh] flex-1 flex-col overflow-hidden rounded-lg [&>*]:min-h-0 [&>*]:flex-1">
           <Game seed={seed} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
         </div>
-        {state.step === "loading" ? <p className="text-sm text-tinta-suave">cargando…</p> : null}
+        {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}
       </section>
     );
   }
@@ -209,11 +209,11 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   if (state.step === "error") {
     return (
       <section className="flex min-h-[70dvh] flex-col justify-center gap-4" data-testid="game-error">
-        <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" role="alert">
+        <p className="note-alert" role="alert">
           {state.message}
         </p>
         {onDone ? (
-          <button type="button" onClick={onDone} className="rounded-md border-2 border-agua px-4 py-3 font-extrabold text-agua">
+          <button type="button" onClick={onDone} className="btn-secondary">
             volver
           </button>
         ) : null}
@@ -224,8 +224,8 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   return (
     <section className="flex min-h-[70dvh] flex-col justify-between gap-6" data-testid="game-result">
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-tinta-suave">{state.cutByTimer ? "se acabó el tiempo" : "terminaste"}</p>
-        <p className="text-[7rem] font-extrabold leading-none tabular-nums" data-testid="game-score">
+        <p className="eyebrow">{state.cutByTimer ? "se acabó el tiempo" : "terminaste"}</p>
+        <p className="display text-[7rem]" data-testid="game-score">
           {state.result.score}
           {unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
         </p>
@@ -235,7 +235,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
         <button
           type="button"
           onClick={onDone}
-          className="rounded-md bg-oro px-4 py-4 text-xl font-extrabold text-fondo"
+          className="btn-primary"
           data-testid="game-done"
         >
           listo

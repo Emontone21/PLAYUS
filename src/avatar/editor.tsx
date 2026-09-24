@@ -54,7 +54,7 @@ export function AvatarEditor({
         <button
           type="button"
           onClick={() => onChange(randomAvatar())}
-          className="rounded-md border-2 border-agua px-3 py-2 text-sm font-bold text-agua"
+          className="btn-secondary-sm"
         >
           al azar
         </button>
@@ -70,7 +70,7 @@ export function AvatarEditor({
               role="tab"
               aria-selected={active}
               onClick={() => setCategory(c)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-bold ${
+              className={`chip shrink-0 ${
                 active ? "bg-tinta text-fondo" : "bg-superficie text-tinta-suave"
               }`}
             >

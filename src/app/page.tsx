@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <main className="flex min-h-dvh flex-col justify-center gap-10 px-5 py-10">
       <header className="flex flex-col gap-2">
-        <h1 className="text-5xl font-extrabold tracking-tight">playus</h1>
+        <h1 className="display text-5xl">playus</h1>
         <p className="text-lg text-tinta-suave">
           un minijuego distinto por día. todos el mismo, el mismo día. gana el ranking del grupo.
         </p>
@@ -29,7 +29,7 @@ export default async function HomePage() {
       <section className="flex flex-col gap-3">
         <Link
           href="/crear"
-          className="rounded-md bg-oro px-4 py-4 text-center text-lg font-extrabold text-fondo"
+          className="btn-primary"
         >
           crear un grupo
         </Link>

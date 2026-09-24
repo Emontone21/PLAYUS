@@ -24,7 +24,7 @@ export function GroupSwitcher({
             await selectGroup(id, "/grupo");
           });
         }}
-        className="rounded-md bg-superficie px-3 py-2 font-bold text-tinta"
+        className="btn-quiet"
         aria-label="elegir grupo"
       >
         {groups.map((g) => (

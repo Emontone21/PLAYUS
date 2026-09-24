@@ -79,8 +79,8 @@ export function JoinFlow({ code }: { code: string }) {
   return (
     <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
       <header className="flex flex-col gap-1">
-        <p className="text-sm text-tinta-suave">te invitaron a un grupo</p>
-        <h1 className="text-4xl font-extrabold tracking-tight">
+        <p className="eyebrow">te invitaron a un grupo</p>
+        <h1 className="display text-4xl">
           código <span className="tracking-[0.2em] text-oro">{code}</span>
         </h1>
       </header>
@@ -99,7 +99,7 @@ export function JoinFlow({ code }: { code: string }) {
 
       {state.step === "error" ? (
         <div className="flex flex-col gap-4">
-          <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" role="alert" data-testid="flow-error">
+          <p className="note-alert" role="alert" data-testid="flow-error">
             {state.message}
           </p>
           <CodeForm />

@@ -58,7 +58,7 @@ export function Nicknames({ groups }: { groups: Row[] }) {
                 }}
                 placeholder="tu nombre"
                 aria-label={`apodo en ${g.name}`}
-                className="min-w-0 flex-1 rounded-md border-2 border-superficie bg-superficie px-3 py-2 font-bold text-tinta outline-none focus:border-agua"
+                className="input-sm min-w-0 flex-1"
               />
               <span className="w-16 text-right text-xs text-tinta-suave" aria-live="polite">
                 {status[g.id] === "saving" ? "guardando" : status[g.id] === "saved" ? "guardado" : ""}
@@ -68,7 +68,7 @@ export function Nicknames({ groups }: { groups: Row[] }) {
         </li>
       ))}
       {message ? (
-        <li className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3 text-sm" role="status">
+        <li className="note-alert text-sm" role="status">
           {message}
         </li>
       ) : null}

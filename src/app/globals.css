@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Paleta del brief: pizarrón de campeonato de barrio. Una sola paleta, sin modo claro. */
+/* Paleta del brief: pizarrón de campeonato de barrio. Una sola paleta, sin
+   modo claro. Contundente, saturado, plano: sin degradados ni sombras. */
 :root {
   --fondo: #1b1a2e;
   --superficie: #26244a;
@@ -19,6 +20,9 @@
   --color-agua: var(--agua);
   --color-tinta: var(--tinta);
   --color-tinta-suave: var(--tinta-suave);
+  /* dos familias, no más: display para puntajes, nombres y títulos; sans para el resto */
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -28,7 +32,79 @@ html {
 body {
   background: var(--fondo);
   color: var(--tinta);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+  /* cifras tabulares en todo lo que sea número */
   font-variant-numeric: tabular-nums;
   -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  /* títulos, nombres y puntajes: display, pesado, tracking cerrado */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+  .display-bold {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  /* etiqueta chica arriba de una sección: minúscula, nunca mayúsculas */
+  .eyebrow {
+    @apply text-sm text-tinta-suave;
+  }
+  /* radios distintos según la pieza: el CTA es la única forma muy redondeada */
+  .btn-primary {
+    @apply block w-full rounded-2xl bg-oro px-4 py-4 text-center text-xl text-fondo disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .btn-primary-sm {
+    @apply rounded-2xl bg-oro px-4 py-3 text-base text-fondo disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .btn-secondary {
+    @apply rounded-lg border-2 border-agua px-4 py-3 font-bold text-agua disabled:opacity-40;
+  }
+  .btn-secondary-sm {
+    @apply rounded-lg border-2 border-agua px-3 py-2 text-sm font-bold text-agua disabled:opacity-40;
+  }
+  .btn-quiet {
+    @apply rounded-lg bg-superficie px-3 py-2 font-bold text-tinta;
+  }
+  .input {
+    @apply w-full rounded-lg border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold text-tinta outline-none focus:border-agua;
+  }
+  .input-sm {
+    @apply w-full rounded-lg border-2 border-superficie bg-superficie px-3 py-2 font-bold text-tinta outline-none focus:border-agua;
+  }
+  /* bloques planos: sin radio, como tiza sobre el pizarrón */
+  .note {
+    @apply bg-superficie px-4 py-3 text-tinta-suave;
+  }
+  .note-alert {
+    @apply border-l-4 border-rosa bg-superficie px-4 py-3;
+  }
+  .note-ok {
+    @apply border-l-4 border-agua bg-superficie px-4 py-3;
+  }
+  .panel {
+    @apply flex flex-col gap-3 bg-superficie px-4 py-4;
+  }
+  .chip {
+    @apply rounded-full px-3 py-1.5 text-sm font-bold;
+  }
+}
+
+/* el único movimiento coreografiado: el ranking se reordena al revelar el puntaje */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
