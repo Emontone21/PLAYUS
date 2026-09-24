@@ -91,3 +91,25 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 40. **Las estadísticas del perfil son un componente con datos en null.** `ProfileStats` recibe `{roundsPlayed, wins, bestStreak, seasonsWon, bestGame}` y muestra "—" y un texto de invitación mientras todo sea null. La etapa 5 solo tiene que calcular el objeto.
 
 41. **`data-avatar` en el SVG.** El renderizador escribe el JSON normalizado del avatar como atributo. Es lo que usa el test E2E para comprobar que el avatar guardado en un navegador es exactamente el que ve el otro.
+
+## Etapa 4
+
+42. **`onProgress` en `GameProps`.** El brief define `seed`, `onReady` y `onFinish`, pero el contenedor corta por tiempo y necesita un puntaje en ese momento. Agregué `onProgress(result)`: el juego informa su resultado parcial cada vez que cambia y el contenedor usa el último cuando corta. Un juego que siempre termina antes (reflejo) puede ignorarlo. Es la extensión más chica que resuelve el corte sin que el juego conozca el cronómetro.
+
+43. **Decisión 8 resuelta: `import * as React` en los juegos.** Con `import { useState } from "react"` en un módulo que también importa un Server Component (`/dev/juego/[id]`, y en la etapa 5 `/finish`), `next build` falla: "You're importing a component that needs useEffect... mark the file with use client". Con `React.useState` compila y el contrato de un solo archivo se mantiene. Los archivos de juego **no** llevan `"use client"`: si lo llevaran, el objeto `GameModule` que exportan llegaría al servidor como referencia de cliente y no se podrían leer los límites. Quien los renderiza (el contenedor) sí es de cliente.
+
+44. **`gameLimits(game)`.** Función en `src/games/types.ts` que aplica los defaults (`minDurationMs = durationMs - 2000`, `maxDurationMs = durationMs + 10000`, `minScore = 0`). El servidor de la etapa 5 usa esto y no repite la regla.
+
+45. **El contenedor es dueño del cronómetro y del ciclo.** Estados: intro → countdown → loading → playing → submitting → result | error. El cronómetro arranca en `onReady` y corre con `requestAnimationFrame`; corta solo. `onStart` (antes de la cuenta regresiva) y `onSubmit` (con el resultado) son ganchos opcionales que la etapa 5 conecta a `/start` y `/finish`; sin ellos, el contenedor muestra el resultado sin guardar ("partida de prueba").
+
+46. **`hash32` es FNV-1a con avalancha final, y no se cambia nunca.** Todas las semillas de rondas y mazos van a salir de acá; cambiarlo cambiaría los tableros de los días futuros y rompería `validate` de las rondas pasadas. El test unitario lo fija.
+
+47. **Registry con chequeos al cargar.** `src/games/index.ts` falla al arrancar si un id no cumple `^[a-z0-9][a-z0-9-]{0,39}$` (el mismo check que `rounds.game_id`) o si hay ids repetidos. Mejor romper en desarrollo que guardar un id que la base rechaza.
+
+48. **Ruta `/dev/juego/[id]` solo en desarrollo.** Devuelve 404 con `NODE_ENV=production`. Es donde se prueba un juego nuevo sin ronda ni servidor.
+
+49. **`reflejo`: salida en falso repite la ronda con la misma espera.** Mantiene el determinismo (las esperas salen de la semilla por ronda) y penaliza sin inventar un número. La traza guarda cuántas salidas en falso hubo por ronda.
+
+50. **Las llamadas concurrentes a `ensureAnonymousUser` comparten la misma promesa.** Apareció en los E2E: StrictMode monta los efectos dos veces en desarrollo, se disparaban dos registros anónimos y el perfil se guardaba con el token del otro usuario (RLS lo rechaza). Vale también para una navegación rápida en producción.
+
+51. **Vitest desde esta etapa.** El plan lo ponía en la etapa 5; el PRNG merece tests unitarios ya (estabilidad del hash, secuencias iguales con la misma semilla, rangos). `npm test` los corre.

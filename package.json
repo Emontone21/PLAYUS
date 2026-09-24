@@ -11,7 +11,9 @@
     "db:test": "supabase test db",
     "db:test:local": "scripts/db-test-local.sh",
     "dev:local-stack": "node scripts/mini-supabase/server.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -27,7 +29,7 @@
     "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9",
-    "@types/node": "^20",
+    "@types/node": "^22.20.4",
     "@types/pg": "^8",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -36,6 +38,7 @@
     "jsonwebtoken": "^9",
     "pg": "^8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   }
 }

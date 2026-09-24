@@ -2,7 +2,7 @@
 
 PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
 
-Estado: **etapa 3** (avatar y perfiles). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
+Estado: **etapa 4** (contrato de juegos, contenedor y juegos de relleno). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 
 ## Qué hay
 
@@ -14,12 +14,15 @@ src/
     crear/                  crear un grupo
     (app)/hoy|grupo|perfil  las tres pestañas (hoy es placeholder hasta la etapa 5)
     (app)/perfil/editar     nombre visible y editor de avatar
+    dev/juego/[id]          solo desarrollo: probar un juego con una semilla, sin servidor
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
+  games/                    contrato (types.ts), registry (index.ts), contenedor, juegos y README
+  lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   components/               avatar, formulario de alta, invitar, barra, estadísticas
   lib/supabase/             clientes (browser, server, middleware) y tipos de la base
   lib/groups*.ts            grupo actual (cookie) y acción de servidor
   middleware.ts             refresca la sesión en cada petición
-e2e/                        tests Playwright (invitación, perfil y avatar)
+e2e/                        tests Playwright (invitación, perfil, juegos)
 supabase/
   config.toml               configuración del stack local (auth anónima habilitada)
   migrations/
@@ -52,8 +55,11 @@ Copiá `.env.example` a `.env.local` y completá `NEXT_PUBLIC_SUPABASE_URL`, `NE
 
 ```bash
 npm run dev                 # http://localhost:3000
+npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
+
+Para probar un juego suelto: `http://localhost:3000/dev/juego/reflejo?seed=abc`. Para agregar uno: `src/games/README.md`.
 
 ## Sin Docker
 

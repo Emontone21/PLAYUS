@@ -50,6 +50,7 @@ function send(res, status, body, extraHeaders = {}) {
     return;
   }
   headers["Content-Type"] = "application/json; charset=utf-8";
+  if (status >= 400) console.error(`[mini-supabase] ${status}`, JSON.stringify(body).slice(0, 300));
   res.writeHead(status, headers);
   res.end(JSON.stringify(body));
 }
