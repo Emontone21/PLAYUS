@@ -49,3 +49,25 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 21. **Verificación sin Docker.** Este entorno no tiene daemon de Docker, así que `supabase test db` no se puede correr. `scripts/db-test-local.sh` reproduce lo mínimo del entorno de Supabase (roles, `auth.uid()`, `auth.users`, privilegios por defecto, `extensions`) con `scripts/supabase-shim.sql` sobre un Postgres 16 común y corre los mismos tests con `pg_prove`. En una máquina con Docker, `supabase db reset && supabase test db` es el camino oficial y los archivos son los mismos.
 
 22. **Las rondas del seed no siguen el mazo.** El seed alterna `tap-race` y `reflejo` a mano. El algoritmo del mazo llega en la etapa 5 y no tendría sentido duplicarlo en SQL.
+
+## Etapa 2
+
+23. **Los flujos de invitación y de creación de grupo son de cliente.** `signInAnonymously` tiene que escribir las cookies de sesión, y un Server Component no puede. Las pantallas `/g/[code]` y `/crear` son componentes de cliente que abren la sesión, guardan el perfil y llaman a la RPC; el resto de la app lee con el cliente de servidor.
+
+24. **Grupo actual en una cookie.** `playus-group` guarda el id del grupo elegido; se fija al crear o unirse, y desde el selector de la pestaña Grupo (visible solo con más de un grupo). Si la cookie no apunta a un grupo propio, se usa el más viejo.
+
+25. **Avatar provisorio: solo un color de fondo más las iniciales.** Se guarda como `{"bg": "#…"}`, la misma clave que va a usar el avatar por piezas de la etapa 3, así los perfiles creados ahora no se rompen.
+
+26. **La zona horaria del grupo es la del navegador de quien lo crea.** `Intl.DateTimeFormat().resolvedOptions().timeZone`, con reintento a `America/Montevideo` si la base la rechaza. Configurable por grupo más adelante.
+
+27. **Sin sesión o sin grupo, las pestañas mandan a la landing; con grupo, la landing manda a Hoy.** La landing es la única pantalla que ofrece crear o entrar con código. `getMyGroups` devuelve vacío sin sesión en lugar de consultar como `anon`, porque Next renderiza página y layout en paralelo y la consulta fallaría antes de que el layout redirija.
+
+28. **Consultas planas, sin recursos embebidos de PostgREST.** La lista de integrantes se arma con dos consultas (membresías y perfiles) en vez de `group_members(profiles(*))`. Es más fácil razonar qué política aplica a cada lectura, y es lo que soporta el emulador local (decisión 29).
+
+29. **`mini-supabase` para desarrollar y correr E2E sin Docker.** `scripts/mini-supabase/server.mjs` emula los endpoints de Auth (registro anónimo, usuario, refresh) y de REST (tablas con filtros básicos y RPC) sobre el Postgres local, corriendo cada petición con `set local role` y `request.jwt.claims`, así RLS y las RPC se ejercitan de verdad. No cubre email, realtime, storage ni embebidos, y no reemplaza a Supabase real: en una máquina con Docker se usa `supabase start` y el mismo `.env.local` con las claves que imprime `supabase status`.
+
+30. **Tests de la etapa: Playwright.** `e2e/invitacion.spec.ts` reproduce el criterio "listo cuando" con dos contextos de navegador (uno crea, otro entra por el link), mide que entrar tarde menos de 15 segundos, y cubre código inválido y redirecciones. Corre contra el stack local o contra Supabase real.
+
+31. **Tipos de la base escritos a mano.** `supabase gen types` necesita el stack en Docker. `src/lib/supabase/types.ts` refleja las migraciones; se regenera y compara cuando haya Docker.
+
+32. **Fuentes del sistema por ahora.** `next/font` con Bricolage Grotesque e Instrument Sans llega en la etapa 7 (pasada de diseño); la paleta ya está como tokens en `globals.css`.

@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Paleta del brief: pizarrón de campeonato de barrio. Una sola paleta, sin modo claro. */
+:root {
+  --fondo: #1b1a2e;
+  --superficie: #26244a;
+  --oro: #ffc94a;
+  --rosa: #ff5c8a;
+  --agua: #5bc0be;
+  --tinta: #f5f3ff;
+  --tinta-suave: #b9b5d6;
+}
+
+@theme inline {
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-oro: var(--oro);
+  --color-rosa: var(--rosa);
+  --color-agua: var(--agua);
+  --color-tinta: var(--tinta);
+  --color-tinta-suave: var(--tinta-suave);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--fondo);
+  color: var(--tinta);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent;
+}

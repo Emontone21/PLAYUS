@@ -12,3 +12,10 @@ out/
 # sistema
 .DS_Store
 *.log
+
+# playwright
+test-results/
+playwright-report/
+
+# generado por next
+next-env.d.ts
