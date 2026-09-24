@@ -2,7 +2,7 @@
 
 PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
 
-Estado: **etapa 4** (contrato de juegos, contenedor y juegos de relleno). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
+Estado: **etapa 5** (rondas, intentos, puntos, rankings y temporadas). Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 
 ## Qué hay
 
@@ -12,17 +12,23 @@ src/
     page.tsx                landing: crear grupo o entrar con código
     g/[code]/               link de invitación → sesión anónima → nombre + avatar → adentro
     crear/                  crear un grupo
-    (app)/hoy|grupo|perfil  las tres pestañas (hoy es placeholder hasta la etapa 5)
-    (app)/perfil/editar     nombre visible y editor de avatar
+    (app)/hoy               juego del día, partida (/hoy/jugar) y ranking en vivo
+    (app)/grupo             tabla de la temporada, historial, integrantes (+ /integrante/[id]) e invitar
+    (app)/perfil            nombre, avatar, estadísticas, apodos y email
+    api/rounds/[id]/start   consume el intento y devuelve la semilla
+    api/attempts/[id]/finish valida tiempo, cotas y traza, y guarda el puntaje
     dev/juego/[id]          solo desarrollo: probar un juego con una semilla, sin servidor
+    dev/hoy                 solo desarrollo: simular el día siguiente
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
   games/                    contrato (types.ts), registry (index.ts), contenedor, juegos y README
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
+  lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
+  lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
   components/               avatar, formulario de alta, invitar, barra, estadísticas
   lib/supabase/             clientes (browser, server, middleware) y tipos de la base
   lib/groups*.ts            grupo actual (cookie) y acción de servidor
   middleware.ts             refresca la sesión en cada petición
-e2e/                        tests Playwright (invitación, perfil, juegos)
+e2e/                        tests Playwright (invitación, perfil, juegos, ronda completa)
 supabase/
   config.toml               configuración del stack local (auth anónima habilitada)
   migrations/
@@ -59,7 +65,7 @@ npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
 
-Para probar un juego suelto: `http://localhost:3000/dev/juego/reflejo?seed=abc`. Para agregar uno: `src/games/README.md`.
+Para probar un juego suelto: `http://localhost:3000/dev/juego/reflejo?seed=abc`. Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
 ## Sin Docker
 
@@ -78,6 +84,8 @@ npm run dev:local-stack                           # emulador en :54321
 npm run dev                                       # app en :3000
 PW_CHROMIUM_PATH=/ruta/a/chromium npm run e2e     # opcional: usar un Chromium ya instalado
 ```
+
+Con el emulador, `npm test` corre también `src/lib/attempts.test.ts` (consumo de intentos contra la base); sin stack, ese archivo se saltea.
 
 `scripts/db-test-local.sh` crea una base efímera, aplica `scripts/supabase-shim.sql` (roles, `auth.uid()`, `auth.users`, privilegios por defecto), las migraciones y el seed, y corre `pg_prove` sobre `supabase/tests`. `KEEP_DB=1` deja la base para mirarla; `SKIP_SEED=1` la deja sin seed. `scripts/dev-local.sh --reset` rehace la base de desarrollo.
 

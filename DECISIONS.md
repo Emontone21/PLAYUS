@@ -113,3 +113,29 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 50. **Las llamadas concurrentes a `ensureAnonymousUser` comparten la misma promesa.** Apareció en los E2E: StrictMode monta los efectos dos veces en desarrollo, se disparaban dos registros anónimos y el perfil se guardaba con el token del otro usuario (RLS lo rechaza). Vale también para una navegación rápida en producción.
 
 51. **Vitest desde esta etapa.** El plan lo ponía en la etapa 5; el PRNG merece tests unitarios ya (estabilidad del hash, secuencias iguales con la misma semilla, rangos). `npm test` los corre.
+
+## Etapa 5
+
+52. **Los clientes de Supabase del servidor usan un `fetch` sin memoización.** Next memoiza los `fetch` GET idénticos dentro de un mismo render. Con Supabase eso rompe el patrón "¿existe la ronda de hoy? → no → la creo → la leo": la segunda lectura devolvía el "no" memoizado. `src/lib/supabase/fetch.ts` pasa un `AbortController.signal` propio (la forma documentada de salir de la memoización) y `cache: "no-store"`. Aplica al cliente admin y al cliente SSR. Sin esto, la app fallaba también contra Supabase real.
+
+53. **La temporada nueva arranca el día que se crea, no el día después de la anterior.** Si nadie abre la app durante semanas después de que venció una temporada, no se fabrican temporadas vacías: la siguiente empieza en el `today` de la primera visita. `ends_on = starts_on + 29`. El cierre es idempotente (`closed_at`) y el campeón se calcula con `standings` (puntos, después victorias; null si nadie jugó).
+
+54. **La tabla de la temporada cuenta solo los días cerrados (hasta ayer).** Los puntos de hoy se ven en Hoy y suman a medianoche. Así la tabla no depende de qué puntajes de hoy puede ver cada uno (RLS los tapa hasta jugar) y todos ven la misma tabla.
+
+55. **Los intentos rechazados por `/finish` pasan a `abandoned`.** Un puntaje imposible, un tiempo fuera de rango o una traza inválida cuestan el intento igual que recargar. Si no, se podría reintentar el envío hasta acertar.
+
+56. **`/start` marca `abandoned` los intentos colgados de más de 5 minutos y también cualquier intento propio en curso de esa ronda** (decisión 9). Nada de esto devuelve intentos: `attempts_used` es el `attempt_number` más alto, sin importar el estado.
+
+57. **`DEV_FAKE_TODAY` y la cookie `playus-fake-today`.** La variable de entorno fija la fecha al arrancar; la cookie (que fija `/dev/hoy/set`) permite cambiar de día sin reiniciar Next y por navegador, que es lo que necesitan los E2E. Las dos se ignoran en producción. La escribe un Route Handler porque una página no puede escribir cookies.
+
+58. **Ranking en vivo: Realtime más un refresco periódico.** `LiveRefresh` se suscribe a `postgres_changes` de `attempts` filtrado por ronda (Realtime respeta RLS, así que a cada uno le llegan solo las filas que puede leer) y llama a `router.refresh()`. Además refresca cada 15 segundos por si el socket no conecta. `NEXT_PUBLIC_DISABLE_REALTIME=1` apaga la suscripción: el emulador local no tiene Realtime, y los E2E prueban el "en vivo" con el refresco.
+
+59. **`round_participants` alimenta la vista tapada.** Antes de jugar, Hoy muestra quiénes ya jugaron con "???" en lugar del puntaje. Los datos vienen de la RPC de la etapa 1, no de `attempts` (que RLS oculta).
+
+60. **Las estadísticas se calculan al vuelo con el cliente del usuario que mira.** Sin tablas de agregados: se leen los intentos completados del perfil, las rondas y los intentos de esas rondas, y se calcula rondas jugadas, victorias (solo en rondas con más de un jugador), mejor racha de días seguidos, temporadas ganadas y el juego con mejor proporción de victorias. RLS decide qué entra; una ronda de hoy que todavía está tapada no cuenta para victorias.
+
+61. **El perfil de otro integrante vive en `/grupo/integrante/[id]`** y muestra el nombre en ese grupo, el avatar, la corona si corresponde y las mismas estadísticas. Se entra desde la lista de integrantes.
+
+62. **El test de intentos corre contra la base que haya.** `src/lib/attempts.test.ts` usa el stack de `SUPABASE_TEST_URL` (default `http://127.0.0.1:54321`, sea Supabase real o el emulador) y se saltea si no responde. Inyecta `now` en `finishAttempt` para no esperar 15 segundos reales por partida.
+
+63. **El emulador devuelve `date` como texto y responde después del commit.** Dos diferencias con PostgREST que salieron en esta etapa: `pg` convertía las columnas `date` a `Date` (y salían como timestamp ISO), y el `INSERT` respondía antes del `commit`, con lo que una lectura inmediata por otra conexión no veía la fila. Las dos están corregidas; `MINI_DEBUG=1` imprime cada petición.

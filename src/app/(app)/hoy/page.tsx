@@ -1,25 +1,147 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { getMyGroups, pickCurrentGroup } from "@/lib/groups";
+import { loadToday } from "@/lib/today";
+import { formatShortDate } from "@/lib/time";
+import { Ranking, type RankingRow } from "@/components/ranking";
+import { Avatar } from "@/components/avatar";
+import { LiveRefresh } from "./live-refresh";
 
 export const dynamic = "force-dynamic";
 
-// Placeholder hasta la etapa 5 (rondas e intentos).
+// Hoy: el juego del día grande si todavía no jugaste (con los puntajes de los
+// demás tapados), el ranking en vivo si ya jugaste, y arriba quién ganó ayer.
 export default async function TodayPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const groups = await getMyGroups();
   const group = await pickCurrentGroup(groups);
+  if (!user || !group) return null;
+
+  const t = await loadToday(user.id, group);
+  const unit = t.game.scoring === "low" ? "ms" : undefined;
+  const attemptsText =
+    t.attemptsLeft === 0 ? "no te quedan intentos por hoy" : t.attemptsLeft === 1 ? "te queda 1 intento" : `te quedan ${t.attemptsLeft} intentos`;
+
+  const rows: RankingRow[] = t.ranking.map((r) => {
+    const m = t.members.get(r.profileId);
+    return {
+      profileId: r.profileId,
+      name: m?.name ?? "alguien",
+      avatar: m?.avatar ?? t.members.values().next().value?.avatar ?? { base: 1, skin: "#C98A5E", hair: 1, hairColor: "#000000", eyes: 1, mouth: 1, accessory: null, bg: "#FFC94A" },
+      rank: r.rank,
+      value: r.bestScore,
+      unit,
+      detail: `+${r.points}`,
+      isMe: r.profileId === user.id,
+      champion: r.profileId === t.championId,
+    };
+  });
+
   return (
-    <main className="flex flex-col gap-6 px-5 py-8">
+    <main className="flex flex-col gap-8 px-5 py-8">
       <header className="flex flex-col gap-1">
-        <p className="text-sm text-tinta-suave">{group?.name}</p>
-        <h1 className="text-4xl font-extrabold tracking-tight">hoy</h1>
+        <p className="text-sm text-tinta-suave">
+          {group.name} · {formatShortDate(t.today)}
+        </p>
+        {t.yesterday ? (
+          <p className="text-sm" data-testid="yesterday-winner">
+            ayer {t.yesterday.tied ? "empató arriba" : "ganó"} <span className="font-extrabold">{t.yesterday.winner.name}</span> con{" "}
+            <span className="font-extrabold tabular-nums">{t.yesterday.score}</span>
+            {t.yesterday.game.scoring === "low" ? " ms" : ""} en {t.yesterday.game.name}.
+          </p>
+        ) : null}
       </header>
-      <p className="rounded-md bg-superficie px-4 py-4 text-tinta-suave">
-        el juego del día llega en la etapa 5. mientras tanto, armá el grupo desde la pestaña{" "}
-        <Link href="/grupo" className="font-bold text-agua">
-          grupo
-        </Link>
-        .
-      </p>
+
+      {!t.hasCompleted ? (
+        <section className="flex flex-col gap-5" data-testid="today-game">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-oro">el juego de hoy</p>
+            <h1 className="text-5xl font-extrabold tracking-tight" data-testid="today-game-name">
+              {t.game.name}
+            </h1>
+            <p className="text-lg text-tinta-suave">{t.game.tagline}</p>
+          </div>
+          <ol className="flex flex-col gap-2">
+            {t.game.howTo.map((step, i) => (
+              <li key={step} className="flex gap-3">
+                <span className="w-6 shrink-0 text-right font-extrabold text-oro">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+          {t.attemptsLeft > 0 ? (
+            <Link
+              href="/hoy/jugar"
+              className="rounded-md bg-oro px-4 py-4 text-center text-xl font-extrabold text-fondo"
+              data-testid="play-link"
+            >
+              jugar
+            </Link>
+          ) : (
+            <p className="rounded-md border-l-4 border-rosa bg-superficie px-4 py-3" data-testid="no-attempts">
+              se te fueron los {group.max_attempts} intentos sin terminar ninguna partida. mañana hay revancha.
+            </p>
+          )}
+          <p className="text-sm text-tinta-suave" data-testid="attempts-left">
+            {attemptsText}
+            {t.attemptsUsed > 0 && t.attemptsLeft > 0 ? " · las partidas que no terminaste se contaron igual." : ""}
+          </p>
+
+          <div className="flex flex-col gap-2" data-testid="participants">
+            {t.participants.length === 0 ? (
+              <p className="text-tinta-suave">todavía nadie jugó hoy. sé quien abre el ranking.</p>
+            ) : (
+              <>
+                <p className="text-sm text-tinta-suave">
+                  ya jugaron {t.participants.length}. los puntajes se destapan cuando termines tu primera partida.
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {t.participants.map((p) => {
+                    const m = t.members.get(p.profileId);
+                    if (!m) return null;
+                    return (
+                      <li key={p.profileId} className="flex items-center gap-2 rounded-full bg-superficie py-1 pl-1 pr-3">
+                        <Avatar avatar={m.avatar} name={m.name} size={28} />
+                        <span className="font-bold">{m.name}</span>
+                        <span className="text-xs text-tinta-suave">???</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </div>
+        </section>
+      ) : (
+        <section className="flex flex-col gap-4" data-testid="today-ranking">
+          <div className="flex items-end justify-between gap-3">
+            <div className="flex flex-col">
+              <p className="text-sm text-oro">ranking de hoy · {t.game.name}</p>
+              <p className="text-sm text-tinta-suave" data-testid="attempts-left">
+                tu mejor: <span className="font-extrabold text-tinta tabular-nums">{t.myBest}</span>
+                {unit ? ` ${unit}` : ""} · {attemptsText}
+              </p>
+            </div>
+            {t.attemptsLeft > 0 ? (
+              <Link
+                href="/hoy/jugar"
+                className="shrink-0 rounded-md bg-oro px-4 py-3 font-extrabold text-fondo"
+                data-testid="play-again-link"
+              >
+                jugar de nuevo
+              </Link>
+            ) : null}
+          </div>
+          <Ranking rows={rows} emptyText="todavía no hay puntajes." />
+          <p className="text-xs text-tinta-suave">
+            se actualiza solo cuando alguien termina una partida. +10, +7, +5, +3 para los cuatro primeros; +1 para el resto.
+          </p>
+          <LiveRefresh roundId={t.round.id} />
+        </section>
+      )}
     </main>
   );
 }

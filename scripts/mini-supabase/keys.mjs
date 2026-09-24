@@ -10,3 +10,5 @@ const service = jwt.sign({ iss: "supabase", role: "service_role", iat, exp }, se
 console.log(`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:${process.env.PORT ?? 54321}`);
 console.log(`NEXT_PUBLIC_SUPABASE_ANON_KEY=${anon}`);
 console.log(`SUPABASE_SERVICE_ROLE_KEY=${service}`);
+// el emulador no tiene Realtime: el ranking en vivo usa el refresco periódico
+console.log("NEXT_PUBLIC_DISABLE_REALTIME=1");

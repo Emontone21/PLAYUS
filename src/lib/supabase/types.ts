@@ -86,22 +86,24 @@ export type Database = {
         Update: Partial<Pick<GroupMemberRow, "nickname">>;
         Relationships: [];
       };
+      // seasons, rounds y attempts: el cliente solo lee (RLS + privilegios).
+      // Los Insert/Update los usa el servidor con service_role.
       seasons: {
         Row: SeasonRow;
-        Insert: Record<string, never>;
-        Update: Record<string, never>;
+        Insert: Partial<SeasonRow> & Pick<SeasonRow, "group_id" | "number" | "starts_on">;
+        Update: Partial<SeasonRow>;
         Relationships: [];
       };
       rounds: {
         Row: RoundRow;
-        Insert: Record<string, never>;
-        Update: Record<string, never>;
+        Insert: Partial<RoundRow> & Pick<RoundRow, "group_id" | "season_id" | "play_date" | "game_id" | "seed">;
+        Update: Partial<RoundRow>;
         Relationships: [];
       };
       attempts: {
         Row: AttemptRow;
-        Insert: Record<string, never>;
-        Update: Record<string, never>;
+        Insert: Partial<AttemptRow> & Pick<AttemptRow, "round_id" | "profile_id" | "attempt_number">;
+        Update: Partial<AttemptRow>;
         Relationships: [];
       };
     };

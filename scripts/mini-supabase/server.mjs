@@ -27,6 +27,10 @@ const JWT_SECRET =
   process.env.JWT_SECRET ?? "super-secret-jwt-token-with-at-least-32-characters-long";
 const INSTANCE_ID = "00000000-0000-0000-0000-000000000000";
 
+// date (oid 1082) viaja como "YYYY-MM-DD", igual que en PostgREST; los
+// timestamptz quedan como Date y salen en ISO.
+pg.types.setTypeParser(1082, (value) => value);
+
 const pool = new pg.Pool({ connectionString: DATABASE_URL });
 const refreshTokens = new Map(); // refresh_token -> user id
 
@@ -276,9 +280,16 @@ function parseFilters(url, alias, params) {
   for (const [key, raw] of url.searchParams) {
     if (RESERVED.has(key)) continue;
     const col = `${alias}.${ident(key)}`;
-    const dot = raw.indexOf(".");
-    const op = dot === -1 ? raw : raw.slice(0, dot);
-    const value = dot === -1 ? "" : raw.slice(dot + 1);
+    let expr = raw;
+    let negate = false;
+    if (expr.startsWith("not.")) {
+      negate = true;
+      expr = expr.slice(4);
+    }
+    const dot = expr.indexOf(".");
+    const op = dot === -1 ? expr : expr.slice(0, dot);
+    const value = dot === -1 ? "" : expr.slice(dot + 1);
+    const before = clauses.length;
     if (op === "is") {
       if (value === "null") clauses.push(`${col} is null`);
       else if (value === "true" || value === "false") clauses.push(`${col} is ${value}`);
@@ -293,6 +304,7 @@ function parseFilters(url, alias, params) {
     } else {
       throw new HttpError(400, { code: "PGRST100", message: `operador no soportado: ${op}` });
     }
+    if (negate && clauses.length > before) clauses[clauses.length - 1] = `not (${clauses[clauses.length - 1]})`;
   }
   return clauses.length ? ` where ${clauses.join(" and ")}` : "";
 }
@@ -373,19 +385,26 @@ function pgErrorToHttp(e) {
   return new HttpError(status, { code: e.code, message: e.message, details: e.detail ?? null, hint: e.hint ?? null });
 }
 
-function respondRows(req, res, rows, status = 200, extra = {}) {
+// Los handlers de REST devuelven un descriptor y la respuesta se manda recién
+// después del commit: si se mandara antes, una lectura inmediata del cliente
+// podría entrar por otra conexión y no ver la fila todavía.
+function reply(status, body, extra = {}) {
+  return { status, body, extra };
+}
+
+function respondRows(req, rows, status = 200, extra = {}) {
   if (wantsObject(req)) {
     if (rows.length !== 1) {
-      return send(res, 406, {
+      return reply(406, {
         code: "PGRST116",
         message: "JSON object requested, multiple (or no) rows returned",
         details: `The result contains ${rows.length} rows`,
         hint: null,
       });
     }
-    return send(res, status, rows[0], extra);
+    return reply(status, rows[0], extra);
   }
-  return send(res, status, rows, extra);
+  return reply(status, rows, extra);
 }
 
 async function handleTable(req, res, url, table) {
@@ -413,7 +432,7 @@ async function handleTable(req, res, url, table) {
         } else {
           extra["Content-Range"] = `0-${Math.max(0, rows.length - 1)}/*`;
         }
-        return respondRows(req, res, rows, 200, extra);
+        return respondRows(req, rows, 200, extra);
       }
 
       if (method === "POST") {
@@ -432,8 +451,8 @@ async function handleTable(req, res, url, table) {
         }
         if (prefer.return === "representation") sql += ` returning ${select}`;
         const { rows } = await client.query(sql, [JSON.stringify(items)]);
-        if (prefer.return === "representation") return respondRows(req, res, rows, 201);
-        return send(res, 201);
+        if (prefer.return === "representation") return respondRows(req, rows, 201);
+        return reply(201);
       }
 
       if (method === "PATCH") {
@@ -446,8 +465,8 @@ async function handleTable(req, res, url, table) {
         let sql = `update public.${ident(table)} ${alias} set ${sets} from jsonb_populate_record(null::public.${ident(table)}, $1::jsonb) r${where}`;
         if (prefer.return === "representation") sql += ` returning ${select === "*" ? `${alias}.*` : select}`;
         const { rows, rowCount } = await client.query(sql, params);
-        if (prefer.return === "representation") return respondRows(req, res, rows, 200);
-        return send(res, 204, undefined, { "Content-Range": `0-${Math.max(0, rowCount - 1)}/*` });
+        if (prefer.return === "representation") return respondRows(req, rows, 200);
+        return reply(204, undefined, { "Content-Range": `0-${Math.max(0, rowCount - 1)}/*` });
       }
 
       if (method === "DELETE") {
@@ -456,8 +475,8 @@ async function handleTable(req, res, url, table) {
         let sql = `delete from public.${ident(table)} ${alias}${where}`;
         if (prefer.return === "representation") sql += ` returning ${select === "*" ? `${alias}.*` : select}`;
         const { rows } = await client.query(sql, params);
-        if (prefer.return === "representation") return respondRows(req, res, rows, 200);
-        return send(res, 204);
+        if (prefer.return === "representation") return respondRows(req, rows, 200);
+        return reply(204);
       }
 
       throw new HttpError(405, { code: "PGRST105", message: `método no soportado: ${method}` });
@@ -496,8 +515,8 @@ async function handleRpc(req, res, url, fn) {
       }
       const { rows } = await client.query(sql, params);
       const value = rows[0]?.v ?? null;
-      if (wantsObject(req) && Array.isArray(value)) return respondRows(req, res, value);
-      return send(res, 200, value);
+      if (wantsObject(req) && Array.isArray(value)) return respondRows(req, value);
+      return reply(200, value);
     } catch (e) {
       throw pgErrorToHttp(e);
     }
@@ -508,14 +527,26 @@ async function handleRpc(req, res, url, fn) {
 // servidor
 // ---------------------------------------------------------------------------
 
+const DEBUG = process.env.MINI_DEBUG === "1";
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
   const path = url.pathname;
+  if (DEBUG) {
+    const t0 = Date.now();
+    res.on("finish", () => console.log(`[mini] ${res.statusCode} ${req.method} ${path}${url.search} ${Date.now() - t0}ms`));
+  }
   try {
     if (req.method === "OPTIONS") return send(res, 204);
     if (path.startsWith("/auth/v1/")) return await handleAuth(req, res, url, path);
-    if (path.startsWith("/rest/v1/rpc/")) return await handleRpc(req, res, url, path.slice("/rest/v1/rpc/".length));
-    if (path.startsWith("/rest/v1/")) return await handleTable(req, res, url, path.slice("/rest/v1/".length));
+    if (path.startsWith("/rest/v1/rpc/")) {
+      const r = await handleRpc(req, res, url, path.slice("/rest/v1/rpc/".length));
+      return send(res, r.status, r.body, r.extra);
+    }
+    if (path.startsWith("/rest/v1/")) {
+      const r = await handleTable(req, res, url, path.slice("/rest/v1/".length));
+      return send(res, r.status, r.body, r.extra);
+    }
     if (path === "/") return send(res, 200, { name: "mini-supabase" });
     throw new HttpError(404, { code: 404, message: `sin ruta: ${req.method} ${path}` });
   } catch (e) {

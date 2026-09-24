@@ -24,7 +24,7 @@ export function ProfileStats({ stats }: { stats: ProfileStatsData }) {
     { label: "temporadas ganadas", value: fmt(stats.seasonsWon) },
     { label: "donde mejor te va", value: stats.bestGame ?? "—" },
   ];
-  const empty = Object.values(stats).every((v) => v === null);
+  const empty = Object.values(stats).every((v) => v === null || v === 0);
 
   return (
     <div className="flex flex-col gap-3" data-testid="profile-stats">

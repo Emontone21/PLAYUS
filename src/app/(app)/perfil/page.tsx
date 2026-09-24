@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { parseAvatar } from "@/avatar/schema";
 import { Avatar } from "@/components/avatar";
-import { EMPTY_STATS, ProfileStats } from "@/components/profile-stats";
+import { ProfileStats } from "@/components/profile-stats";
+import { computeStats } from "@/lib/stats";
 import { getMyGroups } from "@/lib/groups";
 import { Nicknames } from "./nicknames";
 import { LinkEmail } from "./link-email";
@@ -16,10 +17,11 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) return null; // el layout redirige
 
-  const [{ data: profile }, groups, { data: memberships }] = await Promise.all([
+  const [{ data: profile }, groups, { data: memberships }, stats] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar").eq("id", user.id).maybeSingle(),
     getMyGroups(),
     supabase.from("group_members").select("group_id, nickname").eq("profile_id", user.id),
+    computeStats(user.id),
   ]);
 
   const name = profile?.display_name ?? "";
@@ -47,7 +49,7 @@ export default async function ProfilePage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm text-tinta-suave">tus números</h2>
-        <ProfileStats stats={EMPTY_STATS} />
+        <ProfileStats stats={stats} />
       </section>
 
       <section className="flex flex-col gap-3">
