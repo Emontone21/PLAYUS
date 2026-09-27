@@ -4,6 +4,7 @@ import { getGame } from "@/games";
 import { gameLimits, type GameResult } from "@/games/types";
 import { abandonStale, groupToday, rankedRound } from "./rounds";
 import { attemptSeed } from "./deck";
+import { seedPepper, SeedPepperMissingError } from "./seed-pepper";
 import type { RankedEntry } from "./scoring";
 import type { DateString } from "./time";
 
@@ -19,6 +20,15 @@ export class AttemptError extends Error {
     message: string,
   ) {
     super(message);
+  }
+}
+
+function readPepper(): string {
+  try {
+    return seedPepper();
+  } catch (e) {
+    if (e instanceof SeedPepperMissingError) throw new AttemptError(500, "seed_pepper_missing", e.message);
+    throw e;
   }
 }
 
@@ -75,6 +85,8 @@ export async function startAttempt(
 
   const game = getGame(round.game_id);
   if (!game) throw new AttemptError(500, "unknown_game", `el juego ${round.game_id} no está en el registry.`);
+  // antes de consumir nada: sin pepper en producción, /start falla claro
+  const pepper = readPepper();
 
   // no se puede jugar una ronda pasada (ni futura)
   if (round.play_date !== groupToday(group, opts.fakeToday)) {
@@ -110,7 +122,7 @@ export async function startAttempt(
       attemptNumber: data.attempt_number,
       attemptsLeft: group.max_attempts - data.attempt_number,
       // la semilla es por intento: misma para todos en el mismo número, distinta entre intentos propios
-      seed: attemptSeed(round.seed, data.attempt_number),
+      seed: attemptSeed(round.seed, data.attempt_number, pepper),
       gameId: round.game_id,
       durationMs: game.durationMs,
     };
@@ -166,7 +178,7 @@ export async function finishAttempt(
   if (result.score < limits.minScore || result.score > limits.maxScore) {
     throw await reject("implausible_score", "no pudimos validar este puntaje. el intento cuenta igual.");
   }
-  if (game.validate && !game.validate(result, attemptSeed(round.seed, attempt.attempt_number))) {
+  if (game.validate && !game.validate(result, attemptSeed(round.seed, attempt.attempt_number, readPepper()))) {
     throw await reject("invalid_events", "no pudimos validar esta partida. el intento cuenta igual.");
   }
 

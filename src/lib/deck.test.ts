@@ -80,10 +80,24 @@ describe("roundSeed", () => {
 describe("semilla por intento", () => {
   it("es determinística, distinta de la de la ronda y distinta entre intentos", () => {
     const round = roundSeed("g1", "2026-09-27", "reflejo");
-    expect(attemptSeed(round, 1)).toBe(attemptSeed(round, 1));
-    expect(attemptSeed(round, 1)).toMatch(/^[0-9a-f]{8}$/);
-    expect(attemptSeed(round, 1)).not.toBe(round);
-    expect(new Set([1, 2, 3, 4, 5].map((n) => attemptSeed(round, n))).size).toBe(5);
-    expect(attemptSeed(round, 2)).not.toBe(attemptSeed(roundSeed("g2", "2026-09-27", "reflejo"), 2));
+    const p = "pepper-de-prueba";
+    expect(attemptSeed(round, 1, p)).toBe(attemptSeed(round, 1, p));
+    expect(attemptSeed(round, 1, p)).toMatch(/^[0-9a-f]{8}$/);
+    expect(attemptSeed(round, 1, p)).not.toBe(round);
+    expect(new Set([1, 2, 3, 4, 5].map((n) => attemptSeed(round, n, p))).size).toBe(5);
+    expect(attemptSeed(round, 2, p)).not.toBe(attemptSeed(roundSeed("g2", "2026-09-27", "reflejo"), 2, p));
+    // con otro pepper, la misma ronda e intento dan otra semilla
+    expect(attemptSeed(round, 1, "otro-pepper")).not.toBe(attemptSeed(round, 1, p));
+  });
+});
+
+describe("pepper de la semilla", () => {
+  it("en producción es obligatorio; en desarrollo y tests vale el fijo", async () => {
+    const { seedPepper, DEV_SEED_PEPPER, SeedPepperMissingError } = await import("./seed-pepper");
+    expect(seedPepper({ NODE_ENV: "test" } as NodeJS.ProcessEnv)).toBe(DEV_SEED_PEPPER);
+    expect(seedPepper({ NODE_ENV: "development", SEED_PEPPER: "  " } as NodeJS.ProcessEnv)).toBe(DEV_SEED_PEPPER);
+    expect(seedPepper({ NODE_ENV: "production", SEED_PEPPER: "secreto" } as NodeJS.ProcessEnv)).toBe("secreto");
+    expect(() => seedPepper({ NODE_ENV: "production" } as NodeJS.ProcessEnv)).toThrow(SeedPepperMissingError);
+    expect(() => seedPepper({ NODE_ENV: "production", SEED_PEPPER: "" } as NodeJS.ProcessEnv)).toThrow(SeedPepperMissingError);
   });
 });

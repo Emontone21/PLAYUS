@@ -36,10 +36,12 @@ export function roundSeed(groupId: string, playDate: DateString, gameId: string)
 }
 
 /**
- * Semilla de un intento: hash(round.seed + ':' + attempt_number). Todos los
- * del grupo ven la misma secuencia en el mismo número de intento, y cada
- * intento propio es distinto. Solo la devuelve /start (decisión 103).
+ * Semilla de un intento: hash(round.seed + ':' + attempt_number + ':' + pepper).
+ * Todos los del grupo ven la misma secuencia en el mismo número de intento, y
+ * cada intento propio es distinto. El pepper es un secreto del servidor: sin
+ * él, la semilla de la ronda (legible vía RLS) alcanzaría para calcularla.
+ * Solo la devuelve /start (decisiones 103 y 105).
  */
-export function attemptSeed(roundSeed: string, attemptNumber: number): string {
-  return hashHex(`${roundSeed}:${attemptNumber}`);
+export function attemptSeed(roundSeed: string, attemptNumber: number, pepper: string): string {
+  return hashHex(`${roundSeed}:${attemptNumber}:${pepper}`);
 }

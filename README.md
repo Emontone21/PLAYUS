@@ -64,7 +64,7 @@ npx supabase test db        # corre los tests pgTAP de supabase/tests
 
 Si el arranque corta por el chequeo de salud de Studio, agregar `--ignore-health-check` (decisión 85). Después de cambiar `supabase/config.toml` hay que hacer `npx supabase stop` y `start` de nuevo. Studio queda en `http://127.0.0.1:54323` y Mailpit (los emails de Auth) en `http://127.0.0.1:54324`. Ahí se ven las tablas y el seed (grupo "los del barrio", código `JUEGA7`).
 
-Copiá `.env.example` a `.env.local` y completá `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` con lo que imprime `npx supabase status`. Después:
+Copiá `.env.example` a `.env.local` y completá `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` con lo que imprime `npx supabase status`. `SEED_PEPPER` (el secreto de la semilla de los intentos, decisión 105) es obligatorio en producción y en los preview de Vercel; en desarrollo puede faltar. Después:
 
 ```bash
 npm run dev                 # http://localhost:3000

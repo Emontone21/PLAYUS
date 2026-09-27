@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database, GroupRow } from "@/lib/supabase/types";
 import { ensureRound, ensureSeason, closeSeason, seasonStandings } from "./rounds";
@@ -7,6 +7,7 @@ import { getGame } from "@/games";
 import { gameLimits } from "@/games/types";
 import { addDays, todayInTz } from "./time";
 import { attemptSeed } from "./deck";
+import { seedPepper } from "./seed-pepper";
 import { waitsForSeed } from "@/games/reflejo";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -74,7 +75,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     expect(s1.attemptsLeft).toBe(group.max_attempts - 1);
     // la semilla es por intento, no la de la ronda
     expect(s1.seed).not.toBe(round.seed);
-    expect(s1.seed).toBe(attemptSeed(round.seed, 1));
+    expect(s1.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
 
     // "recargar": no se termina el intento 1 y se arranca otro
     const s2 = await startAttempt(admin, userA, round.id);
@@ -171,7 +172,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const d1 = await startAttempt(admin, userD, round.id);
     expect(c1.seed).toBe(d1.seed);
     expect(c1.seed).not.toBe(round.seed);
-    expect(c1.seed).toBe(attemptSeed(round.seed, 1));
+    expect(c1.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
 
     // una traza armada con la semilla de la ronda no pasa validate (si el juego valida)
     const startedC1 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c1.attemptId).single()).data!.started_at);
@@ -185,7 +186,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const c2 = await startAttempt(admin, userC, round.id);
     expect(c2.attemptNumber).toBe(2);
     expect(c2.seed).not.toBe(c1.seed);
-    expect(c2.seed).toBe(attemptSeed(round.seed, 2));
+    expect(c2.seed).toBe(attemptSeed(round.seed, 2, seedPepper()));
 
     // con la semilla del intento, el resultado se guarda
     const startedC2 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c2.attemptId).single()).data!.started_at);
@@ -197,6 +198,28 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const { data: a } = await admin.from("attempts").select("*").eq("id", c2.attemptId).single();
     expect(JSON.stringify(r)).not.toContain(c2.seed);
     expect(JSON.stringify(a)).not.toContain(c2.seed);
+  });
+
+  it("sin SEED_PEPPER en producción, start falla claro y no consume el intento", async () => {
+    const k = await keys();
+    const e = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const userE = (await e.auth.signInAnonymously()).data.user!.id;
+    const { data: g3, error } = await e.rpc("create_group", { p_name: "test pepper" });
+    if (error) throw error;
+    const round = await ensureRound(admin, g3, todayInTz(g3.timezone));
+
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("SEED_PEPPER", "");
+    try {
+      await expect(startAttempt(admin, userE, round.id)).rejects.toMatchObject({ code: "seed_pepper_missing", status: 500 });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    expect(await attemptsUsed(admin, round.id, userE)).toBe(0);
+
+    // con pepper, la misma llamada anda
+    const ok = await startAttempt(admin, userE, round.id);
+    expect(ok.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
   });
 
   it("no deja jugar una ronda pasada", async () => {
