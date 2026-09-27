@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deckFor, gameForDay, roundSeed } from "./deck";
+import { attemptSeed, deckFor, gameForDay, roundSeed } from "./deck";
 
 const GAMES = ["tap-race", "reflejo", "memoria", "sopa", "puntería"];
 
@@ -74,5 +74,16 @@ describe("roundSeed", () => {
     expect(roundSeed("g2", "2026-09-24", "tap-race")).not.toBe(base);
     expect(roundSeed("g1", "2026-09-25", "tap-race")).not.toBe(base);
     expect(roundSeed("g1", "2026-09-24", "reflejo")).not.toBe(base);
+  });
+});
+
+describe("semilla por intento", () => {
+  it("es determinística, distinta de la de la ronda y distinta entre intentos", () => {
+    const round = roundSeed("g1", "2026-09-27", "reflejo");
+    expect(attemptSeed(round, 1)).toBe(attemptSeed(round, 1));
+    expect(attemptSeed(round, 1)).toMatch(/^[0-9a-f]{8}$/);
+    expect(attemptSeed(round, 1)).not.toBe(round);
+    expect(new Set([1, 2, 3, 4, 5].map((n) => attemptSeed(round, n))).size).toBe(5);
+    expect(attemptSeed(round, 2)).not.toBe(attemptSeed(roundSeed("g2", "2026-09-27", "reflejo"), 2));
   });
 });

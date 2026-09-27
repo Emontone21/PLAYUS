@@ -4,7 +4,7 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 
 ## El contrato en cuatro reglas
 
-1. **La semilla manda.** Todo lo aleatorio sale de `seed` con `rngFromSeed(seed)` de `src/lib/rng.ts`. Nunca `Math.random()`. Dos jugadores del mismo grupo el mismo día tienen que ver exactamente el mismo tablero.
+1. **La semilla manda.** Todo lo aleatorio sale de `seed` con `rngFromSeed(seed)` de `src/lib/rng.ts`. Nunca `Math.random()`. La semilla es **por intento**: `hash(semilla de la ronda + ':' + número de intento)`. Dos jugadores del mismo grupo, el mismo día y en el mismo número de intento ven exactamente el mismo tablero; el segundo intento de cada uno es otro tablero (el mismo para todos en su segundo intento). El juego no se entera de nada de esto: recibe `seed` y listo. La semilla la entrega solo `/api/rounds/:id/start` al empezar la partida; no viaja en la página ni se guarda en la base.
 2. **El juego no sabe nada del resto.** Recibe `seed`, devuelve `score`. No conoce grupos, usuarios, rankings ni base de datos.
 3. **El cronómetro es del sistema.** El contenedor arranca a contar cuando llamás a `onReady()` y corta la partida cuando se acaba `durationMs`. Cuando corta, usa el último resultado que informaste con `onProgress(...)`. Si tu juego puede ser cortado por tiempo, llamá a `onProgress` cada vez que cambie el puntaje; si siempre termina antes por su cuenta, alcanza con `onFinish`.
 4. **Hooks como `React.useState`, no `import { useState }`.** El servidor importa tu módulo para leer los límites y Next rechaza los hooks importados por nombre fuera de un Client Component. Escribí `import * as React from "react"` y usá `React.useState`, `React.useEffect`, etc.
@@ -20,6 +20,14 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 3. Probalo sin servidor en `http://localhost:3000/dev/juego/mi-juego?seed=loquesea`. Cambiá la semilla y confirmá que cambia el tablero; repetí la misma semilla en otra ventana y confirmá que es idéntico.
 4. Listo. Desde mañana entra en el mazo de todos los grupos (el mazo se calcula sobre los ids ordenados alfabéticamente; los días pasados no cambian).
 
+## Pautas para juegos reales
+
+Los dos juegos que hay (`tap-race`, `reflejo`) son de relleno. Para los de verdad, dos cosas más allá del contrato:
+
+1. **Que saber cómo viene la partida dé la menor ventaja posible.** Alguien puede haber jugado ya ese mismo número de intento y contarte cómo viene, o vos podés haber jugado tu primer intento y saber qué esperar del segundo (no: es otra semilla, pero el *tipo* de desafío se repite). Diseñá para que conocer la secuencia ayude poco: que el puntaje dependa de ejecutar (velocidad, precisión, memoria en el momento) más que de saber de antemano; que la información útil aparezca recién cuando hace falta; que no haya un "camino correcto" memorizable de principio a fin. Un juego de reacción donde el verde aparece a los 3, 5 y 4 segundos se gana con un cronómetro en la otra mano; uno donde hay que tocar el objetivo que se enciende entre varios, no tanto.
+
+2. **Usá `validate` sobre `events` para frenar puntajes imposibles.** Las cotas (`minPlausibleScore`, `maxPlausibleScore`) son la red gruesa; `validate(result, seed)` es la fina. Guardá en `events` lo mínimo para recomputar el puntaje desde la traza y comprobarlo contra la semilla del intento (la misma que recibió el juego): que la cantidad de eventos cierre con el puntaje, que los tiempos sean crecientes y humanos, que cada respuesta corresponda a algo que la semilla realmente generó. Si `validate` devuelve `false`, el servidor rechaza el resultado y el intento se pierde igual. Cuanto más recomputable sea tu puntaje desde `events` + `seed`, menos vale mandar un número inventado.
+
 ## Los campos de `GameModule`
 
 | campo | qué es |
@@ -31,10 +39,10 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 | `scoring` | `'high'` gana el más alto, `'low'` gana el más bajo. |
 | `maxPlausibleScore` | cota superior: el servidor rechaza puntajes mayores. |
 | `minPlausibleScore?` | cota inferior (ej. 100 ms de reacción). Default 0. |
-| `validate?(result, seed)` | chequeo propio sobre `events`. Devolvé `false` para rechazar. El servidor lo llama después de las cotas. |
+| `validate?(result, seed)` | chequeo propio sobre `events`. Devolvé `false` para rechazar. El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente). |
 | `Component` | el juego. Recibe `GameProps`. |
 
-`GameProps`: `seed`, `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
+`GameProps`: `seed` (la del intento), `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
 
 ## Ejemplo comentado: `tap-race`
 

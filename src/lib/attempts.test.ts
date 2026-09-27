@@ -6,6 +6,7 @@ import { startAttempt, finishAttempt, AttemptError, attemptsUsed } from "./attem
 import { getGame } from "@/games";
 import { gameLimits } from "@/games/types";
 import { addDays, todayInTz } from "./time";
+import { attemptSeed } from "./deck";
 import { waitsForSeed } from "@/games/reflejo";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -71,7 +72,9 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const s1 = await startAttempt(admin, userA, round.id);
     expect(s1.attemptNumber).toBe(1);
     expect(s1.attemptsLeft).toBe(group.max_attempts - 1);
-    expect(s1.seed).toBe(round.seed);
+    // la semilla es por intento, no la de la ronda
+    expect(s1.seed).not.toBe(round.seed);
+    expect(s1.seed).toBe(attemptSeed(round.seed, 1));
 
     // "recargar": no se termina el intento 1 y se arranca otro
     const s2 = await startAttempt(admin, userA, round.id);
@@ -97,7 +100,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
     // demasiado rápido
     await expect(
-      finishAttempt(admin, userB, s.attemptId, validResult(game.id, round.seed, 5), {
+      finishAttempt(admin, userB, s.attemptId, validResult(game.id, s.seed, 5), {
         now: new Date(startedAt + limits.minDurationMs - 1000),
       }),
     ).rejects.toMatchObject({ code: "bad_duration" });
@@ -115,7 +118,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const s3 = await startAttempt(admin, userB, round.id);
     const started3 = Date.parse((await admin.from("attempts").select("started_at").eq("id", s3.attemptId).single()).data!.started_at);
     await expect(
-      finishAttempt(admin, userB, s3.attemptId, validResult(game.id, round.seed, 5), { now: new Date(started3 + limits.maxDurationMs + 1) }),
+      finishAttempt(admin, userB, s3.attemptId, validResult(game.id, s3.seed, 5), { now: new Date(started3 + limits.maxDurationMs + 1) }),
     ).rejects.toMatchObject({ code: "bad_duration" });
 
     // se fueron los tres
@@ -132,19 +135,68 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const startedAt = Date.parse((await admin.from("attempts").select("started_at").eq("id", s.attemptId).single()).data!.started_at);
     const now = new Date(startedAt + limits.minDurationMs + 500);
 
-    await expect(finishAttempt(admin, userB, s.attemptId, validResult(game.id, round.seed, 7), { now })).rejects.toMatchObject({
+    await expect(finishAttempt(admin, userB, s.attemptId, validResult(game.id, s.seed, 7), { now })).rejects.toMatchObject({
       code: "not_yours",
     });
 
-    const ok = await finishAttempt(admin, userA, s.attemptId, validResult(game.id, round.seed, 7), { now });
+    const ok = await finishAttempt(admin, userA, s.attemptId, validResult(game.id, s.seed, 7), { now });
     expect(ok.score).toBeGreaterThan(0);
     const { data: saved } = await admin.from("attempts").select("status, score").eq("id", s.attemptId).single();
     expect(saved).toMatchObject({ status: "completed", score: ok.score });
 
-    await expect(finishAttempt(admin, userA, s.attemptId, validResult(game.id, round.seed, 7), { now })).rejects.toMatchObject({
+    await expect(finishAttempt(admin, userA, s.attemptId, validResult(game.id, s.seed, 7), { now })).rejects.toMatchObject({
       code: "already_finished",
     });
     await expect(startAttempt(admin, userA, round.id)).rejects.toMatchObject({ code: "no_attempts_left" });
+  });
+
+  it("la semilla es por intento: igual para dos jugadores en el mismo número, distinta entre intentos, y solo la da start", async () => {
+    // grupo aparte con dos personas nuevas, para no depender de los intentos gastados arriba
+    const k = await keys();
+    const c = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const d = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const userC = (await c.auth.signInAnonymously()).data.user!.id;
+    const userD = (await d.auth.signInAnonymously()).data.user!.id;
+    const { data: g2, error } = await c.rpc("create_group", { p_name: "test semillas" });
+    if (error) throw error;
+    const { error: jErr } = await d.rpc("join_group", { p_code: g2.invite_code });
+    if (jErr) throw jErr;
+
+    const round = await ensureRound(admin, g2, todayInTz(g2.timezone));
+    const game = getGame(round.game_id)!;
+    const limits = gameLimits(game);
+
+    // mismo número de intento, dos jugadores: misma semilla; y no es la de la ronda
+    const c1 = await startAttempt(admin, userC, round.id);
+    const d1 = await startAttempt(admin, userD, round.id);
+    expect(c1.seed).toBe(d1.seed);
+    expect(c1.seed).not.toBe(round.seed);
+    expect(c1.seed).toBe(attemptSeed(round.seed, 1));
+
+    // una traza armada con la semilla de la ronda no pasa validate (si el juego valida)
+    const startedC1 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c1.attemptId).single()).data!.started_at);
+    if (game.validate) {
+      await expect(
+        finishAttempt(admin, userC, c1.attemptId, validResult(game.id, round.seed, 5), { now: new Date(startedC1 + limits.minDurationMs + 500) }),
+      ).rejects.toMatchObject({ code: "invalid_events" });
+    }
+
+    // otro intento propio: otra semilla
+    const c2 = await startAttempt(admin, userC, round.id);
+    expect(c2.attemptNumber).toBe(2);
+    expect(c2.seed).not.toBe(c1.seed);
+    expect(c2.seed).toBe(attemptSeed(round.seed, 2));
+
+    // con la semilla del intento, el resultado se guarda
+    const startedC2 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c2.attemptId).single()).data!.started_at);
+    const ok = await finishAttempt(admin, userC, c2.attemptId, validResult(game.id, c2.seed, 5), { now: new Date(startedC2 + limits.minDurationMs + 500) });
+    expect(ok.score).toBeGreaterThan(0);
+
+    // la semilla del intento no está guardada en ningún lado: sin iniciarlo no hay de dónde leerla
+    const { data: r } = await admin.from("rounds").select("*").eq("id", round.id).single();
+    const { data: a } = await admin.from("attempts").select("*").eq("id", c2.attemptId).single();
+    expect(JSON.stringify(r)).not.toContain(c2.seed);
+    expect(JSON.stringify(a)).not.toContain(c2.seed);
   });
 
   it("no deja jugar una ronda pasada", async () => {

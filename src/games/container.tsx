@@ -13,9 +13,10 @@ export type SubmitOutcome = { ok: true } | { ok: false; message: string };
 
 export interface GameContainerProps {
   game: GameModule;
-  seed: string;
-  /** se llama al tocar "jugar", antes de la cuenta regresiva (etapa 5: /start) */
-  onStart?: () => Promise<void>;
+  /** semilla inicial; si onStart devuelve una, esa manda (la semilla real es por intento) */
+  seed?: string;
+  /** se llama al tocar "jugar", antes de la cuenta regresiva (etapa 5: /start). Puede devolver la semilla del intento. */
+  onStart?: () => Promise<void | { seed?: string }>;
   /** se llama con el resultado final (etapa 5: /finish) */
   onSubmit?: (result: GameResult, meta: { elapsedMs: number; cutByTimer: boolean }) => Promise<SubmitOutcome>;
   /** al tocar "listo" en la pantalla de resultado */
@@ -41,6 +42,7 @@ const COUNTDOWN_FROM = 3;
 
 export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, warning, autoStart }: GameContainerProps) {
   const [state, setState] = useState<State>({ step: "intro" });
+  const [activeSeed, setActiveSeed] = useState<string | undefined>(seed);
   const [timeLeftMs, setTimeLeftMs] = useState(game.durationMs);
   const startedAt = useRef<number | null>(null);
   const lastProgress = useRef<GameResult>({ score: 0, events: [] });
@@ -108,14 +110,21 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
 
   async function start() {
     setState({ step: "countdown", n: COUNTDOWN_FROM });
+    let nextSeed = seed;
     if (onStart) {
       try {
-        await onStart();
+        const started = await onStart();
+        if (started && started.seed) nextSeed = started.seed;
       } catch (e) {
         setState({ step: "error", message: (e as Error).message || "no se pudo empezar la partida." });
         return;
       }
     }
+    if (!nextSeed) {
+      setState({ step: "error", message: "no llegó la semilla de la partida. probá de nuevo." });
+      return;
+    }
+    setActiveSeed(nextSeed);
     for (let n = COUNTDOWN_FROM; n >= 1; n--) {
       setState({ step: "countdown", n });
       await sleep(1000);
@@ -193,7 +202,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
         </header>
         {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
         <div className="flex min-h-[60dvh] flex-1 flex-col overflow-hidden rounded-lg [&>*]:min-h-0 [&>*]:flex-1">
-          <Game seed={seed} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
+          <Game seed={activeSeed ?? ""} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
         </div>
         {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}
       </section>

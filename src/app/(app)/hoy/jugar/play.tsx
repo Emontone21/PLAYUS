@@ -14,14 +14,12 @@ export function Play({
   myRank,
   roundId,
   gameId,
-  seed,
   attemptsLeft,
   firstTime,
 }: {
   myRank: number | null;
   roundId: string;
   gameId: string;
-  seed: string;
   attemptsLeft: number;
   firstTime: boolean;
 }) {
@@ -40,11 +38,13 @@ export function Play({
   const game = getGame(gameId);
   if (!game) return <p className="text-lengua">el juego de hoy no está en esta versión de la app. actualizala.</p>;
 
+  // la semilla llega recién acá: es por intento y solo la da /start
   async function onStart() {
     const res = await fetch(`/api/rounds/${roundId}/start`, { method: "POST" });
-    const body = (await res.json()) as { attemptId?: string; message?: string };
-    if (!res.ok || !body.attemptId) throw new Error(body.message ?? "no se pudo empezar la partida.");
+    const body = (await res.json()) as { attemptId?: string; seed?: string; message?: string };
+    if (!res.ok || !body.attemptId || !body.seed) throw new Error(body.message ?? "no se pudo empezar la partida.");
     attemptId.current = body.attemptId;
+    return { seed: body.seed };
   }
 
   async function onSubmit(result: GameResult): Promise<SubmitOutcome> {
@@ -69,5 +69,5 @@ export function Play({
     ? "el intento se gasta al tocar jugar. si recargás o cerrás la app en medio de la partida, se pierde igual."
     : undefined;
 
-  return <GameContainer game={game} seed={seed} onStart={onStart} onSubmit={onSubmit} onDone={onDone} note={note} warning={warning} />;
+  return <GameContainer game={game} onStart={onStart} onSubmit={onSubmit} onDone={onDone} note={note} warning={warning} />;
 }

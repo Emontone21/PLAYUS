@@ -24,7 +24,6 @@ export default async function PlayPage() {
         myRank={t.ranking.find((r) => r.profileId === user.id)?.rank ?? null}
         roundId={t.round.id}
         gameId={t.game.id}
-        seed={t.round.seed}
         attemptsLeft={t.attemptsLeft}
         firstTime={t.attemptsUsed === 0}
       />

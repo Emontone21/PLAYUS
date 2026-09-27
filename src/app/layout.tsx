@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Fredoka, Instrument_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 // Dos familias, no más. Fredoka para títulos, nombres, números, botones y la
-// marca; Instrument Sans para el resto. Se sirven desde el propio dominio.
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["600", "700"],
+// marca; Instrument Sans para el resto. Los archivos (variables, subconjunto
+// latino, licencia OFL) viven en ./fonts: ni el build ni el desarrollo
+// dependen de Google Fonts (decisión 104).
+const fredoka = localFont({
+  src: [{ path: "./fonts/fredoka-latin-600-700.woff2", weight: "600 700", style: "normal" }],
   variable: "--font-fredoka",
   display: "swap",
 });
 
-const instrument = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const instrument = localFont({
+  src: [{ path: "./fonts/instrument-sans-latin-400-600.woff2", weight: "400 600", style: "normal" }],
   variable: "--font-instrument",
   display: "swap",
 });

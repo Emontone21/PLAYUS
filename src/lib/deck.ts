@@ -34,3 +34,12 @@ export function gameForDay(groupId: string, seasonNumber: number, dayIndex: numb
 export function roundSeed(groupId: string, playDate: DateString, gameId: string): string {
   return hashHex(`round:${groupId}:${playDate}:${gameId}`);
 }
+
+/**
+ * Semilla de un intento: hash(round.seed + ':' + attempt_number). Todos los
+ * del grupo ven la misma secuencia en el mismo número de intento, y cada
+ * intento propio es distinto. Solo la devuelve /start (decisión 103).
+ */
+export function attemptSeed(roundSeed: string, attemptNumber: number): string {
+  return hashHex(`${roundSeed}:${attemptNumber}`);
+}
