@@ -91,7 +91,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
           )}
           <p className="eyebrow" data-testid="attempts-left">
             {attemptsText}
-            {t.attemptsUsed > 0 && t.attemptsLeft > 0 ? ". las partidas que no terminaste se contaron igual." : ""}
+            {t.attemptsUsed > 0 && t.attemptsLeft > 0 ? ". los intentos que empezaste cuentan aunque no se hayan guardado." : ""}
           </p>
 
           <div className="flex flex-col gap-2" data-testid="participants">

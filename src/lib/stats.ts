@@ -5,10 +5,12 @@ import { getGame } from "@/games";
 import type { ProfileStatsData } from "@/components/profile-stats";
 import { bestScores, rankRound } from "./scoring";
 import { addDays } from "./time";
+import { readFakeToday } from "./api";
+import { groupToday } from "./rounds";
 
 // Estadísticas de un integrante, calculadas con el cliente del usuario que
-// mira: RLS decide qué rondas y puntajes entran. Las rondas de hoy que
-// todavía están tapadas no cuentan para victorias (no se ve a todos).
+// mira: RLS decide qué rondas y puntajes entran. Las rondas de hoy suman a
+// "rondas jugadas" pero no a victorias hasta que cierra el día del grupo.
 
 export async function computeStats(profileId: string): Promise<ProfileStatsData> {
   const supabase = await createClient();
@@ -24,15 +26,24 @@ export async function computeStats(profileId: string): Promise<ProfileStatsData>
     return { roundsPlayed: 0, wins: 0, bestStreak: 0, seasonsWon, bestGame: null };
   }
 
-  const [{ data: rounds }, { data: attempts }, seasonsWon] = await Promise.all([
+  const [{ data: rounds }, { data: attempts }, seasonsWon, fakeToday] = await Promise.all([
     supabase.from("rounds").select("id, group_id, play_date, game_id").in("id", roundIds),
     supabase.from("attempts").select("round_id, profile_id, score, status").in("round_id", roundIds),
     countSeasonsWon(profileId),
+    readFakeToday(),
   ]);
+
+  // victorias: solo días cerrados, como la tabla de la temporada (decisión 54).
+  // Lo de hoy todavía puede cambiar hasta la medianoche del grupo.
+  const groupIds = [...new Set((rounds ?? []).map((r) => r.group_id))];
+  const { data: groups } = await supabase.from("groups").select("id, timezone").in("id", groupIds);
+  const todayByGroup = new Map((groups ?? []).map((g) => [g.id, groupToday(g, fakeToday)]));
 
   let wins = 0;
   const winsByGame = new Map<string, { wins: number; played: number }>();
   for (const r of rounds ?? []) {
+    const today = todayByGroup.get(r.group_id);
+    if (!today || r.play_date >= today) continue;
     const game = getGame(r.game_id);
     const scoring = game?.scoring ?? "high";
     const entries = bestScores(

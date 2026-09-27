@@ -156,16 +156,16 @@ export async function finishAttempt(
 
   const elapsedMs = now.getTime() - Date.parse(attempt.started_at);
   if (elapsedMs < limits.minDurationMs || elapsedMs > limits.maxDurationMs) {
-    throw await reject("bad_duration", "la partida duró un tiempo que no cierra. el intento se perdió.");
+    throw await reject("bad_duration", "no pudimos validar la duración de esta partida. el intento cuenta igual.");
   }
 
   const result = parseResult(body);
-  if (!result) throw await reject("bad_body", "el resultado llegó mal armado. el intento se perdió.");
+  if (!result) throw await reject("bad_body", "el resultado no llegó bien. el intento cuenta igual.");
   if (result.score < limits.minScore || result.score > limits.maxScore) {
-    throw await reject("implausible_score", "ese puntaje no es posible. el intento se perdió.");
+    throw await reject("implausible_score", "no pudimos validar este puntaje. el intento cuenta igual.");
   }
   if (game.validate && !game.validate(result, round.seed)) {
-    throw await reject("invalid_events", "la partida no pasó la validación. el intento se perdió.");
+    throw await reject("invalid_events", "no pudimos validar esta partida. el intento cuenta igual.");
   }
 
   const before = opts.afterSave ? (await rankedRound(admin, round)).ranked : [];

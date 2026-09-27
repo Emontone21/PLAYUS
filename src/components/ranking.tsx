@@ -30,7 +30,7 @@ export function Ranking({ rows, emptyText, testId = "ranking" }: { rows: Ranking
           data-testid="ranking-row"
           data-profile={r.profileId}
           data-rank={r.rank}
-          className={`flex items-center gap-3 border-b border-superficie bg-fondo py-3 ${
+          className={`flex items-center gap-2 border-b border-superficie bg-fondo py-3 min-[420px]:gap-3 ${
             r.isMe ? "-ml-5 border-l-4 border-l-agua pl-4" : ""
           }`}
         >
@@ -43,14 +43,16 @@ export function Ranking({ rows, emptyText, testId = "ranking" }: { rows: Ranking
           </span>
           <Avatar avatar={r.avatar} name={r.name} size={36} />
           <span className="flex min-w-0 flex-1 items-center gap-1">
-            <span className={`truncate text-lg ${r.rank === 1 ? "font-extrabold" : "font-bold"}`}>{r.name}</span>
+            <span className={`truncate text-base min-[420px]:text-lg ${r.rank === 1 ? "font-extrabold" : "font-bold"}`}>{r.name}</span>
             {r.champion ? <Crown /> : null}
             {r.isMe ? <span className="ml-1 text-xs text-agua">vos</span> : null}
           </span>
-          <span className="flex items-baseline gap-2">
-            <span className="display text-4xl" data-testid="ranking-value">
+          {/* en pantallas angostas el puntaje achica un poco y el detalle va
+              abajo, para que el nombre no quede en tres letras */}
+          <span className="flex shrink-0 flex-col items-end min-[420px]:flex-row min-[420px]:items-baseline min-[420px]:gap-2">
+            <span className="display text-3xl min-[420px]:text-4xl" data-testid="ranking-value">
               {r.value}
-              {r.unit ? <span className="ml-1 text-sm text-tinta-suave">{r.unit}</span> : null}
+              {r.unit ? <span className="ml-0.5 text-xs text-tinta-suave min-[420px]:ml-1 min-[420px]:text-sm">{r.unit}</span> : null}
             </span>
             {r.detail ? <span className="text-right text-xs text-tinta-suave">{r.detail}</span> : null}
           </span>

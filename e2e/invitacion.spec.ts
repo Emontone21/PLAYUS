@@ -90,3 +90,35 @@ test("sin sesión ni grupo, las pestañas mandan a la landing", async ({ browser
   await expect(d.page.getByRole("heading", { name: "playus" })).toBeVisible();
   await d.context.close();
 });
+
+test("con cuenta, el link de otro grupo pide confirmar antes de sumarte", async ({ browser }) => {
+  const createGroup = async (name: string, group: string) => {
+    const w = await freshPage(browser);
+    await w.page.goto("/crear");
+    await w.page.getByPlaceholder("tu nombre").fill(name);
+    await w.page.getByRole("button", { name: "seguir" }).click();
+    await w.page.getByPlaceholder("los del barrio").fill(group);
+    await w.page.getByRole("button", { name: "crear grupo" }).click();
+    await expect(w.page).toHaveURL(/\/grupo$/);
+    return w;
+  };
+  const a = await createGroup("Ana", "grupo de ana");
+  const b = await createGroup("Beto", "grupo de beto");
+  const codeB = (await b.page.getByTestId("invite-code").textContent())?.trim() ?? "";
+
+  // "ahora no" no te suma
+  await a.page.goto(`/g/${codeB}`);
+  await expect(a.page.getByTestId("join-confirm")).toContainText("Ana");
+  await a.page.getByRole("link", { name: "ahora no" }).click();
+  await a.page.goto("/grupo");
+  await expect(a.page.getByTestId("group-name")).toHaveText("grupo de ana");
+
+  // "entrar al grupo" sí
+  await a.page.goto(`/g/${codeB}`);
+  await a.page.getByTestId("join-confirm-button").click();
+  await expect(a.page).toHaveURL(/\/grupo$/);
+  await expect(a.page.getByTestId("group-name")).toHaveText("grupo de beto");
+
+  await a.context.close();
+  await b.context.close();
+});

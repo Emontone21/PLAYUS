@@ -189,3 +189,21 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 84. **La URL y el secreto del recordatorio viven en Supabase Vault, no en `app.settings`.** `alter database postgres set app.settings.*` falla en Supabase ("permission denied to set parameter": el rol `postgres` no es superusuario, tampoco en la nube), así que el job de `pg_cron` nunca iba a tener a dónde llamar. La migración 5 reescribe `call_reminders()` para leer `playus_reminder_url` y `playus_cron_secret` de `vault.decrypted_secrets` (cifrados en reposo; es lo que Supabase recomienda para `pg_cron` + `pg_net`), con `app.settings.*` como respaldo para un Postgres propio. Sigue siendo `security definer` y sin `execute` para `anon` ni `authenticated`. Se configura una vez con `select vault.create_secret('<url>', 'playus_reminder_url')` y `select vault.create_secret('<CRON_SECRET>', 'playus_cron_secret')`.
 
 85. **El stack local se levanta sin logs, storage ni edge functions.** `npx supabase start` a secas no terminó en esta máquina: `analytics`, `storage` y `studio` no pasaban el chequeo de salud a tiempo. La app no usa ninguno de los tres primeros, así que el comando documentado es `npx supabase start -x logflare,vector,storage-api,imgproxy,edge-runtime`. Studio tarda en quedar sano pero funciona; si el chequeo corta el arranque, `--ignore-health-check`.
+
+## Correcciones de la prueba en teléfonos
+
+86. **En reflejo, quedarse sin tiempo da un puntaje, no un intento rechazado.** Si el cronómetro de 35 s corta antes de la quinta ronda (por ejemplo, después de varias salidas en falso), el contenedor usaba el último parcial, que tenía menos de cinco rondas o puntaje 0, y el servidor lo rechazaba como "puntaje no posible". Ahora reflejo informa desde el arranque el resultado "si cortaran ahora": las rondas que faltan valen el tope de 2000 ms, igual que no tocar. El puntaje es válido y malo, y la pantalla dice "se acabó el tiempo". No da ventaja: el tope es el peor valor posible.
+
+87. **Los rechazos de `/finish` no acusan.** "ese puntaje no es posible. el intento se perdió." pasó a "no pudimos validar este puntaje. el intento cuenta igual." (y lo mismo con la duración, el cuerpo y la traza). Hoy dice "los intentos que empezaste cuentan aunque no se hayan guardado." en lugar de "las partidas que no terminaste". El criterio antitrampa no cambió.
+
+88. **Entre rondas de reflejo, el texto va en claro.** El fondo entre rondas es oscuro y el tiempo de la ronda iba en `text-fondo` (contraste de 1,2 a 1). Ahora el color del texto depende de la fase: oscuro sobre rosa y verde, claro sobre el fondo oscuro.
+
+89. **En pantallas de menos de 420 px, la fila del ranking cede lugar al nombre.** El puntaje baja de `text-4xl` a `text-3xl` y los puntos (+10) van debajo en lugar de al lado; el nombre baja a `text-base`. A 360 px entra "Valentina Rodríguez" completo. De 420 px para arriba queda igual que antes. El puntaje sigue siendo lo más grande de la fila (decisión 80).
+
+90. **Las victorias cuentan solo días cerrados.** Como la tabla de la temporada (decisión 54), una ronda suma a "victorias" y a "donde mejor te va" recién cuando pasó la medianoche del grupo; hasta entonces el puesto puede cambiar. "rondas jugadas" y la racha sí cuentan el día de hoy.
+
+91. **El link de invitación pide confirmar si ya usás la app.** Quien ya tiene nombre y abre el link de un grupo en el que no está ve "vas a entrar como …" con "entrar al grupo" y "ahora no". Si ya está en ese grupo (se puede saber porque RLS le deja leerlo), entra directo como antes. Quien llega por primera vez sigue igual: nombre, avatar y adentro.
+
+92. **Guardar el recordatorio avisa al lado del campo.** "guardado" aparece junto a la hora, como en el apodo, en lugar de al final del texto chico. Guarda con una pausa de 600 ms para no escribir por cada dígito, y si la actualización no toca ninguna fila (RLS: no sos owner) lo muestra como error.
+
+93. **Sin barra de scroll en la fila de categorías del avatar, y lugar reservado para la del documento.** La fila sigue deslizándose; la barra se oculta. `scrollbar-gutter: stable` en `html` evita que el contenido se corra unos píxeles entre páginas con y sin scroll en escritorio.

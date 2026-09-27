@@ -27,6 +27,9 @@
 
 html {
   color-scheme: dark;
+  /* reserva el lugar de la barra de scroll en escritorio: el contenido no se
+     corre entre páginas con y sin scroll (en el teléfono no ocupa lugar) */
+  scrollbar-gutter: stable;
 }
 
 body {

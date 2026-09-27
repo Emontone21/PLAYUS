@@ -12,7 +12,7 @@ const GO_TIMEOUT_MS = 2000; // si nadie toca, la ronda vale esto
 const PAUSE_MS = 700;
 
 type Phase = "wait" | "go" | "done";
-type RoundEvent = { round: number; waitMs: number; reactionMs: number; falseStarts: number };
+export type RoundEvent = { round: number; waitMs: number; reactionMs: number; falseStarts: number };
 
 // Las esperas salen de la semilla: todos los del grupo esperan lo mismo en
 // cada ronda. Esto es lo que comprueba el test de la etapa 4.
@@ -49,13 +49,12 @@ function Reflejo({ seed, onReady, onFinish, onProgress }: GameProps) {
       events.current.push(ev);
       falseStarts.current = 0;
       setLast(reactionMs);
-      const score = average(events.current);
-      onProgress({ score, events: [...events.current] });
+      onProgress(projected(events.current, waits));
 
       if (round + 1 >= ROUNDS) {
         setPhase("done");
         setMessage("listo");
-        onFinish({ score, events: [...events.current] });
+        onFinish({ score: average(events.current), events: [...events.current] });
         return;
       }
       setPhase("done");
@@ -82,6 +81,15 @@ function Reflejo({ seed, onReady, onFinish, onProgress }: GameProps) {
     return clear;
   }, [phase, round, waits, finishRound]);
 
+  // si el cronómetro corta antes de la primera ronda, vale este parcial
+  // (una sola vez: después lo actualiza cada ronda terminada)
+  const reportedInitial = React.useRef(false);
+  React.useEffect(() => {
+    if (reportedInitial.current) return;
+    reportedInitial.current = true;
+    onProgress(projected([], waits));
+  }, [onProgress, waits]);
+
   React.useEffect(() => {
     onReady();
   }, [onReady]);
@@ -103,6 +111,10 @@ function Reflejo({ seed, onReady, onFinish, onProgress }: GameProps) {
   }
 
   const bg = phase === "go" ? "#22C55E" : phase === "wait" ? "#FF5C8A" : "#26244A";
+  // sobre rosa y verde, texto oscuro; entre rondas el fondo es oscuro y el
+  // tiempo de la ronda va en claro
+  const ink = phase === "done" ? "text-tinta" : "text-fondo";
+  const inkSoft = phase === "done" ? "text-tinta-suave" : "text-fondo/80";
 
   return (
     <button
@@ -115,13 +127,24 @@ function Reflejo({ seed, onReady, onFinish, onProgress }: GameProps) {
       data-round={round}
       data-waits={JSON.stringify(waits)}
     >
-      <span className="text-sm text-fondo/80">ronda {Math.min(round + 1, ROUNDS)} de {ROUNDS}</span>
-      <span className="text-4xl font-extrabold text-fondo">{message}</span>
+      <span className={`text-sm ${inkSoft}`}>ronda {Math.min(round + 1, ROUNDS)} de {ROUNDS}</span>
+      <span className={`text-4xl font-extrabold ${ink}`}>{message}</span>
       {last !== null && phase !== "done" ? (
-        <span className="text-sm text-fondo/80">última: {last} ms</span>
+        <span className={`text-sm ${inkSoft}`}>última: {last} ms</span>
       ) : null}
     </button>
   );
+}
+
+// Resultado si el cronómetro corta ahora: las rondas que faltan valen el tope,
+// igual que no tocar. Así quedarse sin tiempo da un puntaje válido (y malo)
+// en lugar de un intento rechazado.
+export function projected(done: RoundEvent[], waits: number[]): GameResult {
+  const events: RoundEvent[] = [...done];
+  for (let i = done.length; i < ROUNDS; i++) {
+    events.push({ round: i, waitMs: waits[i] ?? MAX_WAIT_MS, reactionMs: GO_TIMEOUT_MS, falseStarts: 0 });
+  }
+  return { score: average(events), events };
 }
 
 function average(events: RoundEvent[]): number {

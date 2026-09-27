@@ -60,7 +60,7 @@ export function AvatarEditor({
         </button>
       </div>
 
-      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" role="tablist" aria-label="partes del avatar">
+      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="partes del avatar">
         {CATEGORIES.map((c) => {
           const active = c.key === category.key;
           return (

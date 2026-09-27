@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ensureAnonymousUser } from "@/lib/session";
 import { selectGroup } from "@/lib/groups-actions";
@@ -8,15 +9,18 @@ import { friendlyError } from "@/lib/errors";
 import { avatarFromProfile, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { CodeForm } from "@/components/code-form";
+import { Avatar as AvatarView } from "@/components/avatar";
 
 type State =
   | { step: "loading" }
   | { step: "onboarding"; userId: string; name: string; avatar: Avatar }
+  | { step: "confirm"; name: string; avatar: Avatar }
   | { step: "joining" }
   | { step: "error"; message: string };
 
 // 1. sesión anónima automática
-// 2. si el perfil no tiene nombre: una pantalla con nombre + avatar
+// 2. si el perfil no tiene nombre: una pantalla con nombre + avatar;
+//    si ya tiene (ya usa la app), confirma antes de sumarlo a otro grupo
 // 3. join_group(code) y adentro
 export function JoinFlow({ code }: { code: string }) {
   const supabase = useRef(createClient()).current;
@@ -38,7 +42,12 @@ export function JoinFlow({ code }: { code: string }) {
 
         const name = profile?.display_name ?? "";
         if (name.trim().length > 0) {
-          await join();
+          // RLS solo deja leer los grupos propios: si aparece, ya estás adentro
+          // y no hace falta preguntar; si no, es un grupo nuevo y se confirma
+          const { data: mine } = await supabase.from("groups").select("id").eq("invite_code", code).maybeSingle();
+          if (cancelled) return;
+          if (mine) await selectGroup(mine.id, "/grupo");
+          else setState({ step: "confirm", name, avatar: avatarFromProfile(profile?.avatar) });
         } else {
           setState({ step: "onboarding", userId: user.id, name, avatar: avatarFromProfile(profile?.avatar) });
         }
@@ -87,6 +96,23 @@ export function JoinFlow({ code }: { code: string }) {
 
       {state.step === "loading" ? <p className="text-tinta-suave">abriendo…</p> : null}
       {state.step === "joining" ? <p className="text-tinta-suave">entrando al grupo…</p> : null}
+
+      {state.step === "confirm" ? (
+        <section className="flex flex-col gap-5" data-testid="join-confirm">
+          <div className="flex items-center gap-3">
+            <AvatarView avatar={state.avatar} name={state.name} size={56} />
+            <p className="text-lg">
+              vas a entrar como <span className="font-bold">{state.name}</span>.
+            </p>
+          </div>
+          <button type="button" onClick={() => void join()} className="btn-primary" data-testid="join-confirm-button">
+            entrar al grupo
+          </button>
+          <Link href="/hoy" className="btn-quiet text-center">
+            ahora no
+          </Link>
+        </section>
+      ) : null}
 
       {state.step === "onboarding" ? (
         <OnboardingForm
