@@ -135,14 +135,16 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     return (
       <section className="flex min-h-[70dvh] flex-col justify-between gap-6" data-testid="game-intro">
         <div className="flex flex-col gap-3">
-          <p className="eyebrow">el juego de hoy</p>
-          <h1 className="display text-5xl">{game.name}</h1>
-          <p className="text-lg text-tinta-suave">{game.tagline}</p>
-          <ol className="mt-2 flex flex-col gap-2">
+          <p className="text-sm text-rana">el juego de hoy</p>
+          <h1 className="display-lg text-tinta" style={{ fontSize: 58 }}>
+            {game.name}
+          </h1>
+          <p className="text-lg">{game.tagline}</p>
+          <ol className="mt-2 flex flex-col gap-3">
             {game.howTo.map((step, i) => (
-              <li key={step} className="flex gap-3">
-                <span className="w-6 shrink-0 text-right font-extrabold text-oro">{i + 1}</span>
-                <span>{step}</span>
+              <li key={step} className="flex items-center gap-3">
+                <span className="bubble-number">{i + 1}</span>
+                <span className="text-tinta-media">{step}</span>
               </li>
             ))}
           </ol>
@@ -174,7 +176,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   if (state.step === "countdown") {
     return (
       <section className="flex min-h-[70dvh] flex-col items-center justify-center gap-2" data-testid="game-countdown">
-        <span className="display text-[9rem] text-oro">{state.n}</span>
+        <span className="display-lg text-[9rem] text-rana">{state.n}</span>
         <span className="text-tinta-suave">preparate</span>
       </section>
     );
@@ -184,7 +186,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     return (
       <section className="flex min-h-[80dvh] flex-col gap-3" data-testid="game-playing">
         <header className="flex items-baseline justify-between">
-          <span className="font-extrabold">{game.name}</span>
+          <span className="display text-lg">{game.name}</span>
           <span className="display text-4xl" data-testid="game-timer" aria-live="off">
             {formatSeconds(timeLeftMs)}
           </span>
@@ -225,7 +227,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     <section className="flex min-h-[70dvh] flex-col justify-between gap-6" data-testid="game-result">
       <div className="flex flex-col gap-2">
         <p className="eyebrow">{state.cutByTimer ? "se acabó el tiempo" : "terminaste"}</p>
-        <p className="display text-[7rem]" data-testid="game-score">
+        <p className="display-lg text-[7rem] text-tinta" data-testid="game-score">
           {state.result.score}
           {unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
         </p>

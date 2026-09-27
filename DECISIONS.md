@@ -207,3 +207,21 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 92. **Guardar el recordatorio avisa al lado del campo.** "guardado" aparece junto a la hora, como en el apodo, en lugar de al final del texto chico. Guarda con una pausa de 600 ms para no escribir por cada dígito, y si la actualización no toca ninguna fila (RLS: no sos owner) lo muestra como error.
 
 93. **Sin barra de scroll en la fila de categorías del avatar, y lugar reservado para la del documento.** La fila sigue deslizándose; la barra se oculta. `scrollbar-gutter: stable` en `html` evita que el contenido se corra unos píxeles entre páginas con y sin scroll en escritorio.
+
+## Etapa extra: rediseño Frog
+
+94. **Cambio de dirección visual: Frog.** La app pasa a llamarse `frog` (siempre en minúscula) y cambia de identidad. Cuatro cambios respecto del brief original:
+    - **Paleta:** índigo → estanque de noche (`--fondo #0E2620`, `--superficie #163A2F`, acción en `--rana #86E05A`, primer puesto en `--luciernaga #FFD34E`, alertas en `--lengua #FF6F91`, tu fila en `--agua #6FD3E0`).
+    - **Tipografía:** Bricolage Grotesque → Fredoka 600/700 para títulos, nombres, números, botones y la marca; Instrument Sans 400/500/600 para el resto. Como Instrument no se carga en 700, `font-bold` de Tailwind se remapea a 600.
+    - **Estilo:** plano con contornos de 3 px y sombras duras (nunca difuminadas), esquinas desparejas (tres grandes y una chica, distinta según la tarjeta), estética de caricatura. Estados vacíos con borde punteado y sin fondo.
+    - **Movimiento:** el brief permitía una sola animación (el FLIP del ranking). Ahora también hay parpadeo y saltito de la rana mascota, y el hundimiento de los botones al presionar (feedback táctil). Todo lo decorativo se apaga con `prefers-reduced-motion`: la rana queda quieta y con los ojos abiertos.
+
+95. **La rana es un componente de pixel art calculado desde un mapa de letras.** `src/components/frog/frog-grid.ts` arma la grilla de 15×15 (mapa base de 12×8, siete poses aplicadas con `put`, borde de sticker y sombra) sin React, y `Frog.tsx` la dibuja como un `<path>` por color. Así se testea con vitest y el mismo dibujo genera los íconos de la PWA (`scripts/frog-icons.ts`, con `sharp` y vecino más cercano, que ya viene con Next). La rana es decorativa: el SVG va con `aria-hidden`; donde significa algo (la corona del campeón) el significado va en el contenedor con `role="img"`.
+
+96. **Los nombres internos siguen siendo `playus`.** Cookies (`playus-group`, `playus-fake-today`), claves de `localStorage`, nombres de caché del service worker, el proyecto de Vercel y el repo conservan el nombre anterior. Renombrarlos no le aporta nada a quien usa la app y algunos (las cookies) cerrarían la sesión de todo el mundo.
+
+97. **El aviso "te pasó por X" se calcula con `finished_at`.** Para saber si alguien te pasó *después* de tu mejor partida, Hoy lee una columna más (`finished_at`) en la misma consulta de `attempts` que ya hacía, y busca a quien tiene mejor puesto y cuyo mejor puntaje llegó después del tuyo. No se tocó ningún endpoint, política ni regla de rondas. La diferencia se muestra con la unidad del juego ("ms" en reflejo; sin unidad en tap race).
+
+98. **Quien todavía no jugó aparece en las listas con la rana dormida.** En Hoy antes de jugar, "los demás" lista a todos los integrantes: quien ya jugó lleva el puntaje tapado con una píldora con una ola; quien no, la rana dormida. En el ranking, los que faltan van al final con "todavía no", sin puesto ni puntaje. Antes solo se listaba a quienes habían jugado.
+
+99. **Los avatares de "{A} y {B} ya están adentro" en la invitación quedan afuera de esta etapa.** Quien abre el link todavía no es integrante, y RLS no le deja leer los integrantes del grupo. Mostrarlos exige una RPC `security definer` nueva (una migración), que esta etapa prohíbe. Queda como pregunta.

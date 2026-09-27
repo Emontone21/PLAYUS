@@ -10,6 +10,9 @@ import { avatarFromProfile, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { CodeForm } from "@/components/code-form";
 import { Avatar as AvatarView } from "@/components/avatar";
+import { Brand } from "@/components/brand";
+import { Frog } from "@/components/frog/Frog";
+import { Lily } from "@/components/lily";
 
 type State =
   | { step: "loading" }
@@ -86,29 +89,39 @@ export function JoinFlow({ code }: { code: string }) {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
-      <header className="flex flex-col gap-1">
+    <main className="relative isolate flex min-h-dvh flex-col justify-center gap-8 overflow-x-clip px-5 py-8">
+      <Lily size={280} className="-right-24 -top-10" />
+      <Lily size={200} className="-left-20 bottom-10 -scale-x-100" />
+      <Brand />
+
+      <header className="flex flex-col gap-3">
+        {/* las tres ranas agrupadas, arriba del texto */}
+        <div className="flex items-end gap-1 pl-1" aria-hidden="true">
+          <Frog pose="risa" size={150} tilt={-6} />
+          <Frog pose="lengua" size={86} tilt={10} color="#5FCB8F" className="-ml-4 mb-3" />
+          <Frog pose="guino" size={64} tilt={-12} color="#B8E04A" className="-ml-3 mb-10" />
+        </div>
         <p className="eyebrow">te invitaron a un grupo</p>
-        <h1 className="display text-4xl">
-          código <span className="tracking-[0.2em] text-oro">{code}</span>
+        <h1 className="display-lg text-tinta" style={{ fontSize: 40 }}>
+          código <span className="tracking-[0.2em] text-luciernaga">{code}</span>
         </h1>
       </header>
 
-      {state.step === "loading" ? <p className="text-tinta-suave">abriendo…</p> : null}
-      {state.step === "joining" ? <p className="text-tinta-suave">entrando al grupo…</p> : null}
+      {state.step === "loading" ? <p>abriendo…</p> : null}
+      {state.step === "joining" ? <p>entrando al grupo…</p> : null}
 
       {state.step === "confirm" ? (
         <section className="flex flex-col gap-5" data-testid="join-confirm">
-          <div className="flex items-center gap-3">
+          <div className="card card-d flex items-center gap-3">
             <AvatarView avatar={state.avatar} name={state.name} size={56} />
-            <p className="text-lg">
-              vas a entrar como <span className="font-bold">{state.name}</span>.
+            <p className="text-lg text-tinta">
+              vas a entrar como <span className="display-bold">{state.name}</span>.
             </p>
           </div>
           <button type="button" onClick={() => void join()} className="btn-primary" data-testid="join-confirm-button">
             entrar al grupo
           </button>
-          <Link href="/hoy" className="btn-quiet text-center">
+          <Link href="/hoy" className="btn-secondary">
             ahora no
           </Link>
         </section>

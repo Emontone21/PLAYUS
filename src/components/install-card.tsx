@@ -81,7 +81,7 @@ export function InstallCard({ dismissable = true }: { dismissable?: boolean }) {
 
   return (
     <div className="panel" data-testid="install-card">
-      <p className="font-extrabold">instalá playus en el teléfono</p>
+      <p className="display text-lg text-tinta">instalá frog en el teléfono</p>
       {mode === "android" ? (
         <>
           <p className="eyebrow">queda con ícono propio, abre a pantalla completa y puede avisarte.</p>
@@ -120,7 +120,7 @@ export function InstallCard({ dismissable = true }: { dismissable?: boolean }) {
 
 function ShareIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5BC0BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--agua)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       <path d="M12 3v12" />
       <path d="M8 7l4-4 4 4" />
       <path d="M5 11v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9" />
@@ -130,7 +130,7 @@ function ShareIcon() {
 
 function PlusIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5BC0BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--agua)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       <rect x="3" y="3" width="18" height="18" rx="4" />
       <path d="M12 8v8M8 12h8" />
     </svg>
@@ -139,7 +139,7 @@ function PlusIcon() {
 
 function BellIcon() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5BC0BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--agua)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0">
       <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" />
       <path d="M10 21h4" />
     </svg>

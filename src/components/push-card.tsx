@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Frog } from "@/components/frog/Frog";
 import { pushStatus, subscribeToPush, unsubscribeFromPush, type PushStatus } from "@/lib/push-client";
 
 // Notificaciones. Dos usos:
@@ -34,7 +35,7 @@ export function PushCard({ userId, variant }: { userId: string; variant: "offer"
     try {
       const next = await subscribeToPush(supabase, userId);
       setStatus(next);
-      if (next === "denied") setError("el navegador tiene las notificaciones bloqueadas para playus. se cambia en los ajustes del sitio.");
+      if (next === "denied") setError("el navegador tiene las notificaciones bloqueadas para frog. se cambia en los ajustes del sitio.");
       if (next === "no-sw") setError("acá no hay service worker (en desarrollo no se genera). probalo en el build.");
     } catch (e) {
       setError((e as Error).message);
@@ -67,8 +68,10 @@ export function PushCard({ userId, variant }: { userId: string; variant: "offer"
   const enabled = status === "subscribed";
 
   return (
-    <div className="panel" data-testid={`push-${variant}`}>
-      <p className="font-extrabold">{variant === "offer" ? "¿te avisamos cuando te pasen?" : "notificaciones"}</p>
+    <div className={`relative ${variant === "offer" ? "mt-10" : ""}`}>
+      {variant === "offer" ? <Frog pose="guino" size={86} tilt={10} className="absolute -top-12 right-2 z-10" /> : null}
+    <div className={`panel ${variant === "offer" ? "card-c pt-6" : "card-b"}`} data-testid={`push-${variant}`}>
+      <p className="display text-lg text-tinta">{variant === "offer" ? "¿te avisamos cuando te pasen?" : "notificaciones"}</p>
       <p className="eyebrow">
         {status === "unsupported"
           ? "este navegador no puede mandar notificaciones. en iPhone hace falta instalar la app primero."
@@ -95,10 +98,11 @@ export function PushCard({ userId, variant }: { userId: string; variant: "offer"
         </div>
       ) : null}
       {error ? (
-        <p className="text-sm text-rosa" role="status">
+        <p className="text-sm text-lengua" role="status">
           {error}
         </p>
       ) : null}
+    </div>
     </div>
   );
 }

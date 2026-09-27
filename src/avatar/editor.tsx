@@ -71,7 +71,7 @@ export function AvatarEditor({
               aria-selected={active}
               onClick={() => setCategory(c)}
               className={`chip shrink-0 ${
-                active ? "bg-tinta text-fondo" : "bg-superficie text-tinta-suave"
+                active ? "bg-rana text-contorno" : "text-tinta-suave"
               }`}
             >
               {c.label}
@@ -93,7 +93,7 @@ export function AvatarEditor({
                 aria-label={`${category.label} ${color}`}
                 onClick={() => onChange({ ...value, [category.key]: color })}
                 className="aspect-square rounded-full border-4"
-                style={{ background: color, borderColor: selected ? "#f5f3ff" : "transparent" }}
+                style={{ background: color, borderColor: selected ? "var(--rana)" : "var(--contorno)" }}
               />
             );
           })}
@@ -145,7 +145,7 @@ function Thumb({
       aria-label={label}
       onClick={onClick}
       className="rounded-full border-4 p-0.5"
-      style={{ borderColor: selected ? "#f5f3ff" : "transparent" }}
+      style={{ borderColor: selected ? "var(--rana)" : "var(--contorno)" }}
     >
       <AvatarSvg avatar={avatar} size={64} label={label} className="block h-auto w-full" />
     </button>

@@ -14,15 +14,15 @@ export default async function DevTodayPage() {
 
   return (
     <main className="flex flex-col gap-4 px-5 py-8">
-      <h1 className="text-3xl font-extrabold">fecha simulada (desarrollo)</h1>
+      <h1 className="display text-3xl">fecha simulada (desarrollo)</h1>
       <p className="text-tinta-suave">
         hoy para la app:{" "}
-        <span className="font-extrabold text-tinta" data-testid="fake-today">
+        <span className="display text-tinta" data-testid="fake-today">
           {active ?? "real"}
         </span>
       </p>
       <div className="flex flex-wrap gap-2">
-        <a href="/dev/hoy/set?adelantar=1" className="rounded-md bg-oro px-4 py-2 font-extrabold text-fondo">
+        <a href="/dev/hoy/set?adelantar=1" className="btn-primary-sm">
           +1 día
         </a>
         <a href="/dev/hoy/set?reset=1" className="rounded-md border-2 border-agua px-4 py-2 font-bold text-agua">

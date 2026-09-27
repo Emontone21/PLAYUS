@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { parseAvatar } from "@/avatar/schema";
 import { Avatar } from "@/components/avatar";
+import { Frog } from "@/components/frog/Frog";
 import { ProfileStats } from "@/components/profile-stats";
 import { computeStats } from "@/lib/stats";
 import { getMyGroups } from "@/lib/groups";
@@ -36,34 +37,33 @@ export default async function ProfilePage() {
   }));
 
   return (
-    <main className="flex flex-col gap-8 px-5 py-8">
-      <header className="flex items-center gap-4">
+    <main className="flex flex-col gap-8 px-5 py-6">
+      <header className="relative flex items-center gap-4 pr-20">
         <Avatar avatar={avatar} name={name} size={80} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h1 className="truncate display text-3xl" data-testid="profile-name">
+          <h1 className="truncate display-lg text-tinta" style={{ fontSize: 32 }} data-testid="profile-name">
             {name || "sin nombre"}
           </h1>
-          <Link href="/perfil/editar" className="text-sm font-bold text-agua">
+          <Link href="/perfil/editar" className="display-bold text-sm text-agua">
             editar nombre y avatar
           </Link>
         </div>
+        <Frog pose="feliz" size={72} tilt={12} className="absolute -top-2 right-0" />
       </header>
 
       <section className="flex flex-col gap-3">
-        <h2 className="eyebrow">tus números</h2>
+        <h2 className="display text-xl text-tinta">tus números</h2>
         <ProfileStats stats={stats} />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="eyebrow">apodo por grupo</h2>
-        <p className="eyebrow">
-          en cada grupo te pueden conocer distinto. si lo dejás vacío, se usa tu nombre.
-        </p>
+        <h2 className="display text-xl text-tinta">apodo por grupo</h2>
+        <p className="eyebrow">en cada grupo te pueden conocer distinto. si lo dejás vacío, se usa tu nombre.</p>
         <Nicknames groups={groupsWithNickname} />
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="eyebrow">ajustes</h2>
+      <section className="flex flex-col gap-4">
+        <h2 className="display text-xl text-tinta">ajustes</h2>
         <PushCard userId={user.id} variant="settings" />
         <InstallCard dismissable={false} />
         <LinkEmail currentEmail={user.email ?? null} pendingEmail={user.new_email ?? null} />

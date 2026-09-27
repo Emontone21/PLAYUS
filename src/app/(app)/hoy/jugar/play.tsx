@@ -38,7 +38,7 @@ export function Play({
   }, [myRank]);
 
   const game = getGame(gameId);
-  if (!game) return <p className="text-rosa">el juego de hoy no está en esta versión de la app. actualizala.</p>;
+  if (!game) return <p className="text-lengua">el juego de hoy no está en esta versión de la app. actualizala.</p>;
 
   async function onStart() {
     const res = await fetch(`/api/rounds/${roundId}/start`, { method: "POST" });

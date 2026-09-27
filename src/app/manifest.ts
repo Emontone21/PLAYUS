@@ -4,17 +4,17 @@ import type { MetadataRoute } from "next";
 // parada en el ómnibus con una mano.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "playus",
-    short_name: "playus",
-    description: "un minijuego distinto por día. todos el mismo, el mismo día. gana el ranking del grupo.",
+    name: "frog",
+    short_name: "frog",
+    description: "un juego distinto cada día, el mismo para todo el grupo. jugás, comparás y a medianoche se sabe quién ganó.",
     lang: "es",
     id: "/hoy",
     start_url: "/hoy",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#1b1a2e",
-    theme_color: "#1b1a2e",
+    background_color: "#0E2620",
+    theme_color: "#0E2620",
     categories: ["games", "social"],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -25,7 +25,7 @@ export default function manifest(): MetadataRoute.Manifest {
     screenshots: [
       { src: "/screenshots/hoy.png", sizes: "1082x2202", type: "image/png", form_factor: "narrow", label: "el juego del día" },
       { src: "/screenshots/ranking.png", sizes: "1082x2202", type: "image/png", form_factor: "narrow", label: "el ranking de hoy" },
-      { src: "/screenshots/grupo.png", sizes: "1082x2649", type: "image/png", form_factor: "narrow", label: "la tabla de la temporada" },
+      { src: "/screenshots/grupo.png", sizes: "1082x2202", type: "image/png", form_factor: "narrow", label: "la tabla de la temporada" },
     ],
   };
 }

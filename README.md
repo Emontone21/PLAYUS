@@ -1,6 +1,6 @@
-# playus
+# frog
 
-PWA para que un grupo de amigos juegue un minijuego distinto cada día y compita por el ranking del grupo.
+PWA para que un grupo de amigos juegue un juego distinto cada día, el mismo para todo el grupo, y compita por el ranking. La marca se escribe siempre en minúscula: `frog`. El repo, el proyecto de Vercel, las cookies, las claves de `localStorage` y los nombres de caché del service worker conservan el nombre anterior (`playus`): son internos y renombrarlos no aporta nada.
 
 Estado: **etapa 7** (pasada de diseño). Las siete etapas del brief están hechas; falta la verificación en teléfonos reales de las etapas 6 y 7. Ver `PLAN.md` para las etapas y `DECISIONS.md` para las decisiones tomadas.
 

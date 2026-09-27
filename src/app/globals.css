@@ -1,28 +1,52 @@
 @import "tailwindcss";
 
-/* Paleta del brief: pizarrón de campeonato de barrio. Una sola paleta, sin
-   modo claro. Contundente, saturado, plano: sin degradados ni sombras. */
+/* Paleta Frog: estanque de noche. Plano, con contornos gruesos y sombras
+   duras (nunca difuminadas), estética de caricatura. Una sola paleta. */
 :root {
-  --fondo: #1b1a2e;
-  --superficie: #26244a;
-  --oro: #ffc94a;
-  --rosa: #ff5c8a;
-  --agua: #5bc0be;
-  --tinta: #f5f3ff;
-  --tinta-suave: #b9b5d6;
+  --fondo: #0e2620;
+  --superficie: #163a2f;
+  --superficie-2: #1e4a3c;
+  --decoracion: #133329;
+  --barra: #0a1f19;
+  --contorno: #071611;
+  --rana: #86e05a;
+  --luciernaga: #ffd34e;
+  --lengua: #ff6f91;
+  --agua: #6fd3e0;
+  --tinta: #eef8ea;
+  --tinta-media: #d5ebdd;
+  --tinta-suave: #a7c4b3;
+  /* borde punteado de los estados vacíos */
+  --punteado: #2a5c4b;
+  /* fondo de tu propia fila en el ranking */
+  --mi-fila: #143d32;
+  /* fondo del globo de diálogo y del borde de sticker */
+  --papel: #f7fff2;
 }
 
 @theme inline {
   --color-fondo: var(--fondo);
   --color-superficie: var(--superficie);
-  --color-oro: var(--oro);
-  --color-rosa: var(--rosa);
+  --color-superficie-2: var(--superficie-2);
+  --color-decoracion: var(--decoracion);
+  --color-barra: var(--barra);
+  --color-contorno: var(--contorno);
+  --color-rana: var(--rana);
+  --color-luciernaga: var(--luciernaga);
+  --color-lengua: var(--lengua);
   --color-agua: var(--agua);
   --color-tinta: var(--tinta);
+  --color-tinta-media: var(--tinta-media);
   --color-tinta-suave: var(--tinta-suave);
-  /* dos familias, no más: display para puntajes, nombres y títulos; sans para el resto */
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --color-punteado: var(--punteado);
+  --color-mi-fila: var(--mi-fila);
+  --color-papel: var(--papel);
+  /* dos familias: Fredoka para títulos, nombres, números, botones y la marca;
+     Instrument Sans para párrafos, etiquetas y ayudas */
+  --font-display: var(--font-fredoka), ui-rounded, ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  /* Instrument Sans se carga en 400/500/600: "bold" es 600 */
+  --font-weight-bold: 600;
 }
 
 html {
@@ -41,71 +65,222 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+p {
+  color: var(--tinta-media);
+}
+
 @layer components {
-  /* títulos, nombres y puntajes: display, pesado, tracking cerrado */
+  /* títulos, nombres y puntajes: Fredoka 700; a partir de 40px, tracking -1px */
   .display {
     font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .display-lg {
+    font-family: var(--font-display);
+    font-weight: 700;
     line-height: 0.95;
+    letter-spacing: -1px;
   }
   .display-bold {
     font-family: var(--font-display);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 600;
   }
   /* etiqueta chica arriba de una sección: minúscula, nunca mayúsculas */
   .eyebrow {
     @apply text-sm text-tinta-suave;
   }
-  /* radios distintos según la pieza: el CTA es la única forma muy redondeada */
-  .btn-primary {
-    @apply block w-full rounded-2xl bg-oro px-4 py-4 text-center text-xl text-fondo disabled:opacity-40;
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.02em;
+
+  /* tarjetas: contorno grueso, sombra dura y tres esquinas grandes más una
+     chica; cuál es la chica cambia con la letra, para que no parezca la misma
+     tarjeta repetida */
+  .card {
+    @apply relative bg-superficie px-4 py-4;
+    border: 3px solid var(--contorno);
+    box-shadow: 5px 6px 0 var(--contorno);
+    border-radius: 30px 30px 30px 10px;
   }
-  .btn-primary-sm {
-    @apply rounded-2xl bg-oro px-4 py-3 text-base text-fondo disabled:opacity-40;
-    font-family: var(--font-display);
-    font-weight: 800;
-    letter-spacing: -0.02em;
+  .card-b {
+    border-radius: 10px 30px 30px 30px;
   }
-  .btn-secondary {
-    @apply rounded-lg border-2 border-agua px-4 py-3 font-bold text-agua disabled:opacity-40;
+  .card-c {
+    border-radius: 26px 26px 8px 26px;
   }
-  .btn-secondary-sm {
-    @apply rounded-lg border-2 border-agua px-3 py-2 text-sm font-bold text-agua disabled:opacity-40;
-  }
-  .btn-quiet {
-    @apply rounded-lg bg-superficie px-3 py-2 font-bold text-tinta;
-  }
-  .input {
-    @apply w-full rounded-lg border-2 border-superficie bg-superficie px-3 py-3 text-lg font-bold text-tinta outline-none focus:border-agua;
-  }
-  .input-sm {
-    @apply w-full rounded-lg border-2 border-superficie bg-superficie px-3 py-2 font-bold text-tinta outline-none focus:border-agua;
-  }
-  /* bloques planos: sin radio, como tiza sobre el pizarrón */
-  .note {
-    @apply bg-superficie px-4 py-3 text-tinta-suave;
-  }
-  .note-alert {
-    @apply border-l-4 border-rosa bg-superficie px-4 py-3;
-  }
-  .note-ok {
-    @apply border-l-4 border-agua bg-superficie px-4 py-3;
+  .card-d {
+    border-radius: 30px 10px 30px 30px;
   }
   .panel {
-    @apply flex flex-col gap-3 bg-superficie px-4 py-4;
+    @apply relative flex flex-col gap-3 bg-superficie px-4 py-4;
+    border: 3px solid var(--contorno);
+    box-shadow: 5px 6px 0 var(--contorno);
+    border-radius: 30px 30px 30px 10px;
   }
+
+  /* botón principal: 64px, ancho completo, se hunde al presionar */
+  .btn-primary {
+    @apply flex h-16 w-full items-center justify-center bg-rana px-4 text-center text-contorno disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1;
+    border: 3px solid var(--contorno);
+    border-radius: 20px 20px 20px 8px;
+    box-shadow: 0 6px 0 var(--contorno);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 var(--contorno);
+  }
+  .btn-primary-sm {
+    @apply inline-flex h-12 items-center justify-center bg-rana px-4 text-contorno disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+    border: 3px solid var(--contorno);
+    border-radius: 16px 16px 16px 6px;
+    box-shadow: 0 4px 0 var(--contorno);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  }
+  .btn-primary-sm:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--contorno);
+  }
+  .btn-secondary {
+    @apply inline-flex h-12 items-center justify-center bg-superficie-2 px-4 text-tinta disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1;
+    border: 3px solid var(--contorno);
+    border-radius: 14px 14px 14px 6px;
+    box-shadow: 0 4px 0 var(--contorno);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--contorno);
+  }
+  .btn-secondary-sm {
+    @apply inline-flex h-10 items-center justify-center bg-superficie-2 px-3 text-sm text-tinta disabled:opacity-40;
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1;
+    border: 3px solid var(--contorno);
+    border-radius: 12px 12px 12px 5px;
+    box-shadow: 0 3px 0 var(--contorno);
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out;
+  }
+  .btn-secondary-sm:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--contorno);
+  }
+  .btn-quiet {
+    @apply bg-superficie-2 px-3 py-2 text-tinta;
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 3px solid var(--contorno);
+    border-radius: 12px 12px 12px 5px;
+  }
+
+  .input {
+    @apply w-full bg-superficie px-4 py-3 text-lg text-tinta outline-none placeholder:text-tinta-suave/70 focus:border-agua;
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 3px solid var(--contorno);
+    border-radius: 16px 16px 16px 6px;
+  }
+  .input-sm {
+    @apply w-full bg-superficie px-3 py-2 text-tinta outline-none placeholder:text-tinta-suave/70 focus:border-agua;
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 3px solid var(--contorno);
+    border-radius: 12px 12px 12px 5px;
+  }
+
+  /* estados vacíos: borde punteado, sin fondo */
+  .note {
+    @apply px-4 py-3 text-tinta-suave;
+    border: 3px dashed var(--punteado);
+    border-radius: 18px 18px 18px 6px;
+  }
+  .note-alert {
+    @apply bg-lengua px-4 py-3 text-contorno;
+    border: 3px solid var(--contorno);
+    border-radius: 18px 18px 6px 18px;
+    box-shadow: 4px 5px 0 var(--contorno);
+  }
+  .note-alert p,
+  .note-ok p {
+    color: inherit;
+  }
+  .note-ok {
+    @apply bg-agua px-4 py-3 text-contorno;
+    border: 3px solid var(--contorno);
+    border-radius: 6px 18px 18px 18px;
+    box-shadow: 4px 5px 0 var(--contorno);
+  }
+
   .chip {
-    @apply rounded-full px-3 py-1.5 text-sm font-bold;
+    @apply rounded-full bg-superficie-2 px-3 py-1.5 text-sm text-tinta;
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 3px solid var(--contorno);
+  }
+  /* puntos ganados en el ranking (+10) */
+  .chip-points {
+    @apply rounded-full bg-superficie-2 px-2 py-0.5 text-xs text-rana;
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+  /* burbuja de número de los pasos del juego */
+  .bubble-number {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center bg-superficie-2 text-base text-rana;
+    font-family: var(--font-display);
+    font-weight: 700;
+    border-radius: 50% 50% 50% 14%;
+  }
+  /* globo de diálogo de la rana */
+  .speech {
+    @apply inline-block bg-papel px-3 py-1.5 text-contorno;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.1;
+    border: 3px solid var(--contorno);
+    border-radius: 14px 14px 4px 14px;
+    box-shadow: 3px 4px 0 var(--contorno);
+    transform: rotate(-4deg);
+  }
+  /* píldora que tapa un puntaje ajeno hasta que juegues */
+  .covered {
+    @apply inline-flex h-7 w-14 items-center justify-center rounded-full bg-superficie-2;
+    border: 2px solid var(--contorno);
   }
 }
 
-/* el único movimiento coreografiado: el ranking se reordena al revelar el puntaje */
+/* saltito de la rana: un píxel de la grilla, en pasos discretos, la mitad de
+   un ciclo de 1,4 s */
+@keyframes frog-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(-1 * var(--frog-px, 8px)));
+  }
+}
+.frog-hop {
+  animation: frog-hop 1.4s steps(1, end) infinite;
+}
+
+/* con reducir movimiento: nada se mueve salvo el feedback de los botones (que
+   es instantáneo) y el FLIP del ranking se resuelve al instante */
 @media (prefers-reduced-motion: reduce) {
+  .frog-hop {
+    animation: none;
+  }
   * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;

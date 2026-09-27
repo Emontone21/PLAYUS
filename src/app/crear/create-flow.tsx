@@ -8,6 +8,8 @@ import { selectGroup } from "@/lib/groups-actions";
 import { friendlyError } from "@/lib/errors";
 import { avatarFromProfile, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
+import { Brand } from "@/components/brand";
+import { Lily } from "@/components/lily";
 
 type State =
   | { step: "loading" }
@@ -83,16 +85,20 @@ export function CreateFlow() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col justify-center gap-8 px-5 py-10">
-      <header className="flex flex-col gap-1">
+    <main className="relative isolate flex min-h-dvh flex-col justify-center gap-8 overflow-x-clip px-5 py-8">
+      <Lily size={280} className="-right-24 -top-12" />
+      <Brand />
+      <header className="flex flex-col gap-2">
         <Link href="/" className="eyebrow">
           volver
         </Link>
-        <h1 className="display text-4xl">crear un grupo</h1>
+        <h1 className="display-lg text-tinta" style={{ fontSize: 40 }}>
+          crear un grupo
+        </h1>
       </header>
 
-      {state.step === "loading" ? <p className="text-tinta-suave">abriendo…</p> : null}
-      {state.step === "creating" ? <p className="text-tinta-suave">creando…</p> : null}
+      {state.step === "loading" ? <p>abriendo…</p> : null}
+      {state.step === "creating" ? <p>creando…</p> : null}
 
       {state.step === "onboarding" ? (
         <OnboardingForm

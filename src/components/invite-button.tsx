@@ -15,10 +15,10 @@ export function InviteButton({ code, groupName }: { code: string; groupName: str
   }, [code]);
 
   async function share() {
-    const text = `sumate a "${groupName}" en playus: un minijuego por día. código ${code}`;
+    const text = `sumate a "${groupName}" en frog: un juego distinto cada día. código ${code}`;
     if (canShare) {
       try {
-        await navigator.share({ title: "playus", text, url: link });
+        await navigator.share({ title: "frog", text, url: link });
         return;
       } catch {
         // cancelado o sin soporte real: cae a copiar

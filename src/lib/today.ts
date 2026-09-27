@@ -37,6 +37,8 @@ export interface TodayData {
   /** quiénes ya jugaron hoy (sin puntajes), para cuando el ranking está tapado */
   participants: { profileId: string; completedAttempts: number }[];
   yesterday: { game: GameModule; winner: Member; score: number; tied: boolean } | null;
+  /** el último que te pasó hoy (jugó mejor después de tu mejor partida), si hay */
+  overtaker: { member: Member; diff: number } | null;
 }
 
 export async function loadMembers(groupId: string): Promise<Map<string, Member>> {
@@ -89,7 +91,7 @@ export async function loadToday(userId: string, group: GroupRow): Promise<TodayD
   const [members, championId, { data: visibleAttempts }, { data: participants }] = await Promise.all([
     loadMembers(group.id),
     loadChampion(group.id),
-    supabase.from("attempts").select("profile_id, attempt_number, status, score").eq("round_id", round.id),
+    supabase.from("attempts").select("profile_id, attempt_number, status, score, finished_at").eq("round_id", round.id),
     supabase.rpc("round_participants", { p_round_id: round.id }),
   ]);
 
@@ -113,6 +115,29 @@ export async function loadToday(userId: string, group: GroupRow): Promise<TodayD
         game.scoring,
       )
     : [];
+
+  // "te pasó": alguien con mejor puesto cuyo mejor puntaje llegó después del
+  // tuyo. Se muestra el más reciente. Solo es una lectura más de la misma
+  // consulta (finished_at); no cambia ninguna regla.
+  let overtaker: TodayData["overtaker"] = null;
+  const me = ranking.find((r) => r.profileId === userId);
+  if (me) {
+    const bestAt = new Map<string, string>();
+    for (const a of visibleAttempts ?? []) {
+      if (a.status !== "completed" || a.score === null || !a.finished_at) continue;
+      const best = ranking.find((r) => r.profileId === a.profile_id)?.bestScore;
+      if (a.score === best && (!bestAt.has(a.profile_id) || a.finished_at < bestAt.get(a.profile_id)!)) {
+        bestAt.set(a.profile_id, a.finished_at);
+      }
+    }
+    const mineAt = bestAt.get(userId);
+    const candidates = ranking
+      .filter((r) => r.rank < me.rank && mineAt && (bestAt.get(r.profileId) ?? "") > mineAt)
+      .sort((a, b) => (bestAt.get(b.profileId) ?? "").localeCompare(bestAt.get(a.profileId) ?? ""));
+    const top = candidates[0];
+    const member = top ? members.get(top.profileId) : undefined;
+    if (top && member) overtaker = { member, diff: Math.abs(top.bestScore - me.bestScore) };
+  }
 
   // quién ganó ayer (decisión 9): la ronda de ayer ya cerró, así que es visible
   let yesterday: TodayData["yesterday"] = null;
@@ -146,5 +171,6 @@ export async function loadToday(userId: string, group: GroupRow): Promise<TodayD
     ranking,
     participants: (participants ?? []).map((p) => ({ profileId: p.profile_id, completedAttempts: p.completed_attempts })),
     yesterday,
+    overtaker,
   };
 }

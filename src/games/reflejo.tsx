@@ -128,7 +128,7 @@ function Reflejo({ seed, onReady, onFinish, onProgress }: GameProps) {
       data-waits={JSON.stringify(waits)}
     >
       <span className={`text-sm ${inkSoft}`}>ronda {Math.min(round + 1, ROUNDS)} de {ROUNDS}</span>
-      <span className={`text-4xl font-extrabold ${ink}`}>{message}</span>
+      <span className={`display text-4xl ${ink}`}>{message}</span>
       {last !== null && phase !== "done" ? (
         <span className={`text-sm ${inkSoft}`}>última: {last} ms</span>
       ) : null}

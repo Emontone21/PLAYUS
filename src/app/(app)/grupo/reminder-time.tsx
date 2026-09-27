@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { cityFromTimezone } from "@/lib/time";
 
 // Hora local del recordatorio diario. Solo el owner la edita (RLS).
 // Guarda al cambiar la hora, con una pausa corta para no mandar una escritura
@@ -63,13 +64,13 @@ export function ReminderTime({ groupId, value, timezone }: { groupId: string; va
         </span>
       </label>
       {state === "error" ? (
-        <p className="text-sm text-rosa" role="status">
+        <p className="text-sm text-lengua" role="status">
           no se pudo guardar la hora. probá de nuevo.
         </p>
       ) : null}
       <p className="text-xs text-tinta-suave">
-        hora de {timezone}. les llega a los que activaron los avisos y todavía no jugaron. borrá la hora para
-        apagarlo.
+        hora de {cityFromTimezone(timezone)}. les llega a los que activaron los avisos y todavía no jugaron. borrá la
+        hora para apagarlo.
       </p>
     </div>
   );

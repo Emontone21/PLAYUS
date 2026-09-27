@@ -39,17 +39,16 @@ export function LinkEmail({
   }
 
   return (
-    <details className="bg-superficie px-4 py-3" data-testid="link-email">
-      <summary className="cursor-pointer text-sm font-bold">¿cambiás de teléfono? vinculá un email</summary>
+    <details className="note text-tinta" data-testid="link-email">
+      <summary className="cursor-pointer display-bold text-sm text-tinta">¿cambiás de teléfono? vinculá un email</summary>
       <div className="flex flex-col gap-3 pt-3">
         {currentEmail ? (
           <p className="text-sm">
-            tu cuenta ya está vinculada a <span className="font-bold">{currentEmail}</span>.
+            tu cuenta ya está vinculada a <span className="display-bold text-tinta">{currentEmail}</span>.
           </p>
         ) : (
           <p className="eyebrow">
-            sin esto, la cuenta vive solo en este teléfono. con un email podés recuperarla desde otro.
-            no hay contraseña: te mandamos un link.
+            te mandamos un link y listo. sin contraseña. es solo para no perder tus puntos si cambiás de teléfono.
           </p>
         )}
         {pendingEmail && pendingEmail !== currentEmail ? (
@@ -75,7 +74,7 @@ export function LinkEmail({
               onChange={(e) => setEmail(e.target.value)}
               placeholder={currentEmail ? "otro email" : "tu email"}
               aria-label="email"
-              className="input-sm min-w-0 flex-1 border-fondo bg-fondo"
+              className="input-sm min-w-0 flex-1"
             />
             <button
               type="submit"
@@ -87,7 +86,7 @@ export function LinkEmail({
           </form>
         )}
         {state.kind === "error" ? (
-          <p className="text-sm text-rosa" role="status">
+          <p className="text-sm text-lengua" role="status">
             {state.message}
           </p>
         ) : null}

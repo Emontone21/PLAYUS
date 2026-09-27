@@ -70,7 +70,7 @@ interface PushPayload {
 }
 
 self.addEventListener("push", (event) => {
-  let payload: PushPayload = { title: "playus", body: "hay novedades en tu grupo." };
+  let payload: PushPayload = { title: "frog", body: "hay novedades en tu grupo." };
   try {
     if (event.data) payload = { ...payload, ...(event.data.json() as Partial<PushPayload>) };
   } catch {

@@ -45,3 +45,9 @@ export function formatShortDate(date: DateString, tz = "UTC"): string {
     .replace(",", "")
     .replace(/\.$/, "");
 }
+
+/** "America/Montevideo" → "Montevideo"; "America/Argentina/Buenos_Aires" → "Buenos Aires" */
+export function cityFromTimezone(tz: string): string {
+  const last = tz.split("/").pop() ?? tz;
+  return last.replaceAll("_", " ");
+}

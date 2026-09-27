@@ -33,14 +33,14 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
         </Link>
         <div className="flex items-center gap-4">
           <Avatar avatar={member.avatar} name={member.name} size={80} />
-          <h1 className="flex items-center gap-2 display text-3xl" data-testid="member-name">
+          <h1 className="flex items-center gap-2 display-lg text-tinta" style={{ fontSize: 32 }} data-testid="member-name">
             <span className="truncate">{member.name}</span>
             {id === championId ? <Crown /> : null}
           </h1>
         </div>
       </header>
       <section className="flex flex-col gap-3">
-        <h2 className="eyebrow">{id === user.id ? "tus números" : "sus números"}</h2>
+        <h2 className="display text-xl text-tinta">{id === user.id ? "tus números" : "sus números"}</h2>
         <ProfileStats stats={stats} />
       </section>
     </main>

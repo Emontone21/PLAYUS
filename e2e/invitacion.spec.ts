@@ -13,7 +13,7 @@ test("crear un grupo, invitar por link y ver la lista en los dos lados", async (
   // ventana normal: crea el grupo
   const a = await freshPage(browser);
   await a.page.goto("/");
-  await expect(a.page.getByRole("heading", { name: "playus" })).toBeVisible();
+  await expect(a.page.getByRole("heading", { name: "frog" })).toBeVisible();
   await a.page.getByRole("link", { name: "crear un grupo" }).click();
 
   await a.page.getByPlaceholder("tu nombre").fill("Vale");
@@ -87,7 +87,7 @@ test("sin sesión ni grupo, las pestañas mandan a la landing", async ({ browser
   const d = await freshPage(browser);
   await d.page.goto("/grupo");
   await expect(d.page).toHaveURL(/\/$/);
-  await expect(d.page.getByRole("heading", { name: "playus" })).toBeVisible();
+  await expect(d.page.getByRole("heading", { name: "frog" })).toBeVisible();
   await d.context.close();
 });
 

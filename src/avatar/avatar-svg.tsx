@@ -20,6 +20,8 @@ export function AvatarSvg({
   const Eyes = EYES[avatar.eyes - 1]?.Piece ?? EYES[0]!.Piece;
   const Mouth = MOUTHS[avatar.mouth - 1]?.Piece ?? MOUTHS[0]!.Piece;
   const Accessory = avatar.accessory ? ACCESSORIES[avatar.accessory - 1]?.Piece : undefined;
+  // contorno de 2,5 px reales sobre el círculo, sea cual sea el tamaño
+  const stroke = (2.5 * 100) / size;
 
   return (
     <svg
@@ -37,6 +39,7 @@ export function AvatarSvg({
       <Mouth />
       <Hair color={avatar.hairColor} />
       {Accessory ? <Accessory /> : null}
+      <circle cx="50" cy="50" r={50 - stroke / 2} fill="none" stroke="var(--contorno, #071611)" strokeWidth={stroke} />
     </svg>
   );
 }
