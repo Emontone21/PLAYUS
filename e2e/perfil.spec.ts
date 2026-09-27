@@ -63,9 +63,11 @@ test("armar el avatar, editarlo y verlo igual desde otro navegador", async ({ br
 
   // vincular email (escondido en el perfil)
   await a.page.getByText("vinculá un email").click();
-  await a.page.getByLabel("email").fill("vale@ejemplo.com");
+  // único por corrida: con Supabase real la base persiste entre corridas
+  const email = `vale-${Date.now()}@ejemplo.com`;
+  await a.page.getByLabel("email").fill(email);
   await a.page.getByRole("button", { name: "vincular" }).click();
-  await expect(a.page.getByRole("status")).toContainText("te mandamos un link a vale@ejemplo.com");
+  await expect(a.page.getByRole("status")).toContainText(`te mandamos un link a ${email}`);
 
   // otro navegador entra al grupo y ve el mismo avatar y el apodo
   const b = await freshPage(browser);

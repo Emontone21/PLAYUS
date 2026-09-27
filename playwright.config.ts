@@ -6,6 +6,10 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   timeout: 60_000,
+  // Con Supabase real en Docker y `next dev`, una acción de servidor más el
+  // redirect y el render de la página siguiente tarda 3-7 s en una máquina
+  // modesta; el default de 5 s daba falsos negativos (decisión 82).
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: 0,
   reporter: [["list"]],

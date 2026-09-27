@@ -40,6 +40,8 @@ supabase/
     20260924000001_schema.sql   tablas, checks, índices, trigger de perfil, realtime
     20260924000002_rls.sql      helpers security definer, privilegios y políticas
     20260924000003_rpc.sql      create_group, join_group, round_participants
+    20260924000004_push.sql     push_subscriptions, group_reminders, pg_cron
+    20260927000005_reminders_vault.sql  call_reminders lee la URL y el secreto de Vault
   seed.sql                  grupo de prueba con 4 integrantes falsos y puntajes
   tests/                    tests pgTAP de esquema y políticas
 scripts/
@@ -55,12 +57,12 @@ Requisitos: Docker y Node 20 o más nuevo. El CLI de Supabase se usa con `npx`.
 
 ```bash
 npm install
-npx supabase start          # levanta Postgres, Auth, PostgREST, Realtime y Studio
+npx supabase start -x logflare,vector,storage-api,imgproxy,edge-runtime   # Postgres, Auth, PostgREST, Realtime, Studio y Mailpit
 npx supabase db reset       # aplica migraciones y seed
 npx supabase test db        # corre los tests pgTAP de supabase/tests
 ```
 
-Studio queda en `http://127.0.0.1:54323`. Ahí se ven las tablas y el seed (grupo "los del barrio", código `JUEGA7`).
+Si el arranque corta por el chequeo de salud de Studio, agregar `--ignore-health-check` (decisión 85). Después de cambiar `supabase/config.toml` hay que hacer `npx supabase stop` y `start` de nuevo. Studio queda en `http://127.0.0.1:54323` y Mailpit (los emails de Auth) en `http://127.0.0.1:54324`. Ahí se ven las tablas y el seed (grupo "los del barrio", código `JUEGA7`).
 
 Copiá `.env.example` a `.env.local` y completá `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` con lo que imprime `npx supabase status`. Después:
 
@@ -78,11 +80,12 @@ El service worker se genera solo en el build (`npm run build` → `public/sw.js`
 
 Web Push necesita claves VAPID en `.env.local` (`npx web-push generate-vapid-keys`, una sola vez: cambiarlas invalida las suscripciones) y `CRON_SECRET`. El recordatorio diario lo dispara un scheduler cada 15 minutos llamando a `/api/push/reminders` con `Authorization: Bearer <CRON_SECRET>`:
 
-- **Supabase (default):** la migración crea el job de `pg_cron` si la extensión está disponible. Falta configurar la URL y el secreto, una sola vez, en el SQL Editor:
+- **Supabase (default):** la migración crea el job de `pg_cron` si la extensión está disponible. Falta guardar la URL y el secreto en Vault, una sola vez, en el SQL Editor (`alter database ... set app.settings.*` no sirve: Supabase no lo permite, decisión 84):
   ```sql
-  alter database postgres set app.settings.reminder_url = 'https://<tu-app>/api/push/reminders';
-  alter database postgres set app.settings.cron_secret = '<CRON_SECRET>';
+  select vault.create_secret('https://<tu-app>/api/push/reminders', 'playus_reminder_url');
+  select vault.create_secret('<CRON_SECRET>', 'playus_cron_secret');
   ```
+  Para cambiarlos: `select vault.update_secret(id, '<nuevo>') from vault.secrets where name = 'playus_reminder_url';`. Para probar sin esperar al cron: `select public.call_reminders();` y mirar `net._http_response`.
 - **Vercel Pro:** alternativa sin `pg_cron`: un `vercel.json` con `{"crons":[{"path":"/api/push/reminders","schedule":"*/15 * * * *"}]}`. En el plan Hobby no alcanza (una corrida por día como máximo).
 
 Para probar la PWA sin teléfono: `npm run build`, `npm run start -- --port 3001` y `E2E_PROD=1 E2E_BASE_URL=http://127.0.0.1:3001 npm run e2e -- e2e/pwa.spec.ts`.

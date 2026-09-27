@@ -28,7 +28,11 @@ export function LinkEmail({
     setState({ kind: "sending" });
     const { error } = await supabase.auth.updateUser({ email: to });
     if (error) {
-      setState({ kind: "error", message: "no se pudo vincular ahora. probá más tarde." });
+      const message =
+        error.code === "email_exists"
+          ? "ese email ya está vinculado a otra cuenta."
+          : "no se pudo vincular ahora. probá más tarde.";
+      setState({ kind: "error", message });
       return;
     }
     setState({ kind: "sent", to });
