@@ -11,6 +11,10 @@ export default defineConfig({
   // modesta; el default de 5 s daba falsos negativos (decisión 82).
   expect: { timeout: 15_000 },
   fullyParallel: false,
+  // de a uno: con varios archivos a la vez, `next dev` compila rutas en
+  // paralelo, algún refresco falla y el overlay de Next tumba la página
+  // (decisión 113). En producción no existe ese overlay.
+  workers: 1,
   retries: 0,
   reporter: [["list"]],
   use: {

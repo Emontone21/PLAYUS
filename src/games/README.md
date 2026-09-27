@@ -12,17 +12,18 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 ## Paso a paso
 
 1. Creá `src/games/mi-juego.tsx` (ver el ejemplo de abajo).
-2. Agregá una línea en `src/games/index.ts`:
+2. Agregá una línea en `src/games/index.ts`, en la lista `ACTIVE`:
    ```ts
    import { miJuego } from "./mi-juego";
-   const ALL: GameModule[] = [tapRace, reflejo, miJuego];
+   const ACTIVE: GameModule[] = [pibaDelIpa, miJuego];
    ```
+   La lista `RETIRED` (tap race y reflejo, los de relleno) no entra en el mazo, pero sus módulos siguen resolviéndose por id para que el historial, el perfil y una ronda ya creada con ellos sigan funcionando.
 3. Probalo sin servidor en `http://localhost:3000/dev/juego/mi-juego?seed=loquesea`. Cambiá la semilla y confirmá que cambia el tablero; repetí la misma semilla en otra ventana y confirmá que es idéntico.
 4. Listo. Desde mañana entra en el mazo de todos los grupos (el mazo se calcula sobre los ids ordenados alfabéticamente; los días pasados no cambian).
 
 ## Pautas para juegos reales
 
-Los dos juegos que hay (`tap-race`, `reflejo`) son de relleno. Para los de verdad, dos cosas más allá del contrato:
+El primer juego real es `piba-del-ipa` (`src/games/piba-del-ipa/`): generación pura del mapa (`map.ts`), reglas compartidas por cliente y servidor (`rules.ts`), dibujo en canvas (`draw.ts`) y el componente (`index.tsx`). Es el ejemplo a seguir. `tap-race` y `reflejo` están retirados. Para los de verdad, dos cosas más allá del contrato:
 
 1. **Que saber cómo viene la partida dé la menor ventaja posible.** Alguien puede haber jugado ya ese mismo número de intento y contarte cómo viene, o vos podés haber jugado tu primer intento y saber qué esperar del segundo (no: es otra semilla, pero el *tipo* de desafío se repite). Diseñá para que conocer la secuencia ayude poco: que el puntaje dependa de ejecutar (velocidad, precisión, memoria en el momento) más que de saber de antemano; que la información útil aparezca recién cuando hace falta; que no haya un "camino correcto" memorizable de principio a fin. Un juego de reacción donde el verde aparece a los 3, 5 y 4 segundos se gana con un cronómetro en la otra mano; uno donde hay que tocar el objetivo que se enciende entre varios, no tanto.
 
@@ -41,6 +42,7 @@ Los dos juegos que hay (`tap-race`, `reflejo`) son de relleno. Para los de verda
 | `minPlausibleScore?` | cota inferior (ej. 100 ms de reacción). Default 0. |
 | `validate?(result, seed)` | chequeo propio sobre `events`. Devolvé `false` para rechazar. El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente). |
 | `Component` | el juego. Recibe `GameProps`. |
+| `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba del IPA muestra ahí la ficha "así es ella"). |
 
 `GameProps`: `seed` (la del intento), `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
 

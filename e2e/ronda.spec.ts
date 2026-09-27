@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
+import { playPiba } from "./helpers/piba";
 
 // El "listo cuando" del brief, de punta a punta: dos personas entran por un
 // link, arman su avatar, juegan el juego del día, ven el ranking actualizarse,
@@ -13,11 +14,19 @@ async function freshPage(browser: Browser) {
 
 // Juega lo que sea que toque hoy: tap-race (toca N veces y espera el corte)
 // o reflejo (toca cuando se pone verde). Devuelve el juego jugado.
-async function playToday(page: Page, taps = 8): Promise<"tap-race" | "reflejo"> {
+async function playToday(page: Page, taps = 8): Promise<"tap-race" | "reflejo" | "piba-del-ipa"> {
+  const started = page.waitForResponse((r) => r.url().includes("/api/rounds/") && r.url().endsWith("/start"));
   await page.getByTestId("game-play").click();
+  const { seed } = (await (await started).json()) as { seed: string };
   const tap = page.getByTestId("tap-area");
   const reflejo = page.getByTestId("reflejo-area");
-  await expect(tap.or(reflejo)).toBeVisible({ timeout: 15_000 });
+  const piba = page.getByTestId("piba-area");
+  await expect(tap.or(reflejo).or(piba)).toBeVisible({ timeout: 15_000 });
+  if (await piba.isVisible()) {
+    // la piba: hasta 4 aciertos; el juego dura 60 s y corta solo
+    await playPiba(page, seed, Math.min(taps, 4));
+    return "piba-del-ipa";
+  }
   if (await tap.isVisible()) {
     for (let i = 0; i < taps; i++) await tap.click();
     await expect(page.getByTestId("game-result")).toBeVisible({ timeout: 25_000 });
@@ -55,7 +64,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["tap race", "reflejo"]).toContain(gameName);
+  expect(["tap race", "reflejo", "encontrá a la piba del IPA"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 
@@ -66,6 +75,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await expect(a.page.getByTestId("game-result")).toContainText("quedó guardado");
   const scoreA = Number((await a.page.getByTestId("game-score").textContent())?.replace(/\D/g, ""));
   if (played === "tap-race") expect(scoreA).toBe(8);
+  if (played === "piba-del-ipa") expect(scoreA).toBe(4);
   await a.page.getByTestId("game-done").click();
 
   // A ve el ranking con su fila, y le quedan 2 intentos
@@ -112,7 +122,8 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const nextGame = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(nextGame).not.toBe(gameName);
+  // con un solo juego activo, mañana toca el mismo; con más de uno, otro
+  if (gameName !== "encontrá a la piba del IPA") expect(nextGame).not.toBe(gameName);
   await expect(a.page.getByTestId("yesterday-winner")).toContainText("ayer");
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
 

@@ -33,6 +33,11 @@ export interface GameModule {
    */
   validate?: (result: GameResult, seed: string) => boolean;
   Component: React.ComponentType<GameProps>;
+  /**
+   * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El
+   * contenedor lo muestra debajo de las instrucciones. Opcional.
+   */
+  Intro?: React.ComponentType;
 }
 
 export interface GameProps {

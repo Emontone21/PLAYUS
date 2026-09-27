@@ -22,7 +22,8 @@ src/
     dev/juego/[id]          solo desarrollo: probar un juego con una semilla, sin servidor
     dev/hoy                 solo desarrollo: simular el día siguiente
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
-  games/                    contrato (types.ts), registry (index.ts), contenedor, juegos y README
+  games/                    contrato (types.ts), registry (index.ts: activos y retirados), contenedor y README
+  games/piba-del-ipa/       el primer juego real: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
@@ -72,7 +73,7 @@ npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
 
-Para probar un juego suelto: `http://localhost:3000/dev/juego/reflejo?seed=abc`. Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
+Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
 ## PWA y notificaciones
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GAME_IDS, GAMES } from "@/games";
+import { GAME_IDS, GAMES, RETIRED_GAME_IDS } from "@/games";
 
 export default function DevGamesIndex() {
   if (process.env.NODE_ENV === "production") notFound();
@@ -22,7 +22,17 @@ export default function DevGamesIndex() {
           );
         })}
       </ul>
-      <p className="text-sm text-tinta-suave">agregá ?seed=algo a la URL para fijar la semilla.</p>
+      <p className="text-sm text-tinta-suave">agregá ?seed=algo a la URL para fijar la semilla. para la piba, ?map=N muestra el mapa N con la opción de resaltar; la hoja de sprites está en /dev/piba/sprites.</p>
+      <h2 className="display text-xl">retirados (no entran en el mazo)</h2>
+      <ul className="flex flex-col">
+        {RETIRED_GAME_IDS.map((id) => (
+          <li key={id} className="border-b-2 border-superficie-2 py-2">
+            <Link href={`/dev/juego/${id}?seed=dev`} className="text-sm text-tinta-suave">
+              {GAMES[id]!.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </main>
   );
 }

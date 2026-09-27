@@ -9,6 +9,7 @@ import { addDays, todayInTz } from "./time";
 import { attemptSeed } from "./deck";
 import { seedPepper } from "./seed-pepper";
 import { waitsForSeed } from "@/games/reflejo";
+import { legitTrace } from "@/games/piba-del-ipa/rules";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
 // scripts/mini-supabase). Corre solo si hay un stack en SUPABASE_TEST_URL
@@ -258,6 +259,9 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 function validResult(gameId: string, seed: string, n: number) {
   if (gameId === "tap-race") {
     return { score: n, events: Array.from({ length: n }, (_, i) => i * 100) };
+  }
+  if (gameId === "piba-del-ipa") {
+    return { score: n, events: legitTrace(seed, n) };
   }
   if (gameId === "reflejo") {
     const waits = waitsForSeed(seed);

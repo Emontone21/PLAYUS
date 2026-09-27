@@ -161,6 +161,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
             dura {Math.round(game.durationMs / 1000)} segundos como máximo.{" "}
             {game.scoring === "low" ? "gana el más bajo." : "gana el más alto."}
           </p>
+          {game.Intro ? <game.Intro /> : null}
         </div>
         <div className="flex flex-col gap-3">
           {warning ? (
