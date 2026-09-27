@@ -153,6 +153,10 @@ export type Database = {
         Args: { p_round_id: string };
         Returns: { profile_id: string; completed_attempts: number }[];
       };
+      invite_preview: {
+        Args: { p_code: string };
+        Returns: { total: number; members: { name: string; avatar: unknown }[] };
+      };
       is_member: {
         Args: { p_group_id: string };
         Returns: boolean;

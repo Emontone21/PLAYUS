@@ -6,13 +6,23 @@ import { createClient } from "@/lib/supabase/client";
 import { ensureAnonymousUser } from "@/lib/session";
 import { selectGroup } from "@/lib/groups-actions";
 import { friendlyError } from "@/lib/errors";
-import { avatarFromProfile, type Avatar } from "@/avatar/schema";
+import { avatarFromProfile, parseAvatar, type Avatar } from "@/avatar/schema";
 import { OnboardingForm } from "@/components/onboarding-form";
 import { CodeForm } from "@/components/code-form";
 import { Avatar as AvatarView } from "@/components/avatar";
 import { Brand } from "@/components/brand";
 import { Frog } from "@/components/frog/Frog";
 import { Lily } from "@/components/lily";
+
+// "{A} ya está adentro" / "{A} y {B} ya están adentro" / "{A}, {B} y N más ya están adentro"
+function insideText({ total, members }: { total: number; members: { name: string }[] }): string {
+  const [a, b] = members;
+  if (!a) return "";
+  if (total === 1) return `${a.name} ya está adentro`;
+  if (total === 2 && b) return `${a.name} y ${b.name} ya están adentro`;
+  if (b) return `${a.name}, ${b.name} y ${total - 2} más ya están adentro`;
+  return `${a.name} y ${total - 1} más ya están adentro`;
+}
 
 type State =
   | { step: "loading" }
@@ -25,9 +35,12 @@ type State =
 // 2. si el perfil no tiene nombre: una pantalla con nombre + avatar;
 //    si ya tiene (ya usa la app), confirma antes de sumarlo a otro grupo
 // 3. join_group(code) y adentro
+type Preview = { total: number; members: { name: string; avatar: Avatar }[] };
+
 export function JoinFlow({ code }: { code: string }) {
   const supabase = useRef(createClient()).current;
   const [state, setState] = useState<State>({ step: "loading" });
+  const [preview, setPreview] = useState<Preview | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +48,14 @@ export function JoinFlow({ code }: { code: string }) {
     async function boot() {
       try {
         const user = await ensureAnonymousUser(supabase);
+        // quiénes ya están adentro (RPC pensada para no-miembros: solo nombre y avatar)
+        void supabase.rpc("invite_preview", { p_code: code }).then(({ data }) => {
+          if (cancelled || !data) return;
+          setPreview({
+            total: data.total,
+            members: data.members.map((m) => ({ name: m.name, avatar: parseAvatar(m.avatar) })),
+          });
+        });
         const { data: profile, error } = await supabase
           .from("profiles")
           .select("display_name, avatar")
@@ -105,6 +126,18 @@ export function JoinFlow({ code }: { code: string }) {
         <h1 className="display-lg text-tinta" style={{ fontSize: 40 }}>
           código <span className="tracking-[0.2em] text-luciernaga">{code}</span>
         </h1>
+        {preview && preview.total > 0 ? (
+          <div className="flex items-center gap-3" data-testid="invite-preview">
+            <div className="flex shrink-0">
+              {preview.members.map((m, i) => (
+                <span key={i} className={i > 0 ? "-ml-3" : ""} style={{ zIndex: preview.members.length - i }}>
+                  <AvatarView avatar={m.avatar} name={m.name} size={36} />
+                </span>
+              ))}
+            </div>
+            <p className="text-sm">{insideText(preview)}</p>
+          </div>
+        ) : null}
       </header>
 
       {state.step === "loading" ? <p>abriendo…</p> : null}

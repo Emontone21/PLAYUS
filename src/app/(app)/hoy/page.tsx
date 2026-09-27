@@ -85,14 +85,21 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         <section className="flex flex-col gap-6" data-testid="today-game">
           {/* la tarjeta del juego, con la rana asomada en la esquina y su globo */}
           <div className="relative mt-10">
-            <div className="absolute -top-12 right-2 z-10 flex items-end gap-1">
+            {/* en anchos de menos de 360px la rana y el globo achican un 20% desde
+                la esquina superior, así quedan por encima del título y no lo pisan */}
+            <div className="absolute -top-12 right-2 z-10 flex origin-top-right scale-[0.8] items-end gap-1 min-[360px]:scale-100">
               <span className="speech mb-8 -mr-3">¡te toca, dale!</span>
               <Frog pose="lengua" size={120} tilt={8} />
             </div>
             <div className="card card-b flex flex-col gap-4 pt-6">
-              <div className="flex flex-col gap-2 pr-24">
+              {/* lugar reservado a la derecha del título para la rana asomada */}
+              <div className="flex flex-col gap-2 pr-20 min-[360px]:pr-32">
                 <p className="text-sm text-rana">el juego de hoy</p>
-                <h1 className="display-lg text-tinta" style={{ fontSize: 58 }} data-testid="today-game-name">
+                <h1
+                  className="display-lg break-words text-tinta"
+                  style={{ fontSize: "clamp(40px, 15vw, 58px)" }}
+                  data-testid="today-game-name"
+                >
                   {t.game.name}
                 </h1>
                 <p className="text-lg">{t.game.tagline}</p>
