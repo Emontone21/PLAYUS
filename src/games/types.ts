@@ -37,7 +37,12 @@ export interface GameModule {
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El
    * contenedor lo muestra debajo de las instrucciones. Opcional.
    */
-  Intro?: React.ComponentType;
+  Intro?: React.ComponentType<{ seed?: string }>;
+  /**
+   * pantalla de resultado propia (ej. "18,4 s" con la cara final). Si falta,
+   * el contenedor muestra el puntaje grande. Opcional.
+   */
+  Result?: React.ComponentType<{ result: GameResult; seed: string; cutByTimer: boolean }>;
 }
 
 export interface GameProps {

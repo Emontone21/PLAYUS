@@ -23,7 +23,8 @@ src/
     dev/hoy                 solo desarrollo: simular el día siguiente
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
   games/                    contrato (types.ts), registry (index.ts), contenedor y README
-  games/piba-del-ipa/       el único juego: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
+  games/piba-del-ipa/       encontrá a la piba del IPA: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
+  games/quedo-re-tarado/    quedó re tarado: la cara (face.ts), reglas y un solo dedo (rules.ts), canvas (draw.ts)
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
@@ -73,7 +74,7 @@ npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
 
-Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
+Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
 ## PWA y notificaciones
 

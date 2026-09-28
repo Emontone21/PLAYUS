@@ -9,6 +9,7 @@ import { addDays, todayInTz } from "./time";
 import { attemptSeed } from "./deck";
 import { seedPepper } from "./seed-pepper";
 import { legitTrace } from "@/games/piba-del-ipa/rules";
+import { humanTrace, scoreFor } from "@/games/quedo-re-tarado/rules";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
 // scripts/mini-supabase). Corre solo si hay un stack en SUPABASE_TEST_URL
@@ -174,9 +175,9 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     expect(c1.seed).not.toBe(round.seed);
     expect(c1.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
 
-    // una traza armada con la semilla de la ronda no pasa validate (si el juego valida)
+    // una traza armada con la semilla de la ronda no pasa validate (en un juego cuyo tablero depende de la semilla)
     const startedC1 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c1.attemptId).single()).data!.started_at);
-    if (game.validate) {
+    if (game.validate && game.id === "piba-del-ipa") {
       await expect(
         finishAttempt(admin, userC, c1.attemptId, validResult(game.id, round.seed, 5), { now: new Date(startedC1 + limits.minDurationMs + 500) }),
       ).rejects.toMatchObject({ code: "invalid_events" });
@@ -257,6 +258,10 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 // Un resultado que pasa validate() del juego de la ronda.
 function validResult(gameId: string, seed: string, n: number) {
   if (gameId === "piba-del-ipa") return { score: n, events: legitTrace(seed, n) };
+  if (gameId === "quedo-re-tarado") {
+    const events = humanTrace(200);
+    return { score: scoreFor(events), events };
+  }
   throw new Error(`sin resultado válido para ${gameId}`);
 }
 

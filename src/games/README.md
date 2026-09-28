@@ -23,7 +23,7 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 
 ## Pautas para juegos reales
 
-El único juego que hay es `piba-del-ipa`; es el ejemplo a seguir (ver abajo). Para los que vengan, dos cosas más allá del contrato:
+Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo) y `quedo-re-tarado` (un solo dedo, 200 toques, con `Result` propio y un `validate` que mira el ritmo). Para los que vengan, dos cosas más allá del contrato:
 
 1. **Que saber cómo viene la partida dé la menor ventaja posible.** Alguien puede haber jugado ya ese mismo número de intento y contarte cómo viene, o vos podés haber jugado tu primer intento y saber qué esperar del segundo (no: es otra semilla, pero el *tipo* de desafío se repite). Diseñá para que conocer la secuencia ayude poco: que el puntaje dependa de ejecutar (velocidad, precisión, memoria en el momento) más que de saber de antemano; que la información útil aparezca recién cuando hace falta; que no haya un "camino correcto" memorizable de principio a fin. Un juego de reacción donde el verde aparece a los 3, 5 y 4 segundos se gana con un cronómetro en la otra mano; uno donde hay que tocar el objetivo que se enciende entre varios, no tanto.
 
@@ -42,7 +42,8 @@ El único juego que hay es `piba-del-ipa`; es el ejemplo a seguir (ver abajo). P
 | `minPlausibleScore?` | cota inferior (ej. 100 ms de reacción). Default 0. |
 | `validate?(result, seed)` | chequeo propio sobre `events`. Devolvé `false` para rechazar. El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente). |
 | `Component` | el juego. Recibe `GameProps`. |
-| `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba del IPA muestra ahí la ficha "así es ella"). |
+| `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba muestra la ficha "así es ella"; el tarado, la cara del intento). Recibe `seed`. |
+| `Result?` | opcional: la pantalla de resultado propia, en lugar del puntaje grande (el tarado muestra "18,4 s" o "te faltaron N toques" con la cara final). Recibe `result`, `seed` y `cutByTimer`. |
 
 `GameProps`: `seed` (la del intento), `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
 

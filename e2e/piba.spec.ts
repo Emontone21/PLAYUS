@@ -1,5 +1,6 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { playPiba, startAndGetSeed } from "./helpers/piba";
+import { createGroupWithGame } from "./helpers/group";
 import { MAP_H, MAP_W } from "../src/games/piba-del-ipa/map";
 
 // El primer juego real: se juega una partida tocando a la piba en las
@@ -14,14 +15,8 @@ async function freshPage(browser: Browser) {
 
 test("la piba del IPA: la pantalla previa la muestra, un error bloquea 2 s, y el puntaje llega al ranking", async ({ browser }) => {
   const a = await freshPage(browser);
-  await a.page.goto("/crear");
-  await a.page.getByPlaceholder("tu nombre").fill("Buscadora");
-  await a.page.getByRole("button", { name: "seguir" }).click();
-  await a.page.getByPlaceholder("los del barrio").fill("la piba");
-  await a.page.getByRole("button", { name: "crear grupo" }).click();
-  await expect(a.page).toHaveURL(/\/grupo$/);
-
-  // hoy toca la piba (único juego activo) y la pantalla previa tiene la ficha
+  // un grupo al que hoy le toque la piba (el mazo se baraja por grupo)
+  await createGroupWithGame(a.page, "Buscadora", "encontrá a la piba del IPA");
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game-name")).toHaveText("encontrá a la piba del IPA");
   await a.page.getByTestId("play-link").click();

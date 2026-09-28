@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getGame } from "@/games";
 import { DevGame } from "./dev-game";
 import { MapPreview } from "@/games/piba-del-ipa/preview";
+import { FacePreview } from "@/games/quedo-re-tarado/preview";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -15,11 +16,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { id } = await params;
-  const { seed = "dev", map } = await searchParams;
+  const { seed = "dev", map, estado } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -31,7 +32,13 @@ export default async function DevGamePage({
         </Link>{" "}
         {" "}modo desarrollo. {game.id}, semilla “{seed}”, {game.scoring}, máximo {game.maxPlausibleScore}
       </p>
-      {game.id === "piba-del-ipa" && map ? <MapPreview seed={seed} mapIndex={Math.max(1, Number(map) || 1)} /> : <DevGame id={game.id} seed={seed} />}
+      {game.id === "piba-del-ipa" && map ? (
+        <MapPreview seed={seed} mapIndex={Math.max(1, Number(map) || 1)} />
+      ) : game.id === "quedo-re-tarado" && estado !== undefined ? (
+        <FacePreview seed={seed} initial={Number(estado) || 0} />
+      ) : (
+        <DevGame id={game.id} seed={seed} />
+      )}
     </main>
   );
 }

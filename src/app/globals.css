@@ -65,8 +65,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-p {
-  color: var(--tinta-media);
+/* en la capa base, así las clases de componentes (.speech, .note-alert…)
+   pueden pisar el color de los párrafos */
+@layer base {
+  p {
+    color: var(--tinta-media);
+  }
 }
 
 @layer components {

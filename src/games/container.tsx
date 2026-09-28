@@ -161,7 +161,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
             dura {Math.round(game.durationMs / 1000)} segundos como máximo.{" "}
             {game.scoring === "low" ? "gana el más bajo." : "gana el más alto."}
           </p>
-          {game.Intro ? <game.Intro /> : null}
+          {game.Intro ? <game.Intro seed={seed} /> : null}
         </div>
         <div className="flex flex-col gap-3">
           {warning ? (
@@ -237,10 +237,14 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     <section className="flex min-h-[70dvh] flex-col justify-between gap-6" data-testid="game-result">
       <div className="flex flex-col gap-2">
         <p className="eyebrow">{state.cutByTimer ? "se acabó el tiempo" : "terminaste"}</p>
-        <p className="display-lg text-[7rem] text-tinta" data-testid="game-score">
-          {state.result.score}
-          {unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
-        </p>
+        {game.Result ? (
+          <game.Result result={state.result} seed={activeSeed ?? seed ?? ""} cutByTimer={state.cutByTimer} />
+        ) : (
+          <p className="display-lg text-[7rem] text-tinta" data-testid="game-score">
+            {state.result.score}
+            {unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
+          </p>
+        )}
         <p className="text-tinta-suave">{state.saved ? "quedó guardado." : "partida de prueba: no se guardó."}</p>
       </div>
       {onDone ? (
