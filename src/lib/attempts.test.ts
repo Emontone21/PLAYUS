@@ -10,6 +10,7 @@ import { attemptSeed } from "./deck";
 import { seedPepper } from "./seed-pepper";
 import { legitTrace } from "@/games/piba-del-ipa/rules";
 import { humanTrace, scoreFor } from "@/games/quedo-re-tarado/rules";
+import { greedyTrace } from "@/games/los-deseos-de-larry/rules";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
 // scripts/mini-supabase). Corre solo si hay un stack en SUPABASE_TEST_URL
@@ -261,6 +262,12 @@ function validResult(gameId: string, seed: string, n: number) {
   if (gameId === "quedo-re-tarado") {
     const events = humanTrace(200);
     return { score: scoreFor(events), events };
+  }
+  if (gameId === "los-deseos-de-larry") {
+    // los tests terminan el intento a minDurationMs + 500 ms (5,5 s): una
+    // partida cortada a los 5 s es coherente con esa duración
+    const { events, result } = greedyTrace(seed, 300);
+    return { score: result.score, events };
   }
   throw new Error(`sin resultado válido para ${gameId}`);
 }

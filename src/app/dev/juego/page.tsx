@@ -22,7 +22,7 @@ export default function DevGamesIndex() {
           );
         })}
       </ul>
-      <p className="text-sm text-tinta-suave">agregá ?seed=algo a la URL para fijar la semilla. para la piba, ?map=N muestra el mapa N con la opción de resaltar (la hoja de sprites está en /dev/piba/sprites); para quedó re tarado, ?estado=50 muestra la cara con un control de estados.</p>
+      <p className="text-sm text-tinta-suave">agregá ?seed=algo a la URL para fijar la semilla. para la piba, ?map=N muestra el mapa N con la opción de resaltar (la hoja de sprites está en /dev/piba/sprites); para quedó re tarado, ?estado=50 muestra la cara con un control de estados. para los deseos de Larry hay cajas de colisión, cámara lenta y saltos al cronograma (también por URL: &desde=60&cajas=1&lento=1).</p>
 
     </main>
   );

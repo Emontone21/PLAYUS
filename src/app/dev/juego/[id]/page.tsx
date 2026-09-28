@@ -4,6 +4,7 @@ import { getGame } from "@/games";
 import { DevGame } from "./dev-game";
 import { MapPreview } from "@/games/piba-del-ipa/preview";
 import { FacePreview } from "@/games/quedo-re-tarado/preview";
+import { LarryDev } from "@/games/los-deseos-de-larry/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -16,11 +17,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string; estado?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { id } = await params;
-  const { seed = "dev", map, estado } = await searchParams;
+  const { seed = "dev", map, estado, desde, cajas, lento } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -36,6 +37,8 @@ export default async function DevGamePage({
         <MapPreview seed={seed} mapIndex={Math.max(1, Number(map) || 1)} />
       ) : game.id === "quedo-re-tarado" && estado !== undefined ? (
         <FacePreview seed={seed} initial={Number(estado) || 0} />
+      ) : game.id === "los-deseos-de-larry" ? (
+        <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
       ) : (
         <DevGame id={game.id} seed={seed} />
       )}

@@ -29,9 +29,11 @@ export interface GameModule {
   minPlausibleScore?: number;
   /**
    * validador propio sobre los eventos. Devuelve false para rechazar.
-   * El servidor lo llama después de las cotas. Opcional.
+   * El servidor lo llama después de las cotas, con la semilla del intento y
+   * la duración real del intento medida en el servidor (desde /start, con la
+   * cuenta regresiva incluida). Opcional.
    */
-  validate?: (result: GameResult, seed: string) => boolean;
+  validate?: (result: GameResult, seed: string, meta?: { elapsedMs: number }) => boolean;
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El

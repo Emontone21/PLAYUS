@@ -1,10 +1,11 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { playPiba } from "./helpers/piba";
 import { playTarado } from "./helpers/tarado";
+import { playLarry } from "./helpers/larry";
 
 // El "listo cuando" del brief, de punta a punta: dos personas entran por un
 // link, arman su avatar, juegan el juego del día, ven el ranking actualizarse,
-// y al día siguiente (fecha simulada con /dev/hoy) encuentran el otro juego.
+// y al día siguiente (fecha simulada con /dev/hoy) encuentran otro juego.
 
 test.setTimeout(240_000);
 
@@ -13,15 +14,22 @@ async function freshPage(browser: Browser) {
   return { context, page: await context.newPage() };
 }
 
-// Juega el juego del día: la piba (`hits` aciertos, corta a los 60 s) o el
-// tarado (`hits` × 50 toques a ritmo humano; con 200 termina antes).
+// Juega el juego del día: la piba (`hits` aciertos, corta a los 60 s), el
+// tarado (`hits` × 50 toques a ritmo humano; con 200 termina antes) o Larry
+// (agarra `hits` deseos y se queda quieto; el puntaje exacto depende de lo
+// que le caiga después, así que no se compara).
 async function playToday(page: Page, hits = 4): Promise<number> {
   const started = page.waitForResponse((r) => r.url().includes("/api/rounds/") && r.url().endsWith("/start"));
   await page.getByTestId("game-play").click();
   const { seed } = (await (await started).json()) as { seed: string };
   const piba = page.getByTestId("piba-area");
   const tarado = page.getByTestId("tarado-area");
-  await expect(piba.or(tarado)).toBeVisible({ timeout: 15_000 });
+  const larry = page.getByTestId("larry-area");
+  await expect(piba.or(tarado).or(larry)).toBeVisible({ timeout: 15_000 });
+  if (await larry.isVisible()) {
+    await playLarry(page, seed, hits);
+    return -1;
+  }
   if (await tarado.isVisible()) {
     const taps = Math.min(200, hits * 50);
     await playTarado(page, taps);
@@ -54,7 +62,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 
@@ -64,7 +72,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   const played = await playToday(a.page, 4);
   await expect(a.page.getByTestId("game-result")).toContainText("quedó guardado");
   const scoreA = Number((await a.page.getByTestId("game-score").textContent())?.replace(/\D/g, ""));
-  // el tarado terminado (-1) muestra el tiempo; los demás casos, el puntaje exacto
+  // el tarado terminado y Larry (-1) no tienen un puntaje previsible; los demás, el exacto
   if (played >= 0) expect(scoreA).toBe(played);
   await a.page.getByTestId("game-done").click();
 
@@ -112,7 +120,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const nextGame = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  // con dos juegos, mañana toca el otro
+  // el mazo no repite el juego de ayer
   expect(nextGame).not.toBe(gameName);
   await expect(a.page.getByTestId("yesterday-winner")).toContainText("ayer");
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");

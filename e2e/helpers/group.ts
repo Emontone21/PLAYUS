@@ -1,9 +1,9 @@
 import { expect, type Page } from "@playwright/test";
 
 // Crea grupos hasta que el juego de hoy sea el pedido (el mazo se baraja por
-// grupo, así que con dos juegos cada grupo nuevo tiene una chance de dos).
+// grupo, así que con tres juegos cada grupo nuevo tiene una chance de tres).
 // Devuelve el código de invitación del grupo elegido.
-export async function createGroupWithGame(page: Page, name: string, gameName: string, tries = 8): Promise<string> {
+export async function createGroupWithGame(page: Page, name: string, gameName: string, tries = 14): Promise<string> {
   for (let i = 0; i < tries; i++) {
     await page.goto("/crear");
     // la primera vez pide nombre y avatar; las siguientes, la cuenta ya tiene nombre

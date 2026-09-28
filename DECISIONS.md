@@ -269,3 +269,40 @@ Cada decisión tomada por cuenta propia, con el porqué. Las primeras nueve vien
 118. **Un solo dedo, con un registro de punteros puro.** `createPointerTracker` cuenta un `pointerdown` solo si no hay otro puntero apretado; `pointerup` y `pointercancel` lo liberan. En escritorio vale el botón izquierdo del mouse; el teclado no dispara nada porque el área no es un botón. `touch-action: manipulation`, `user-select: none` y `preventDefault` en `contextmenu` en el área.
 
 119. **La cara vive en un lienzo de 46 × 34 unidades:** la cara de frente ocupa 32 × 32 (columnas 4 a 35) y el cigarro sale de la comisura derecha hacia afuera (filtro de 2 más 14 de papel, que baja un píxel cada ~14 toques hasta la colilla de 2). Los accesorios se dibujan alrededor de los ojos y por encima de la boca, nunca sobre los ojos ni sobre la fila del cigarro; el test lo comprueba en 300 caras. La ceniza se acumula hasta 3 unidades y cada 20 toques cae una unidad durante 450 ms; el humo suma un penacho por cada 20 % consumido.
+
+## Tercer juego real: los deseos de Larry
+
+120. **`validate` recibe la duración real del intento.** El documento pide rechazar un tick de fin incoherente con la duración, y `validate(result, seed)` no la conocía. El contrato suma un tercer parámetro opcional, `meta?: { elapsedMs }`, que `/finish` completa con lo que ya medía (desde `started_at`, con la cuenta regresiva incluida). Los otros dos juegos lo ignoran y no cambian. Larry exige `fin ≤ elapsedMs ≤ fin + 10 s`, el mismo margen que `gameLimits` da sobre `durationMs`.
+
+121. **La traza cierra con `{ tick, fin: true }`.** Además de los cambios de objetivo `{ tick, x }`, el último evento dice en qué tick terminó la partida. Hace falta por el corte del cronómetro: el contenedor corta a los 90 s de reloj y puede hacerlo uno o dos ticks antes de que la simulación llegue sola al 5.400, así que el servidor no puede adivinar dónde paró. `validate` vuelve a jugar hasta ese tick y rechaza si la partida ya había terminado antes (tres vidas perdidas o algo malo agarrado). Declarar un fin más temprano no da ventaja: el puntaje solo sube con el tiempo.
+
+122. **Simulación entera a 60 ticks, avanzada por el tiempo transcurrido.** Las posiciones van en subunidades (16 por unidad lógica; el campo mide 90 × 160). Cada tick hace, en este orden: Larry camina hacia el dedo a 36 subunidades por tick como máximo (cruza el campo en 0,6 s), aparecen los objetos del tick, caen, y se revisa el agarre en el tick en que la base de cada objeto cruza la altura de agarre (y = 128, la parte de arriba del sprite de Larry): agarra si las cajas se superponen en x (objeto de 8 unidades y Larry de 12). Lo que pasa de largo llega al piso (y = 150). El cliente no usa un acumulador flotante que se desvíe: calcula el tick que corresponde al tiempo transcurrido y simula hasta ahí, sin tope. Si la pestaña estuvo en segundo plano, se pone al día de una (5.400 ticks tardan menos de un milisegundo). El ciclo del juego se registra en `requestAnimationFrame` antes que el cronómetro del contenedor, así que en cada cuadro la simulación avanza primero.
+
+123. **La lluvia se genera entera con la semilla, y las garantías se definen con un jugador perfecto que solo usa lo que ve.** `generateRain` fija de una vez qué cae, dónde, cuándo y a qué velocidad, y garantiza cuatro cosas:
+    - Los objetos cruzan la altura de agarre de a uno, en el orden en que aparecen; si hace falta, el que viene cae un poco más despacio.
+    - Cada deseo se alcanza desde el anterior con 3/4 de la velocidad máxima, contando desde que aparece en pantalla.
+    - Larry yendo a toda velocidad al próximo deseo visible, y esperando ahí, nunca queda a menos de 14 unidades de un objeto malo cuando este cruza. Es 4 más de lo que haría falta para tocarlo.
+    - Un objeto malo que cruza a menos de 12 ticks de un deseo cae a 14 unidades o más de él. Tampoco cae a menos de 14 del último deseo, que es donde Larry espera el próximo. Así, el próximo deseo siempre tiene lugar (al menos el mismo x) y ningún hueco de deseo queda vacío. Un objeto malo sin lugar justo se saltea (pasa poquísimo).
+    
+    Los tests lo comprueban en 1.000 semillas con el bot `greedyTarget`, que agarra todos los deseos, no toca nada malo y llega a los 90 s con las 3 vidas. "Nunca pasa algo injusto" queda definido así: siempre existe una forma humana de jugar perfecto.
+
+124. **El cronograma quedó como el de la tabla.** Intervalo de 54, 36, 24 y 17 ticks; velocidad de 16, 22, 30 y 40 subunidades por tick (hasta Larry en 2,1, 1,5, 1,1 y 0,85 s); objetos malos al 10, 18, 25 y 30 %. Se interpola en ticks con enteros y cada objeto varía ±20 % el intervalo y ±12 % la velocidad. Calibración con un jugador simulado que sigue al próximo deseo con retraso de reacción y puntería con error, sin esquivar: con 200 ms de reacción la partida dura 37, 47 y 55 s (cuartil 1, mediana y cuartil 3); con 300 ms, 22, 28 y 34 s. Como la típica cae entre 30 y 60 s, no se tocó nada. Falta confirmarlo con dedos reales. Si resulta muy fácil, el primer ajuste es la velocidad de la fila de 60 s.
+
+125. **`maxPlausibleScore = 246`.** Es la cantidad de huecos del cronograma en 90 s con el intervalo más corto posible y sin ningún objeto malo; ninguna lluvia puede dar más deseos. En 1.000 semillas, el máximo real fue 169.
+
+126. **`minDurationMs: 5_000`.** El default del contrato (88 s) rechazaría cualquier partida que termina antes, que en este juego es lo normal. Lo más rápido posible es agarrar algo malo en el primer objeto: cruza a los ~2,5 s, más 3 s de cuenta regresiva y 1 s de cierre. La coherencia fina la mira `validate` (120).
+
+127. **Un bot que juegue en tiempo real con la semilla del intento no se puede frenar del todo.** Con la semilla, alguien puede generar la lluvia y mover a Larry perfecto: sería una partida posible. `validate` garantiza que la traza sea una partida que sale de esa semilla, con ese puntaje y en ese tiempo, no que la juegue una persona. Entre amigos alcanza.
+
+128. **Cajas iguales para todo lo que cae (8 × 8) y un sprite de Larry de 14 × 22 con una zona de agarre de 12.** Los objetos se distinguen por la silueta (hamburguesa ancha, vapo alto con nube, lechuga redonda, zanahoria en punta, brócoli en árbol, bandera en mástil), pero todos tienen la misma caja: es más fácil de leer y de explicar. El mapa de letras de `sprites.ts` es el mismo para el canvas, los SVG de la pantalla previa, el resultado y las vidas.
+
+129. **Lo que el documento no decía.**
+    - Sin vidas, el cartel dice "sin vidas" y la cara es la de bajón.
+    - Por tiempo no hay cartel: corta el contenedor.
+    - El resultado propio (`Result`) muestra la cara final, el número y el motivo ("agarraste verdura.", "agarraste la bandera.", "se te cayeron tres.", "aguantaste los 90 segundos.").
+    - El ranking muestra el número sin unidad, como la piba.
+    - El sacudón de pantalla al perder una vida y las migas del "plaf" son decorativos y se apagan con `prefers-reduced-motion`.
+
+130. **Herramienta de desarrollo y E2E.** `/dev/juego/los-deseos-de-larry` tiene casillas para las cajas de colisión y la cámara lenta (×0,25), y botones "desde 0/30/60/80 s": el jugador perfecto juega hasta ese tick y ahí toma el control el dedo. También van por URL: `&desde=60&cajas=1&lento=1`. En desarrollo, la página deja las reglas en `window.__larry` para que un E2E compare la simulación del navegador con la de Node sobre la misma traza (tienen que dar el mismo JSON). `rules.ts` importa `rng` por ruta relativa, como el mapa de la piba, porque Playwright lo carga sin los alias de Next.
+
+131. **Con tres juegos, `createGroupWithGame` intenta hasta 14 grupos.** Cada grupo nuevo tiene una chance de tres; con 14 intentos, la probabilidad de no encontrarlo es de 0,3 %.
