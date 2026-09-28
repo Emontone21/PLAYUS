@@ -22,8 +22,8 @@ src/
     dev/juego/[id]          solo desarrollo: probar un juego con una semilla, sin servidor
     dev/hoy                 solo desarrollo: simular el día siguiente
   avatar/                   piezas SVG, esquema zod, renderizador y editor del avatar
-  games/                    contrato (types.ts), registry (index.ts: activos y retirados), contenedor y README
-  games/piba-del-ipa/       el primer juego real: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
+  games/                    contrato (types.ts), registry (index.ts), contenedor y README
+  games/piba-del-ipa/       el único juego: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas

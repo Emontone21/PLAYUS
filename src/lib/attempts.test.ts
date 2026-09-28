@@ -8,7 +8,6 @@ import { gameLimits } from "@/games/types";
 import { addDays, todayInTz } from "./time";
 import { attemptSeed } from "./deck";
 import { seedPepper } from "./seed-pepper";
-import { waitsForSeed } from "@/games/reflejo";
 import { legitTrace } from "@/games/piba-del-ipa/rules";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -257,18 +256,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
 // Un resultado que pasa validate() del juego de la ronda.
 function validResult(gameId: string, seed: string, n: number) {
-  if (gameId === "tap-race") {
-    return { score: n, events: Array.from({ length: n }, (_, i) => i * 100) };
-  }
-  if (gameId === "piba-del-ipa") {
-    return { score: n, events: legitTrace(seed, n) };
-  }
-  if (gameId === "reflejo") {
-    const waits = waitsForSeed(seed);
-    const events = waits.map((waitMs, round) => ({ round, waitMs, reactionMs: 200 + round * 10, falseStarts: 0 }));
-    const score = Math.round(events.reduce((s, e) => s + e.reactionMs, 0) / events.length);
-    return { score, events };
-  }
+  if (gameId === "piba-del-ipa") return { score: n, events: legitTrace(seed, n) };
   throw new Error(`sin resultado válido para ${gameId}`);
 }
 

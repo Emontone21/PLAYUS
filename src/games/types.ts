@@ -18,10 +18,10 @@ export interface GameModule {
   durationMs: number;
   /**
    * duración mínima plausible en ms para un juego que termina antes por su
-   * cuenta (ej. reflejo). Si falta, vale durationMs - 2000.
+   * cuenta. Si falta, vale durationMs - 2000.
    */
   minDurationMs?: number;
-  /** 'high' = gana el puntaje más alto; 'low' = gana el más bajo (ej. tiempo de reacción) */
+  /** 'high' = gana el puntaje más alto; 'low' = gana el más bajo (ej. milisegundos) */
   scoring: ScoringDirection;
   /** cota de plausibilidad para validación en servidor */
   maxPlausibleScore: number;
@@ -51,7 +51,7 @@ export interface GameProps {
    * el juego informa su resultado parcial cada vez que cambia. Cuando el
    * contenedor corta por tiempo, usa el último parcial informado. Un juego
    * que puede ser cortado por tiempo tiene que llamarlo; uno que siempre
-   * termina antes (reflejo) puede ignorarlo.
+   * termina antes puede ignorarlo.
    */
   onProgress: (result: GameResult) => void;
 }

@@ -87,3 +87,7 @@ El primer juego real está construido, probado y publicado en **https://playus-l
 ## Siguiente paso propuesto
 
 Probar la piba en un Android y un iPhone (comodidad con una mano, visibilidad de la estrella y del pucho en la pantalla más chica que tengas) y, con eso, cerrar el estado de esta etapa y de las pendientes (Frog, 6 y 7). Después, el segundo juego real: con dos activos, el mazo vuelve a alternar.
+
+## Actualización (misma fecha)
+
+A pedido, tap race y reflejo se **borraron** del código (decisión 114): ya no hay lista de retirados y el registry tiene un solo juego. En producción, las tres rondas de hoy que se habían creado con ellos ("Sape", "Prueba Claude" y "Prueba Claude 2") se movieron a la piba con la semilla de ronda recalculada, y sus 8 intentos de prueba se borraron: desde ahora esos grupos juegan la piba hoy mismo. Tests: vitest 61/61 (se fueron los 2 de reflejo), e2e 10/10 (se fue `juegos.spec.ts`). Publicado.

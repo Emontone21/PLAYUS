@@ -5,7 +5,7 @@ import { DevGame } from "./dev-game";
 import { MapPreview } from "@/games/piba-del-ipa/preview";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
-// /dev/juego/reflejo?seed=lo-que-quieras
+// /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
 //
 // Este archivo es también la prueba de la decisión 8: un Server Component
 // importa el registry (y con él los módulos de los juegos, que usan hooks)

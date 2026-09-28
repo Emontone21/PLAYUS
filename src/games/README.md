@@ -12,18 +12,18 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 ## Paso a paso
 
 1. Creá `src/games/mi-juego.tsx` (ver el ejemplo de abajo).
-2. Agregá una línea en `src/games/index.ts`, en la lista `ACTIVE`:
+2. Agregá una línea en `src/games/index.ts`:
    ```ts
    import { miJuego } from "./mi-juego";
-   const ACTIVE: GameModule[] = [pibaDelIpa, miJuego];
+   const ALL: GameModule[] = [pibaDelIpa, miJuego];
    ```
-   La lista `RETIRED` (tap race y reflejo, los de relleno) no entra en el mazo, pero sus módulos siguen resolviéndose por id para que el historial, el perfil y una ronda ya creada con ellos sigan funcionando.
+
 3. Probalo sin servidor en `http://localhost:3000/dev/juego/mi-juego?seed=loquesea`. Cambiá la semilla y confirmá que cambia el tablero; repetí la misma semilla en otra ventana y confirmá que es idéntico.
 4. Listo. Desde mañana entra en el mazo de todos los grupos (el mazo se calcula sobre los ids ordenados alfabéticamente; los días pasados no cambian).
 
 ## Pautas para juegos reales
 
-El primer juego real es `piba-del-ipa` (`src/games/piba-del-ipa/`): generación pura del mapa (`map.ts`), reglas compartidas por cliente y servidor (`rules.ts`), dibujo en canvas (`draw.ts`) y el componente (`index.tsx`). Es el ejemplo a seguir. `tap-race` y `reflejo` están retirados. Para los de verdad, dos cosas más allá del contrato:
+El único juego que hay es `piba-del-ipa`; es el ejemplo a seguir (ver abajo). Para los que vengan, dos cosas más allá del contrato:
 
 1. **Que saber cómo viene la partida dé la menor ventaja posible.** Alguien puede haber jugado ya ese mismo número de intento y contarte cómo viene, o vos podés haber jugado tu primer intento y saber qué esperar del segundo (no: es otra semilla, pero el *tipo* de desafío se repite). Diseñá para que conocer la secuencia ayude poco: que el puntaje dependa de ejecutar (velocidad, precisión, memoria en el momento) más que de saber de antemano; que la información útil aparezca recién cuando hace falta; que no haya un "camino correcto" memorizable de principio a fin. Un juego de reacción donde el verde aparece a los 3, 5 y 4 segundos se gana con un cronómetro en la otra mano; uno donde hay que tocar el objetivo que se enciende entre varios, no tanto.
 
@@ -46,56 +46,63 @@ El primer juego real es `piba-del-ipa` (`src/games/piba-del-ipa/`): generación 
 
 `GameProps`: `seed` (la del intento), `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
 
-## Ejemplo comentado: `tap-race`
+## El ejemplo de referencia: `piba-del-ipa`
+
+Es el único juego que hay y el modelo para los que vengan (`src/games/piba-del-ipa/`):
+
+- `map.ts`: la generación **pura** del tablero a partir de `seed` (`generateMap(seed, índice)`), sin DOM ni React, en unidades lógicas. La usan el cliente para dibujar y el servidor para validar.
+- `rules.ts`: las reglas de la partida, también puras y **compartidas**: `applyTap` (qué pasa con cada toque), `simulate` (recorre la traza) y `validate` (el punto de extensión del contrato: recalcula el puntaje desde `events` y la semilla del intento, y compara). Una sola implementación para los dos lados.
+- `draw.ts`: el dibujo en `<canvas>` con escalado entero.
+- `index.tsx`: el componente (`React.useState`, nunca `import { useState }`), la ficha de la pantalla previa (`Intro`) y el módulo exportado. Llama a `onReady()` al montar, informa cada toque con `onProgress`, y deja que el contenedor corte a los 60 s.
+- `map.test.ts` y `rules.test.ts`: la generación es determinística y respeta sus garantías en 1.000 mapas; `validate` acepta la traza real y rechaza cada forma de inventar un puntaje.
+
+Un esqueleto mínimo, para arrancar:
 
 ```tsx
-// src/games/tap-race.tsx
-import * as React from "react";                       // (regla 4)
+// src/games/mi-juego.tsx
+import * as React from "react";
+import { rngFromSeed } from "@/lib/rng";
 import type { GameModule, GameProps, GameResult } from "./types";
 
-function TapRace({ onReady, onProgress }: GameProps) {
-  const [taps, setTaps] = React.useState(0);
+function MiJuego({ seed, onReady, onProgress }: GameProps) {
+  const rng = React.useRef(rngFromSeed(seed)).current; // todo el azar sale de acá
   const startedAt = React.useRef<number | null>(null);
-  const events = React.useRef<number[]>([]);          // la traza: ms de cada toque
+  const events = React.useRef<number[]>([]);
+  const [score, setScore] = React.useState(0);
 
   React.useEffect(() => {
     startedAt.current = performance.now();
-    onReady();                                        // sin nada que cargar: listo al montar
-  }, [onReady]);
+    onProgress({ score: 0, events: [] }); // un corte sin jugar vale 0
+    onReady();                             // acá arranca el cronómetro
+  }, [onReady, onProgress]);
 
-  function tap() {
+  function act() {
     events.current.push(Math.round(performance.now() - (startedAt.current ?? 0)));
-    const next = taps + 1;
-    setTaps(next);
-    onProgress({ score: next, events: [...events.current] }); // el sistema corta por tiempo
-  }                                                            // y usa este último parcial
+    const next = score + 1;
+    setScore(next);
+    onProgress({ score: next, events: [...events.current] }); // el contenedor usa el último parcial
+  }
 
-  return (
-    <button type="button" onPointerDown={tap} className="h-full w-full">
-      {taps}
-    </button>
-  );
+  return <button type="button" onPointerDown={act} className="h-full w-full">{score}</button>;
 }
 
-function validate(result: GameResult): boolean {     // coherencia de la traza
-  const events = result.events as unknown[];
-  return events.length === result.score;
+function validate(result: GameResult, seed: string): boolean {
+  // recomputá el puntaje desde events + seed y compará; devolvé false para rechazar
+  return Array.isArray(result.events) && result.events.length === result.score;
 }
 
-export const tapRace: GameModule = {
-  id: "tap-race",                                     // estable, va a la base
-  name: "tap race",
-  tagline: "quince segundos. tocá lo más rápido que puedas.",
-  howTo: ["tocá la pantalla todas las veces que puedas", "se cuenta cada toque", "gana el que más toca"],
-  durationMs: 15_000,
+export const miJuego: GameModule = {
+  id: "mi-juego",
+  name: "mi juego",
+  tagline: "una línea.",
+  howTo: ["paso uno", "paso dos"],
+  durationMs: 30_000,
   scoring: "high",
-  maxPlausibleScore: 200,
+  maxPlausibleScore: 100,
   validate,
-  Component: TapRace,
+  Component: MiJuego,
 };
 ```
-
-`reflejo` (`src/games/reflejo.tsx`) muestra el otro caso: termina antes por su cuenta con `onFinish`, deriva sus esperas de la semilla con `rngFromSeed`, usa `scoring: 'low'`, `minDurationMs` y `minPlausibleScore`, y su `validate` recalcula las esperas desde la semilla para comprobar la traza.
 
 ## Qué evitar
 
