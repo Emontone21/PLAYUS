@@ -3,6 +3,7 @@ import { playPiba } from "./helpers/piba";
 import { playTarado } from "./helpers/tarado";
 import { playLarry } from "./helpers/larry";
 import { playRemar } from "./helpers/remar";
+import { playParrilla } from "./helpers/parrilla";
 
 // El "listo cuando" del brief, de punta a punta: dos personas entran por un
 // link, arman su avatar, juegan el juego del día, ven el ranking actualizarse,
@@ -19,7 +20,8 @@ async function freshPage(browser: Browser) {
 // tarado (`hits` × 50 toques a ritmo humano; con 200 termina antes), Larry
 // (agarra `hits` deseos y se queda quieto; el puntaje exacto depende de lo
 // que le caiga después, así que no se compara) o remar (sigue el camino
-// seguro `hits` × 25 m y después choca a propósito; tampoco se compara).
+// seguro `hits` × 25 m y después choca a propósito; tampoco se compara) o la
+// parrilla (`hits` × 5 toques seguros y después uno peligroso: el exacto).
 async function playToday(page: Page, hits = 4): Promise<number> {
   const started = page.waitForResponse((r) => r.url().includes("/api/rounds/") && r.url().endsWith("/start"));
   await page.getByTestId("game-play").click();
@@ -28,7 +30,11 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   const tarado = page.getByTestId("tarado-area");
   const larry = page.getByTestId("larry-area");
   const remar = page.getByTestId("remar-area");
-  await expect(piba.or(tarado).or(larry).or(remar)).toBeVisible({ timeout: 15_000 });
+  const parrilla = page.getByTestId("parrilla-area");
+  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla)).toBeVisible({ timeout: 15_000 });
+  if (await parrilla.isVisible()) {
+    return playParrilla(page, seed, hits * 5);
+  }
   if (await remar.isVisible()) {
     await playRemar(page, seed, hits * 25);
     return -1;
@@ -69,7 +75,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 

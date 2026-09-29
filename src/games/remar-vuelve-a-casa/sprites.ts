@@ -3,6 +3,7 @@
 // letras (games/lib/sprites): una letra por unidad lógica, "." transparente.
 
 import { buildSprite as build, composeSprite, flipSprite, OUTLINE, type Sprite } from "../lib/sprites";
+import { textSprite } from "../lib/font";
 import { BANK_W, BOAT_H, BOAT_W, FIELD_H, FIELD_W, PIECE_KINDS, type ItemKind, type PieceKind } from "./rules";
 
 export type { Sprite };
@@ -162,37 +163,8 @@ export function pieceUpright(kind: PieceKind): PieceKind {
   return kind.endsWith("-d") ? (kind.slice(0, -2) as PieceKind) : kind;
 }
 
-// ---------------------------------------------------------------------------
-// una fuente de 3 × 5 para los carteles de la orilla y el "hic!"
-// ---------------------------------------------------------------------------
-
-const FONT: Record<string, string[]> = {
-  "0": ["KKK", "K.K", "K.K", "K.K", "KKK"],
-  "1": [".K.", "KK.", ".K.", ".K.", "KKK"],
-  "2": ["KKK", "..K", "KKK", "K..", "KKK"],
-  "3": ["KKK", "..K", "KKK", "..K", "KKK"],
-  "4": ["K.K", "K.K", "KKK", "..K", "..K"],
-  "5": ["KKK", "K..", "KKK", "..K", "KKK"],
-  "6": ["KKK", "K..", "KKK", "K.K", "KKK"],
-  "7": ["KKK", "..K", "..K", "..K", "..K"],
-  "8": ["KKK", "K.K", "KKK", "K.K", "KKK"],
-  "9": ["KKK", "K.K", "KKK", "..K", "KKK"],
-  h: ["K..", "K..", "KKK", "K.K", "K.K"],
-  i: [".K.", "...", ".K.", ".K.", ".K."],
-  c: ["KKK", "K..", "K..", "K..", "KKK"],
-  m: ["K.K", "KKK", "KKK", "K.K", "K.K"],
-  "!": [".K.", ".K.", ".K.", "...", ".K."],
-  " ": ["...", "...", "...", "...", "..."],
-};
-
-export function textSprite(text: string, color: string): Sprite {
-  const rows = ["", "", "", "", ""];
-  for (const ch of text) {
-    const glyph = FONT[ch] ?? FONT[" "]!;
-    for (let i = 0; i < 5; i++) rows[i] += (rows[i] ? "." : "") + glyph[i];
-  }
-  return build(rows, { K: color });
-}
+// la fuente de 3 × 5 vive en games/lib/font
+export { textSprite };
 
 /** un cartel de madera con los metros, clavado en la orilla (el texto adentro, el poste abajo) */
 const signCache = new Map<number, Sprite>();

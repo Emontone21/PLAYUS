@@ -6,6 +6,7 @@ import { MapPreview } from "@/games/piba-del-ipa/preview";
 import { FacePreview } from "@/games/quedo-re-tarado/preview";
 import { LarryDev } from "@/games/los-deseos-de-larry/dev";
 import { RemarDev } from "@/games/remar-vuelve-a-casa/dev";
+import { ParrillaDev } from "@/games/la-parrilla-del-bro/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -40,6 +41,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "la-parrilla-del-bro" ? (
+        <ParrillaDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} slow={lento === "1"} />
       ) : game.id === "remar-vuelve-a-casa" ? (
         <RemarDev seed={seed} from={Math.max(0, Math.min(2000, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} x2={x2 === "1"} />
       ) : (

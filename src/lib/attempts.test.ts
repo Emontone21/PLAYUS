@@ -12,6 +12,9 @@ import { legitTrace } from "@/games/piba-del-ipa/rules";
 import { humanTrace, scoreFor } from "@/games/quedo-re-tarado/rules";
 import { greedyTrace } from "@/games/los-deseos-de-larry/rules";
 import { soberTrace } from "@/games/remar-vuelve-a-casa/rules";
+import { safeTrace as parrillaTrace } from "@/games/la-parrilla-del-bro/rules";
+import { canarioTimeline } from "@/games/la-parrilla-del-bro/timeline";
+import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
 // scripts/mini-supabase). Corre solo si hay un stack en SUPABASE_TEST_URL
@@ -269,6 +272,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "la-parrilla-del-bro") {
+    // toques seguros durante 4 s y el cronómetro corta ahí (el intento dura 5,5 s)
+    const events = parrillaTrace(canarioTimeline(seed), mulberry32(3), { until: 4_000 });
+    return { score: events.length, events };
   }
   if (gameId === "remar-vuelve-a-casa") {
     // lo mismo: el bot del camino seguro rema 5 s y el cronómetro corta ahí
