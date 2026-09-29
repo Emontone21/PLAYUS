@@ -12,13 +12,13 @@ import {
   boxOf,
   DONPASTA_H,
   DONPASTA_W,
+  DONPASTA_PHRASE,
   FIELD_H,
   FIELD_W,
-  INVULN_TICKS,
   PASTOSO_H,
   PASTOSO_W,
+  PHRASES,
   SCROLL_SUB_PER_TICK,
-  SPECS,
   SUB,
   TICKS_PER_M,
   UNITS_PER_M,
@@ -28,10 +28,11 @@ import {
   WALKER_Y,
   type Pastoso,
   type SimState,
+  type Spawn,
 } from "./rules";
 import { pastosoSprite, streetRects, walkerSprite, WALKER_SPRITE_H, WALKER_SPRITE_W } from "./sprites";
 
-/** sacudón al perder una vida (decorativo) */
+/** sacudón al ser frenado (decorativo) */
 const SHAKE_TICKS = 12;
 /** cada cuántos metros hay un cartel de esquina */
 export const SIGN_EVERY_M = 100;
@@ -77,12 +78,20 @@ function bubble(ctx: CanvasRenderingContext2D, text: string, cx: number, top: nu
   ctx.fillText(text, x + w / 2, y + h / 2);
 }
 
-export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, k: number, opts: DrawOptions) {
+/** hacia dónde mira un pastoso: de frente si baja (o está quieto), de espaldas si sube */
+function facing(p: Pastoso, side: Spawn["side"]): "viene" | "se-va" {
+  const dy = p.y - p.prevY;
+  if (dy > 0) return "viene";
+  if (dy < 0) return "se-va";
+  return side === "abajo" ? "se-va" : "viene";
+}
+
+export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, street: readonly Spawn[], k: number, opts: DrawOptions) {
   ctx.imageSmoothingEnabled = false;
   const a = state.end ? 1 : opts.alpha;
   const tick = state.tick - 1 + a;
   ctx.save();
-  if (!opts.reduced && state.lastHit && state.tick - state.lastHit.tick < SHAKE_TICKS) ctx.translate(state.tick % 2 === 0 ? k : -k, 0);
+  if (!opts.reduced && state.end?.reason === "frenado" && state.tick - state.end.tick < SHAKE_TICKS) ctx.translate(state.tick % 2 === 0 ? k : -k, 0);
 
   // la calle baja con los metros
   const scroll = ((tick * SCROLL_SUB_PER_TICK) / SUB) % FIELD_H;
@@ -109,31 +118,32 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, k: num
   // los pastosos (los que se van, primero: quedan detrás)
   const sorted = [...state.pastosos].sort((p, q) => (p.phase === "se-va" ? -1 : 1) - (q.phase === "se-va" ? -1 : 1) || p.y - q.y);
   const frame = (Math.floor(state.tick / 8) % 2) as 0 | 1;
-  for (const p of sorted) {
+  // los que vienen de atrás (o se van hacia arriba) se ven de espaldas
+  const behindWalker = sorted.filter((p) => p.y > WALKER_Y * SUB);
+  const inFront = sorted.filter((p) => p.y <= WALKER_Y * SUB);
+  const drawPastoso = (p: Pastoso) => {
     const x = (p.prevX + (p.x - p.prevX) * a) / SUB;
     const y = (p.prevY + (p.y - p.prevY) * a) / SUB;
-    const sp = pastosoSprite(p.kind, p.phase === "agarra" ? "viene" : p.phase, p.hits, p.phase === "viene" && !opts.reduced ? frame : 0);
-    ctx.drawImage(spriteCanvas(`18:p:${p.kind}:${p.phase === "agarra" ? "viene" : p.phase}:${Math.min(3, p.hits)}:${p.phase === "viene" && !opts.reduced ? frame : 0}`, sp, k), px(x - sp.w / 2, k), px(y - sp.h / 2, k));
-  }
+    const look = p.phase === "agarra" ? "viene" : facing(p, street[p.i]!.side);
+    const f = p.phase === "viene" && !opts.reduced ? frame : 0;
+    const sp = pastosoSprite(p.kind, look, p.hits, f);
+    ctx.drawImage(spriteCanvas(`18:p:${p.kind}:${look}:${Math.min(3, p.hits)}:${f}`, sp, k), px(x - sp.w / 2, k), px(y - sp.h / 2, k));
+  };
+  for (const p of inFront) drawPastoso(p);
 
-  // el personaje: parpadea mientras es invulnerable
-  const invuln = state.tick < state.invulnUntil && !state.end;
-  const blink = invuln && !opts.reduced && Math.floor(state.tick / 4) % 2 === 0;
-  if (!blink) {
-    const wf = state.end ? 0 : ((Math.floor(state.tick / 7) % 3) as 0 | 1 | 2);
-    ctx.globalAlpha = invuln && opts.reduced ? 0.6 : 1;
-    ctx.drawImage(spriteCanvas(`18:walker:${wf}`, walkerSprite(wf), k), px(WALKER_X - WALKER_SPRITE_W / 2, k), px(WALKER_Y - WALKER_SPRITE_H / 2, k));
-    ctx.globalAlpha = 1;
-  }
+  // el personaje
+  const wf = state.end ? 0 : ((Math.floor(state.tick / 7) % 3) as 0 | 1 | 2);
+  ctx.drawImage(spriteCanvas(`18:walker:${wf}`, walkerSprite(wf), k), px(WALKER_X - WALKER_SPRITE_W / 2, k), px(WALKER_Y - WALKER_SPRITE_H / 2, k));
+  for (const p of behindWalker) drawPastoso(p);
 
-  // los globos: al salir y al irse; don pasta al cuarto toque dice "bueno, bueno"
+  // los globos: al aparecer (una de las tres frases) y al irse; don pasta con las suyas
   for (const p of state.pastosos) {
     if (state.tick >= p.sayUntil) continue;
     const x = (p.prevX + (p.x - p.prevX) * a) / SUB;
     const y = (p.prevY + (p.y - p.prevY) * a) / SUB;
     const top = y - (p.kind === "donpasta" ? DONPASTA_H : PASTOSO_H) / 2 - 1;
-    const text = p.phase === "se-va" ? (p.kind === "donpasta" ? "bueno, bueno" : "¡uh, bueno!") : SPECS[p.kind].bubble;
-    bubble(ctx, text, x, top, k);
+    const text = p.phase === "se-va" ? (p.kind === "donpasta" ? "bueno, bueno" : "¡uh, bueno!") : phraseOf(street[p.i]!);
+    bubble(ctx, text, x, Math.max(top, 7), k);
   }
 
   if (opts.hitboxes) {
@@ -156,12 +166,16 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, k: num
   ctx.restore();
 }
 
+/** lo que dice al aparecer */
+export function phraseOf(s: Spawn): string {
+  return s.kind === "donpasta" ? DONPASTA_PHRASE : PHRASES[s.phrase] ?? PHRASES[0];
+}
+
 /** para la herramienta de desarrollo: un pastoso solo, grande, en su escena */
 export function drawKind(ctx: CanvasRenderingContext2D, p: Pastoso, k: number) {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(background(k), 0, 0);
   const sp = pastosoSprite(p.kind, p.phase, p.hits, 0);
   ctx.drawImage(spriteCanvas(`18:g:${p.kind}:${p.phase}:${p.hits}`, sp, k), px(p.x / SUB - sp.w / 2, k), px(p.y / SUB - sp.h / 2, k));
-  bubble(ctx, p.phase === "se-va" ? "¡uh, bueno!" : SPECS[p.kind].bubble, p.x / SUB, p.y / SUB - sp.h / 2 - 1, k);
-  void INVULN_TICKS;
+  bubble(ctx, p.kind === "donpasta" ? DONPASTA_PHRASE : PHRASES[p.i % PHRASES.length]!, p.x / SUB, p.y / SUB - sp.h / 2 - 1, k);
 }

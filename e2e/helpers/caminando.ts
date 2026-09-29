@@ -4,8 +4,7 @@ import { FIELD_H, FIELD_W } from "../../src/games/caminando-por-18/rules";
 // Juega "caminando por 18" desde el navegador: toca a los pastosos que están
 // viniendo (sus posiciones las expone el juego en data-pastosos, calculadas
 // por la misma simulación que corre en Node) hasta juntar `taps` toques que
-// cuentan, y después deja pasar a todos: pierde las tres vidas y la partida
-// termina sola.
+// cuentan, y después deja pasar al próximo: un contacto y la partida termina.
 
 type Coming = [string, number, number, number];
 
@@ -32,7 +31,7 @@ export async function playCaminando(page: Page, taps: number): Promise<number> {
     }
     await page.waitForTimeout(40);
   }
-  // y ahora los deja pasar
+  // y ahora deja pasar al próximo
   await expect(area).toHaveAttribute("data-end", "frenado", { timeout: 60_000 });
   await expect(page.getByTestId("game-result")).toBeVisible({ timeout: 15_000 });
   return done;

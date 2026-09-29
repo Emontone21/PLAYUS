@@ -8,16 +8,18 @@ import {
   FIELD_W,
   generateStreet,
   initialState,
-  INVULN_TICKS,
   MAX_SCORE,
   MAX_TAPS_PER_WINDOW,
   MIN_TAP_GAP_TICKS,
   MIN_TRAVEL_TICKS,
+  OPPOSITE,
+  OPPOSITE_TICKS,
   perfectTrace,
+  PHRASES,
   playBot,
+  sidesAt,
   simulate,
   SPECS,
-  START_LIVES,
   step,
   SUB,
   TICKS_PER_M,
@@ -29,6 +31,7 @@ import {
   type TraceEvent,
 } from "./rules";
 import { KINDS_ALL, pastosoSprite, walkerSprite, WALKER_SPRITE_H, WALKER_SPRITE_W } from "./sprites";
+import { relativeSpeed, travelOf } from "./rules";
 
 const SEED = "intento-1";
 const SEEDS = Array.from({ length: 1000 }, (_, i) => `semilla-${i}`);
@@ -47,9 +50,9 @@ function arrivalsOf(street: readonly Spawn[]): Map<number, number> {
       const p = state.pastosos.find((q) => q.i === i);
       if (!p || p.phase !== "viene") if (!seen.has(i)) seen.set(i, state.tick - 1);
     }
-    // sin vidas, la simulación termina: seguimos midiendo con vidas infinitas
-    state.lives = START_LIVES;
+    // un contacto termina la partida: seguimos midiendo como si no
     state.end = null;
+    state.pastosos = state.pastosos.filter((p) => p.phase !== "agarra");
     if (state.tick >= END_TICK) break;
   }
   return seen;
@@ -83,8 +86,8 @@ describe("simulate es determinística", () => {
 describe("la calle, en 1.000 semillas", () => {
   const streets = SEEDS.map((s) => generateStreet(s));
 
-  it("todo pastoso tarda al menos 900 ms en llegar desde que aparece", () => {
-    for (const [i, street] of streets.slice(0, 300).entries()) {
+  it("todo pastoso tarda al menos 700 ms en llegar desde que entra en pantalla", () => {
+    for (const [i, street] of streets.slice(0, 120).entries()) {
       const arrivals = arrivalsOf(street);
       for (const [idx, at] of arrivals) {
         const s = street[idx]!;
@@ -95,14 +98,20 @@ describe("la calle, en 1.000 semillas", () => {
     }
   });
 
-  it("ninguna ventana de 1 s exige más de 5 toques, y mientras está don pasta nadie más llega en su mismo segundo", () => {
-    // con las llegadas estimadas en las 1.000 calles, y con las reales (medidas con la simulación) en 300
-    for (const [i, street] of streets.entries()) {
-      const real = i < 300 ? arrivalsOf(street) : null;
-      const arrivals = street.map((s, idx) => [real?.get(idx) ?? s.arrive, SPECS[s.kind].hits] as const);
-      for (const [t] of arrivals) {
+  it("ninguna ventana de 1 s exige más de 6 toques, nadie llega en el segundo de don pasta, y nunca dos de lados opuestos a menos de 400 ms", () => {
+    // con las llegadas previstas en las 1.000 calles (que son las reales: el test de arriba lo comprueba)
+    for (const street of streets) {
+      const arrivals = street.map((s) => ({ t: s.arrive, c: SPECS[s.kind].hits, side: s.side })).sort((a, b) => a.t - b.t);
+      let lo = 0;
+      for (let i = 0; i < arrivals.length; i++) {
+        const a = arrivals[i]!;
+        while (arrivals[lo]!.t < a.t - WINDOW_TICKS) lo++;
         let sum = 0;
-        for (const [u, c] of arrivals) if (Math.abs(u - t) <= WINDOW_TICKS) sum += c;
+        for (let j = lo; j < arrivals.length && arrivals[j]!.t <= a.t + WINDOW_TICKS; j++) {
+          const b = arrivals[j]!;
+          sum += b.c;
+          if (j !== i && b.side === OPPOSITE[a.side]) expect(Math.abs(b.t - a.t)).toBeGreaterThanOrEqual(OPPOSITE_TICKS);
+        }
         expect(sum).toBeLessThanOrEqual(MAX_TAPS_PER_WINDOW);
       }
       for (const dp of street.filter((s) => s.kind === "donpasta")) {
@@ -114,13 +123,24 @@ describe("la calle, en 1.000 semillas", () => {
     }
   });
 
-  it("los tipos se suman según la tabla y don pasta sale desde los 20 s cada 25 a 35 s", () => {
+  it("los tipos se suman según la tabla, aparecen por los cuatro lados (los de atrás desde los 10 s), dicen una de las tres frases, y don pasta sale desde los 20 s cada 25 a 35 s", () => {
+    const sides = new Map<string, number>();
     for (const street of streets) {
       for (const s of street) {
         expect(s.tick).toBeGreaterThanOrEqual(SPECS[s.kind].from * TICKS_PER_S);
-        expect(s.x === 5 || s.x === 85).toBe(true);
-        expect(s.y).toBeGreaterThanOrEqual(SPECS[s.kind].yMin);
-        expect(s.y).toBeLessThanOrEqual(SPECS[s.kind].yMax);
+        expect(sidesAt(s.tick)).toContain(s.side);
+        if (s.side === "izq" || s.side === "der") {
+          expect(s.x === 5 || s.x === 85).toBe(true);
+          expect(s.y).toBeGreaterThanOrEqual(SPECS[s.kind].yMin);
+          expect(s.y).toBeLessThanOrEqual(SPECS[s.kind].yMax);
+        } else {
+          expect(s.y === 2 || s.y === 158).toBe(true);
+          expect(s.x).toBeGreaterThanOrEqual(20);
+          expect(s.x).toBeLessThanOrEqual(70);
+        }
+        if (s.kind === "donpasta") expect(s.phrase).toBe(-1);
+        else expect(PHRASES[s.phrase]).toBeDefined();
+        sides.set(s.side, (sides.get(s.side) ?? 0) + 1);
       }
       const dps = street.filter((s) => s.kind === "donpasta").map((s) => s.tick);
       expect(dps.length).toBeGreaterThanOrEqual(2);
@@ -133,19 +153,23 @@ describe("la calle, en 1.000 semillas", () => {
     const kinds = new Map<string, number>();
     for (const street of streets) for (const s of street) kinds.set(s.kind, (kinds.get(s.kind) ?? 0) + 1);
     for (const k of ["promotor", "firmas", "volantes", "celular", "donpasta"]) expect(kinds.get(k)).toBeGreaterThan(0);
+    for (const sd of ["izq", "der", "arriba", "abajo"]) expect(sides.get(sd)).toBeGreaterThan(1000);
+    // don pasta también por cualquier lado
+    const dpSides = new Set(streets.flatMap((st) => st.filter((s) => s.kind === "donpasta").map((s) => s.side)));
+    expect(dpSides.size).toBe(4);
   });
 
   it("salen cada vez más seguido", () => {
     const street = streets[0]!;
-    const early = street.filter((s) => s.tick < 1200 && s.kind !== "donpasta").length;
-    const late = street.filter((s) => s.tick >= 5400 && s.tick < 6600 && s.kind !== "donpasta").length;
-    expect(late).toBeGreaterThan(early * 1.8);
+    const early = street.filter((s) => s.tick < 600 && s.kind !== "donpasta").length;
+    const late = street.filter((s) => s.tick >= 3600 && s.tick < 4200 && s.kind !== "donpasta").length;
+    expect(late).toBeGreaterThan(early * 1.5);
   });
 
-  it("el jugador perfecto llega a los 120 s con las tres vidas", () => {
+  it("el jugador perfecto llega a los 120 s sin que lo frenen", () => {
     for (const seed of SEEDS.slice(0, 300)) {
       const { result } = perfectTrace(seed);
-      expect({ seed, reason: result.endReason, lives: result.lives, score: result.score }).toEqual({ seed, reason: "tiempo", lives: START_LIVES, score: MAX_SCORE });
+      expect({ seed, reason: result.endReason, score: result.score }).toEqual({ seed, reason: "tiempo", score: MAX_SCORE });
     }
   });
 });
@@ -163,7 +187,7 @@ describe("reglas", () => {
     const after = JSON.parse(JSON.stringify(s));
     // solo avanzó un tick: nada cambió salvo posiciones y tick
     expect(after.tapsDone).toBe(0);
-    expect(after.lives).toBe(JSON.parse(before).lives);
+    expect(after.end).toBe(JSON.parse(before).end);
     const counted = step(s, street, [{ x: Math.round(p.x / SUB), y: Math.round(p.y / SUB) }]);
     expect(counted).toHaveLength(1);
     expect(p.phase).toBe("se-va");
@@ -172,11 +196,11 @@ describe("reglas", () => {
 
   it("don pasta necesita exactamente 4 toques y retrocede con cada uno", () => {
     // una calle con don pasta solo, para no perder vidas mientras tanto
-    const fake: Spawn[] = [{ kind: "donpasta", tick: 0, side: -1, x: 5, y: 40, arrive: 200 }];
+    const fake: Spawn[] = [{ kind: "donpasta", tick: 0, side: "izq", x: 5, y: 40, arrive: 200, phrase: -1 }];
     const s = initialState();
     for (let i = 0; i < 6; i++) step(s, fake, []);
     const p = s.pastosos.find((q) => q.kind === "donpasta")!;
-    const distBefore = Math.abs(p.y - 120 * SUB);
+    const distBefore = Math.abs(p.y - 100 * SUB);
     for (let hit = 1; hit <= 3; hit++) {
       const tapAt = { x: Math.round(p.x / SUB), y: Math.round(p.y / SUB) };
       expect(step(s, fake, [tapAt])).toHaveLength(1);
@@ -185,45 +209,40 @@ describe("reglas", () => {
       for (let i = 0; i < MIN_TAP_GAP_TICKS; i++) step(s, fake, []);
     }
     // tres toques (con sus retrocesos) y sigue lejos: no avanzó casi nada
-    expect(Math.abs(p.y - 120 * SUB)).toBeGreaterThan(distBefore - 5 * SUB);
+    expect(Math.abs(p.y - 100 * SUB)).toBeGreaterThan(distBefore - 5 * SUB);
     const tapAt = { x: Math.round(p.x / SUB), y: Math.round(p.y / SUB) };
     expect(step(s, fake, [tapAt])).toHaveLength(1);
     expect(p.hits).toBe(4);
     expect(p.phase).toBe("se-va");
   });
 
-  it("un pastoso que llega resta una vida y se va; la invulnerabilidad evita perder dos en el mismo segundo; tres terminan la partida", () => {
-    const s = initialState();
-    const lives: number[] = [3];
-    const lostTicks: number[] = [];
-    while (!s.end) {
-      step(s, street, []);
-      if (lives[lives.length - 1] !== s.lives) {
-        lives.push(s.lives);
-        lostTicks.push(s.tick - 1);
-      }
+  it("un solo contacto termina la partida en el acto, venga de donde venga", () => {
+    for (const side of ["izq", "der", "arriba", "abajo"] as const) {
+      const fake: Spawn[] = [{ kind: "promotor", tick: 0, side, x: side === "izq" ? 5 : side === "der" ? 85 : 45, y: side === "arriba" ? 2 : side === "abajo" ? 158 : 60, arrive: 0, phrase: 0 }];
+      const s = initialState();
+      while (!s.end && s.tick < 600) step(s, fake, []);
+      expect(s.end?.reason).toBe("frenado");
+      expect(s.grabbedBy).toBe(0);
+      const grabber = s.pastosos.find((p) => p.phase === "agarra")!;
+      expect(grabber).toBeTruthy();
+      // el tick de fin es el siguiente al contacto, y después nada cambia
+      const endTick = s.end!.tick;
+      expect(endTick).toBe(s.tick);
+      step(s, fake, []);
+      expect(s.tick).toBe(endTick);
     }
-    expect(lives).toEqual([3, 2, 1, 0]);
-    expect(s.end).toEqual({ tick: lostTicks[2]! + 1, reason: "frenado" });
-    for (let i = 1; i < lostTicks.length; i++) expect(lostTicks[i]! - lostTicks[i - 1]!).toBeGreaterThanOrEqual(INVULN_TICKS);
-    // el que lo agarró se fue
-    const grabbers = s.pastosos.filter((p) => p.phase === "agarra");
-    expect(grabbers.length).toBeLessThanOrEqual(1);
-    expect(s.lostAt).toEqual(lostTicks);
+    // sin tocar a nadie, el primero que llega termina la partida
+    const r = simulate(SEED, []);
+    expect(r.endReason).toBe("frenado");
+    expect(r.endTick).toBeLessThan(600);
   });
 
-  it("la invulnerabilidad dura un segundo: en ese lapso, otro que llega no resta", () => {
-    // dos pastosos que llegan casi juntos: se fuerza con una calle artificial
-    const fake: Spawn[] = [
-      { kind: "promotor", tick: 0, side: -1, x: 5, y: 60, arrive: 90 },
-      { kind: "promotor", tick: 10, side: 1, x: 85, y: 60, arrive: 100 },
-    ];
-    const s = initialState();
-    while (s.tick < 400 && s.lives === 3) step(s, fake, []);
-    const firstLoss = s.tick;
-    while (s.tick < firstLoss + INVULN_TICKS + 40) step(s, fake, []);
-    expect(s.lives).toBe(2);
-    expect(s.pastosos.filter((p) => p.phase === "viene")).toHaveLength(0);
+  it("los de atrás son más rápidos que la caminata y los de adelante suman el avance", () => {
+    for (const kind of ["promotor", "firmas", "volantes", "celular", "donpasta"] as const) {
+      expect(travelOf(kind, "abajo", 45, 158)).toBeLessThan(2000);
+      expect(travelOf(kind, "arriba", 45, 2)).toBeLessThan(travelOf(kind, "abajo", 45, 158));
+      expect(relativeSpeed(kind, "abajo")).toBeGreaterThan(0);
+    }
   });
 
   it("los metros son el tiempo por la velocidad: 5 m/s, 12 ticks por metro", () => {
@@ -238,8 +257,8 @@ describe("reglas", () => {
   it("si el toque cae sobre varios, cuenta el más cercano al personaje; las cajas son más grandes que el dibujo", () => {
     const s = initialState();
     const fake: Spawn[] = [
-      { kind: "firmas", tick: 0, side: -1, x: 5, y: 60, arrive: 100 },
-      { kind: "promotor", tick: 0, side: -1, x: 5, y: 62, arrive: 90 },
+      { kind: "firmas", tick: 0, side: "izq", x: 5, y: 60, arrive: 100, phrase: 0 },
+      { kind: "promotor", tick: 0, side: "izq", x: 5, y: 62, arrive: 90, phrase: 1 },
     ];
     step(s, fake, []);
     step(s, fake, []);

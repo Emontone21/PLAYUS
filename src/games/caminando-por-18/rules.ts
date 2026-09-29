@@ -29,30 +29,38 @@ export const UNITS_PER_M = 6;
 export const SCROLL_SUB_PER_TICK = (UNITS_PER_M * SUB) / TICKS_PER_M;
 export const MAX_SCORE = Math.floor(END_TICK / TICKS_PER_M);
 
-/** el personaje: fijo en el centro, en el tercio de abajo */
+/** el personaje: fijo en el centro, un poco arriba del tercio de abajo, para ver venir a los de atrás */
 export const WALKER_X = 45;
-export const WALKER_Y = 120;
+export const WALKER_Y = 100;
 export const WALKER_W = 12;
 export const WALKER_H = 18;
 /** caja de choque del personaje (centro en WALKER_X, WALKER_Y) */
 export const WALKER_HIT_W = 10;
 export const WALKER_HIT_H = 12;
 
-export const START_LIVES = 3;
-/** después de perder una vida, un segundo invulnerable */
-export const INVULN_TICKS = 60;
-/** desde que un pastoso aparece hasta que llega pasan al menos 900 ms */
-export const MIN_TRAVEL_TICKS = 54;
-/** en cualquier ventana de un segundo, los toques necesarios no pasan de 5 */
-export const MAX_TAPS_PER_WINDOW = 5;
+/** desde que un pastoso entra en pantalla hasta que llega pasan al menos 700 ms */
+export const MIN_TRAVEL_TICKS = 42;
+/** en cualquier ventana de un segundo, los toques necesarios no pasan de 6 */
+export const MAX_TAPS_PER_WINDOW = 6;
 export const WINDOW_TICKS = 60;
+/** nunca llegan dos desde lados opuestos en la misma ventana de 400 ms */
+export const OPPOSITE_TICKS = 24;
+
+export const SIDES = ["izq", "der", "arriba", "abajo"] as const;
+export type Side = (typeof SIDES)[number];
+export const OPPOSITE: Record<Side, Side> = { izq: "der", der: "izq", arriba: "abajo", abajo: "arriba" };
+/** los de atrás se suman desde los 10 s */
+export const BEHIND_FROM_S = 10;
+/** lo que dicen los pastosos al aparecer (una al azar, con la semilla) */
+export const PHRASES = ["¿tenés fuego, mano?", "manito, ¿qué andás?", "¿tenés un minutito?"] as const;
+export const DONPASTA_PHRASE = "¡pará, un minutito!";
 
 export const KINDS = ["promotor", "firmas", "volantes", "celular", "donpasta"] as const;
 export type Kind = (typeof KINDS)[number];
 export const REGULAR_KINDS: readonly Kind[] = ["promotor", "firmas", "volantes", "celular"];
 
 export interface KindSpec {
-  /** subunidades por tick hacia el personaje */
+  /** subunidades por tick hacia el personaje (velocidad propia; la relativa suma o resta la caminata según el lado) */
   speed: number;
   /** toques para sacárselo de encima */
   hits: number;
@@ -61,19 +69,26 @@ export interface KindSpec {
   zigzagPeriod: number;
   /** desde qué segundo puede aparecer */
   from: number;
-  /** sale desde más cerca: rango de y (unidades) de la puerta */
+  /** desde los costados: rango de y (unidades) de la puerta; el de planes sale desde más cerca */
   yMin: number;
   yMax: number;
-  bubble: string;
 }
 
 export const SPECS: Record<Kind, KindSpec> = {
-  promotor: { speed: 14, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 0, yMin: 20, yMax: 70, bubble: "¿tenés un minutito?" },
-  firmas: { speed: 11, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 0, yMin: 20, yMax: 80, bubble: "firmá acá, es un segundo" },
-  volantes: { speed: 8, hits: 1, zigzag: 6, zigzagPeriod: 40, from: 20, yMin: 20, yMax: 80, bubble: "¡tomá, tomá!" },
-  celular: { speed: 12, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 45, yMin: 55, yMax: 90, bubble: "¿con qué compañía estás?" },
-  donpasta: { speed: 6, hits: 4, zigzag: 0, zigzagPeriod: 1, from: 20, yMin: 20, yMax: 60, bubble: "¡pará, un minutito!" },
+  promotor: { speed: 14, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 0, yMin: 10, yMax: 60 },
+  firmas: { speed: 11, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 0, yMin: 10, yMax: 70 },
+  volantes: { speed: 8, hits: 1, zigzag: 6, zigzagPeriod: 40, from: 10, yMin: 10, yMax: 70 },
+  celular: { speed: 12, hits: 1, zigzag: 0, zigzagPeriod: 1, from: 30, yMin: 45, yMax: 80 },
+  donpasta: { speed: 6, hits: 4, zigzag: 0, zigzagPeriod: 1, from: 20, yMin: 10, yMax: 50 },
 };
+
+/** la velocidad relativa al personaje según de dónde viene: de adelante suma la caminata, de atrás la descuenta a medias */
+export function relativeSpeed(kind: Kind, side: Side): number {
+  const v = SPECS[kind].speed;
+  if (side === "arriba") return v + SCROLL_SUB_PER_TICK;
+  if (side === "abajo") return Math.max(4, v - SCROLL_SUB_PER_TICK / 2);
+  return v;
+}
 
 /** cajas de toque: un poco más grandes que el dibujo, para el pulgar (unidades) */
 export const PASTOSO_W = 12;
@@ -86,6 +101,11 @@ export const PUSHBACK = 6 * SUB;
 /** la puerta: x del centro del pastoso al salir (izquierda o derecha) */
 export const DOOR_X_LEFT = 5;
 export const DOOR_X_RIGHT = FIELD_W - 5;
+/** por arriba y por abajo entran asomando en el borde de la pantalla (los 700 ms se cuentan desde que se ven), sobre la calzada */
+export const TOP_Y = 2;
+export const BOTTOM_Y = FIELD_H - 2;
+export const STREET_X_MIN = SIDEWALK_W + 6;
+export const STREET_X_MAX = FIELD_W - SIDEWALK_W - 6;
 
 // ---------------------------------------------------------------------------
 // cronograma de dificultad (sección 3): se interpola en ticks, con enteros
@@ -97,17 +117,11 @@ export interface ScheduleRow {
   interval: number;
 }
 
-/**
- * La tabla del documento (0,6 → 0,9 → 1,3 → 1,8 por segundo) resultó fácil:
- * un jugador simulado lento llegaba a los 120 s casi siempre. Quedó 0,6 →
- * 1,5 → 3 → 4,6 por segundo (decisión 164); el tope de 5 toques por
- * segundo sigue mandando, y lo que no entra se saltea.
- */
 export const SCHEDULE: readonly ScheduleRow[] = [
-  { tick: 0, interval: 100 }, // ~0,6 por segundo
-  { tick: 1200, interval: 40 }, // ~1,5
-  { tick: 2700, interval: 20 }, // ~3
-  { tick: 5400, interval: 13 }, // ~4,6 (el tope de 5 toques por segundo recorta lo que no entra)
+  { tick: 0, interval: 42 }, // ~1,4 por segundo
+  { tick: 600, interval: 30 }, // ~2
+  { tick: 1800, interval: 23 }, // ~2,6
+  { tick: 3600, interval: 19 }, // ~3,2
 ];
 export const INTERVAL_JITTER = 25;
 /** don pasta: desde los 20 s, cada 25 a 35 s */
@@ -115,7 +129,7 @@ export const DONPASTA_FIRST_TICK = 20 * TICKS_PER_S;
 export const DONPASTA_EVERY_MIN = 25 * TICKS_PER_S;
 export const DONPASTA_EVERY_MAX = 35 * TICKS_PER_S;
 /** el primero sale acá */
-export const FIRST_SPAWN_TICK = 60;
+export const FIRST_SPAWN_TICK = 30;
 
 function lerpInt(a: number, b: number, num: number, den: number): number {
   return a + Math.floor(((b - a) * num) / den);
@@ -141,15 +155,17 @@ export function kindsAt(tick: number): Kind[] {
 
 export interface Spawn {
   kind: Kind;
-  /** tick en que aparece en la puerta */
+  /** tick en que aparece */
   tick: number;
-  /** puerta: -1 izquierda, 1 derecha */
-  side: -1 | 1;
+  /** por dónde entra */
+  side: Side;
   /** centro al salir, en unidades */
   x: number;
   y: number;
-  /** tick en que llegaría al personaje sin que nadie lo toque (en línea recta) */
+  /** tick en que llegaría al personaje sin que nadie lo toque (la misma simulación) */
   arrive: number;
+  /** cuál de las tres frases dice (los comunes; -1 don pasta) */
+  phrase: number;
 }
 
 /** distancia entera en subunidades: max + min/2 (siempre a menos de un 12 % de la real; es la misma en la generación y en la simulación) */
@@ -160,12 +176,12 @@ function roughDist(dx: number, dy: number): number {
 }
 
 /** un paso hacia el personaje (con el zigzag del tipo), en subunidades; `age` son los ticks desde que salió */
-function moveToward(p: { x: number; y: number }, spec: KindSpec, age: number): void {
+function moveToward(p: { x: number; y: number }, spec: KindSpec, speed: number, age: number): void {
   const dx = WALKER_X * SUB - p.x;
   const dy = WALKER_Y * SUB - p.y;
   const dist = roughDist(dx, dy);
-  p.x += Math.floor((dx * spec.speed) / dist);
-  p.y += Math.floor((dy * spec.speed) / dist);
+  p.x += Math.floor((dx * speed) / dist);
+  p.y += Math.floor((dy * speed) / dist);
   if (spec.zigzag) {
     const period = spec.zigzagPeriod;
     const dir = age % period < period / 2 ? 1 : -1;
@@ -178,40 +194,55 @@ function reachedWalker(p: { x: number; y: number }): boolean {
   return Math.abs(p.x - WALKER_X * SUB) <= ((WALKER_HIT_W + PASTOSO_W) / 2) * SUB && Math.abs(p.y - WALKER_Y * SUB) <= ((WALKER_HIT_H + PASTOSO_H) / 2) * SUB;
 }
 
-/** cuántos ticks tarda un pastoso en llegar desde la puerta (x, y) si nadie lo toca: la misma simulación */
-export function travelOf(kind: Kind, x: number, y: number): number {
+/** cuántos ticks tarda un pastoso en llegar desde (x, y) por el lado `side` si nadie lo toca: la misma simulación */
+const travelCache = new Map<string, number>();
+export function travelOf(kind: Kind, side: Side, x: number, y: number): number {
+  const key = `${kind}:${side}:${x}:${y}`;
+  const cached = travelCache.get(key);
+  if (cached !== undefined) return cached;
   const spec = SPECS[kind];
+  const speed = relativeSpeed(kind, side);
   const p = { x: x * SUB, y: y * SUB };
+  let travel = 2000;
   for (let age = 0; age < 2000; age++) {
-    moveToward(p, spec, age);
-    if (reachedWalker(p)) return age;
+    moveToward(p, spec, speed, age);
+    if (reachedWalker(p)) {
+      travel = age;
+      break;
+    }
   }
-  return 2000;
+  travelCache.set(key, travel);
+  return travel;
+}
+
+/** los lados por los que puede entrar alguien en el tick dado */
+export function sidesAt(tick: number): Side[] {
+  return tick >= BEHIND_FROM_S * TICKS_PER_S ? [...SIDES] : ["izq", "der", "arriba"];
 }
 
 /**
- * Genera la calle entera. Garantías (los tests las comprueban en 1.000 semillas
+ * Genera la calle entera. Garantías (los tests las comprueban en 1.000 calles
  * y con bots):
- * - desde que un pastoso aparece hasta que llega pasan MIN_TRAVEL_TICKS o más;
+ * - desde que un pastoso entra en pantalla hasta que llega pasan MIN_TRAVEL_TICKS o más;
  * - en cualquier ventana de WINDOW_TICKS, los toques necesarios para frenar a
  *   todos los que llegan (1 cada uno, 4 don pasta) no pasan de MAX_TAPS_PER_WINDOW;
- * - mientras don pasta está en pantalla, ningún otro llega en su mismo segundo.
+ * - mientras don pasta está en pantalla, ningún otro llega en su mismo segundo;
+ * - nunca llegan dos desde lados opuestos a menos de OPPOSITE_TICKS.
  */
 export function generateStreet(seed: string): Spawn[] {
   const rng = rngFromSeed(`${seed}:18`);
   const out: Spawn[] = [];
-  /** llegadas ya programadas: [tick, costo] */
-  const arrivals: [number, number][] = [];
-  /** ventanas prohibidas para los demás: la de don pasta [desde, hasta] */
+  /** llegadas ya programadas: [tick, costo, lado] */
+  const arrivals: [number, number, Side][] = [];
   const dpWindows: [number, number][] = [];
 
-  const fits = (arrive: number, cost: number, isDp: boolean): boolean => {
+  const fits = (arrive: number, cost: number, side: Side, isDp: boolean): boolean => {
     if (!isDp) {
       for (const [a, b] of dpWindows) if (arrive >= a && arrive <= b) return false;
     }
-    // suma de costos en la ventana centrada en cada llegada afectada (solo las cercanas importan)
     const near = arrivals.filter(([u]) => Math.abs(u - arrive) <= 2 * WINDOW_TICKS);
-    for (const [t] of [...near, [arrive, cost] as [number, number]]) {
+    for (const [u, , sd] of near) if (sd === OPPOSITE[side] && Math.abs(u - arrive) < OPPOSITE_TICKS) return false;
+    for (const [t] of [...near, [arrive, cost, side] as [number, number, Side]]) {
       let sum = 0;
       for (const [u, c] of near) if (Math.abs(u - t) <= WINDOW_TICKS) sum += c;
       if (Math.abs(arrive - t) <= WINDOW_TICKS) sum += cost;
@@ -222,17 +253,24 @@ export function generateStreet(seed: string): Spawn[] {
 
   const place = (kind: Kind, tick: number): Spawn | null => {
     const spec = SPECS[kind];
-    const side: -1 | 1 = rng.int(0, 1) === 0 ? -1 : 1;
-    const x = side < 0 ? DOOR_X_LEFT : DOOR_X_RIGHT;
     for (let attempt = 0; attempt < 12; attempt++) {
-      const y = rng.int(spec.yMin, spec.yMax);
-      const travel = travelOf(kind, x, y);
+      const side = rng.pick(sidesAt(tick));
+      let x: number;
+      let y: number;
+      if (side === "izq" || side === "der") {
+        x = side === "izq" ? DOOR_X_LEFT : DOOR_X_RIGHT;
+        y = rng.int(spec.yMin, spec.yMax);
+      } else {
+        x = rng.int(STREET_X_MIN, STREET_X_MAX);
+        y = side === "arriba" ? TOP_Y : BOTTOM_Y;
+      }
+      const travel = travelOf(kind, side, x, y);
       if (travel < MIN_TRAVEL_TICKS) continue;
       const arrive = tick + travel;
-      if (fits(arrive, spec.hits, kind === "donpasta")) {
-        arrivals.push([arrive, spec.hits]);
+      if (fits(arrive, spec.hits, side, kind === "donpasta")) {
+        arrivals.push([arrive, spec.hits, side]);
         if (kind === "donpasta") dpWindows.push([tick, arrive + WINDOW_TICKS]);
-        return { kind, tick, side, x, y, arrive };
+        return { kind, tick, side, x, y, arrive, phrase: kind === "donpasta" ? -1 : rng.int(0, PHRASES.length - 1) };
       }
     }
     return null;
@@ -241,17 +279,15 @@ export function generateStreet(seed: string): Spawn[] {
   // don pasta primero: sus ventanas mandan
   let dpTick = DONPASTA_FIRST_TICK + rng.int(0, 5 * TICKS_PER_S);
   while (dpTick < END_TICK - MIN_TRAVEL_TICKS) {
-    const s = place("donpasta", dpTick);
-    if (s) out.push(s);
+    const sp = place("donpasta", dpTick);
+    if (sp) out.push(sp);
     dpTick += rng.int(DONPASTA_EVERY_MIN, DONPASTA_EVERY_MAX);
   }
   // los comunes, según el cronograma
   let t = FIRST_SPAWN_TICK;
   while (t < END_TICK) {
-    const kinds = kindsAt(t);
-    const kind = rng.pick(kinds);
-    const s = place(kind, t);
-    if (s) out.push(s);
+    const sp = place(rng.pick(kindsAt(t)), t);
+    if (sp) out.push(sp);
     // si no entró, el hueco del cronograma queda vacío
     t += Math.max(6, Math.floor((intervalAt(t) * rng.int(100 - INTERVAL_JITTER, 100 + INTERVAL_JITTER)) / 100));
   }
@@ -290,19 +326,16 @@ export type EndReason = "frenado" | "tiempo";
 
 export interface SimState {
   tick: number;
-  lives: number;
   next: number;
   pastosos: Pastoso[];
-  invulnUntil: number;
   end: { tick: number; reason: EndReason } | null;
-  /** para dibujar */
-  lastHit: { tick: number } | null;
-  lostAt: number[];
+  /** quién lo frenó (índice en la calle), para dibujar */
+  grabbedBy: number | null;
   tapsDone: number;
 }
 
 export function initialState(): SimState {
-  return { tick: 0, lives: START_LIVES, next: 0, pastosos: [], invulnUntil: 0, end: null, lastHit: null, lostAt: [], tapsDone: 0 };
+  return { tick: 0, next: 0, pastosos: [], end: null, grabbedBy: null, tapsDone: 0 };
 }
 
 export function metersOf(tick: number): number {
@@ -341,13 +374,12 @@ export type TapEvent = { tick: number; x: number; y: number };
 
 /** cuántos ticks dura el "¡uh, bueno!" y la vuelta a la puerta */
 export const LEAVE_TICKS = 50;
-export const GRAB_TICKS = 30;
 export const BUBBLE_TICKS = 70;
 
 /**
  * Avanza un tick. `taps` son los toques de este tick (unidades). Devuelve
  * cuáles contaron. Orden: aparecen los del tick, se aplican los toques, se
- * mueven, se revisa quién llega, y al final el fin de partida. Muta el estado.
+ * mueven, y si alguno llega la partida termina en el acto. Muta el estado.
  */
 export function step(state: SimState, street: readonly Spawn[], taps: readonly { x: number; y: number }[] = []): TapEvent[] {
   const counted: TapEvent[] = [];
@@ -391,29 +423,20 @@ export function step(state: SimState, street: readonly Spawn[], taps: readonly {
         p.x -= Math.floor((dx * PUSHBACK) / 8 / dist);
         p.y -= Math.floor((dy * PUSHBACK) / 8 / dist);
       } else {
-        moveToward(p, spec, t - s.tick);
+        moveToward(p, spec, relativeSpeed(p.kind, s.side), t - s.tick);
       }
       if (reachedWalker(p)) {
-        if (t >= state.invulnUntil) {
-          state.lives--;
-          state.lostAt.push(t);
-          state.invulnUntil = t + INVULN_TICKS;
-          state.lastHit = { tick: t };
-          p.phase = "agarra";
-          p.since = t;
-        } else {
-          p.phase = "se-va";
-          p.since = t;
-          p.sayUntil = 0;
+        // un toque y perdés (si llegan dos en el mismo tick, los dos lo agarran)
+        p.phase = "agarra";
+        p.since = t;
+        p.sayUntil = 0;
+        if (!state.end) {
+          state.grabbedBy = p.i;
+          state.end = { tick: t + 1, reason: "frenado" };
         }
       }
       keep.push(p);
     } else if (p.phase === "agarra") {
-      if (t - p.since >= GRAB_TICKS) {
-        p.phase = "se-va";
-        p.since = t;
-        p.sayUntil = 0;
-      }
       keep.push(p);
     } else {
       // se va: vuelve a su puerta
@@ -429,7 +452,6 @@ export function step(state: SimState, street: readonly Spawn[], taps: readonly {
   }
   state.pastosos = keep;
   state.tick = t + 1;
-  if (!state.end && state.lives <= 0) state.end = { tick: state.tick, reason: "frenado" };
   if (!state.end && state.tick >= END_TICK) state.end = { tick: state.tick, reason: "tiempo" };
   return counted;
 }
@@ -443,7 +465,6 @@ export type TraceEvent = TapEvent | EndEvent;
 
 export interface SimResult {
   score: number;
-  lives: number;
   endTick: number;
   endReason: EndReason | null;
   state: SimState;
@@ -469,7 +490,7 @@ export function simulate(attemptSeed: string, taps: readonly TapEvent[], untilTi
 
 function resultOf(state: SimState): SimResult {
   const endTick = state.end ? state.end.tick : state.tick;
-  return { score: metersOf(endTick), lives: state.lives, endTick, endReason: state.end?.reason ?? null, state };
+  return { score: metersOf(endTick), endTick, endReason: state.end?.reason ?? null, state };
 }
 
 export type Verdict = { ok: true; score: number; endTick: number; endReason: EndReason | null } | { ok: false; reason: string };
@@ -521,7 +542,7 @@ export function validate(result: { score: number; events: unknown[] }, attemptSe
 /** un toque por tick como máximo: (x, y) en unidades, o null */
 export type Policy = (state: SimState, street: readonly Spawn[]) => { x: number; y: number } | null;
 
-/** el jugador perfecto: toca al que llega antes, en cuanto puede (respetando el intervalo mínimo) */
+/** el jugador perfecto: toca al más cercano que esté en pantalla, en cuanto puede (respetando el intervalo mínimo) */
 export function perfectPolicy(): Policy {
   let lastTap = -Infinity;
   return (state) => {
@@ -529,6 +550,9 @@ export function perfectPolicy(): Policy {
     let best: Pastoso | null = null;
     for (const p of state.pastosos) {
       if (p.phase !== "viene") continue;
+      const x = Math.round(p.x / SUB);
+      const y = Math.round(p.y / SUB);
+      if (x < 0 || x > FIELD_W || y < 0 || y > FIELD_H) continue;
       if (!best || distToWalker2(p) < distToWalker2(best)) best = p;
     }
     if (!best) return null;

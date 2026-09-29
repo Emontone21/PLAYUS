@@ -23,9 +23,9 @@ function summary(seed: string) {
   const lazy = simulate(seed, []);
   return JSON.stringify({
     street: generateStreet(seed),
-    perfect: { events: g.events, score: g.result.score, lives: g.result.lives, endTick: g.result.endTick, reason: g.result.endReason },
+    perfect: { events: g.events, score: g.result.score, endTick: g.result.endTick, reason: g.result.endReason },
     replay: simulate(seed, taps).state,
-    lazy: { score: lazy.score, lives: lazy.lives, endTick: lazy.endTick, reason: lazy.endReason, lostAt: lazy.state.lostAt },
+    lazy: { score: lazy.score, endTick: lazy.endTick, reason: lazy.endReason, grabbedBy: lazy.state.grabbedBy },
   });
 }
 
@@ -35,11 +35,11 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
   await page.waitForFunction(() => "__caminando" in window);
   for (const seed of SEEDS) {
     const inBrowser = await page.evaluate((s) => {
-      type Trace = { events: Array<{ tick: number; fin?: true }>; result: { score: number; lives: number; endTick: number; endReason: string | null } };
+      type Trace = { events: Array<{ tick: number; fin?: true }>; result: { score: number; endTick: number; endReason: string | null } };
       type C = {
         generateStreet: (s: string) => unknown;
         perfectTrace: (s: string) => Trace;
-        simulate: (s: string, t: unknown[]) => { score: number; lives: number; endTick: number; endReason: string | null; state: { lostAt: unknown } };
+        simulate: (s: string, t: unknown[]) => { score: number; endTick: number; endReason: string | null; state: { grabbedBy: unknown } };
       };
       const C = (window as unknown as { __caminando: C }).__caminando;
       const g = C.perfectTrace(s);
@@ -47,16 +47,16 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
       const lazy = C.simulate(s, []);
       return JSON.stringify({
         street: C.generateStreet(s),
-        perfect: { events: g.events, score: g.result.score, lives: g.result.lives, endTick: g.result.endTick, reason: g.result.endReason },
+        perfect: { events: g.events, score: g.result.score, endTick: g.result.endTick, reason: g.result.endReason },
         replay: C.simulate(s, taps).state,
-        lazy: { score: lazy.score, lives: lazy.lives, endTick: lazy.endTick, reason: lazy.endReason, lostAt: lazy.state.lostAt },
+        lazy: { score: lazy.score, endTick: lazy.endTick, reason: lazy.endReason, grabbedBy: lazy.state.grabbedBy },
       });
     }, seed);
     expect(inBrowser, `semilla ${seed}`).toBe(summary(seed));
   }
 });
 
-test("la pantalla previa, el área sin scroll, un solo dedo y una partida que toca y después deja pasar", async ({ browser }) => {
+test("la pantalla previa, el área sin scroll, un solo dedo y una partida que toca y después deja pasar a uno", async ({ browser }) => {
   const a = await freshPage(browser);
   await a.page.goto("/dev/juego/caminando-por-18?seed=abc");
   const card = a.page.getByTestId("caminando-card");
@@ -68,12 +68,11 @@ test("la pantalla previa, el área sin scroll, un solo dedo y una partida que to
   await expect(area).toBeVisible({ timeout: 15_000 });
   expect(await area.evaluate((el) => getComputedStyle(el).touchAction)).toBe("manipulation");
   expect(await area.evaluate((el) => getComputedStyle(el).userSelect)).toBe("none");
-  await expect(a.page.getByTestId("caminando-lives")).toHaveAttribute("aria-label", "3 vidas");
   // tocar el vacío no penaliza
   const canvas = a.page.getByRole("img", { name: "18 de Julio, el personaje y los pastosos" });
   const box = (await canvas.boundingBox())!;
-  await a.page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.95);
-  await expect(area).toHaveAttribute("data-lives", "3");
+  await a.page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.6);
+  await expect(area).toHaveAttribute("data-end", "");
 
   const taps = await playCaminando(a.page, 4);
   expect(taps).toBe(4);
@@ -109,7 +108,7 @@ test("en la ronda real: la partida se valida en el servidor y llega al ranking e
   await expect(a.page.getByTestId("ranking-value").first()).toHaveText(new RegExp(`^\\s*${body.score}\\s*m\\s*$`));
   await expect(a.page.getByTestId("attempts-left")).toContainText(`tu mejor: ${body.score} m`);
 
-  // B no toca a nadie: pierde las tres vidas enseguida y queda detrás
+  // B no toca a nadie: lo frenan enseguida y queda detrás
   await b.page.goto("/hoy/jugar");
   await startAndGetSeed(b.page);
   await expect(b.page.getByTestId("caminando-area")).toBeVisible({ timeout: 15_000 });

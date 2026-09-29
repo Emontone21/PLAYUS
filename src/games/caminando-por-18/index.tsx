@@ -1,8 +1,9 @@
 // "caminando por 18": el personaje camina por 18 de Julio y de las puertas
 // salen los pastosos (el promotor de tarjetas, el de las firmas, el de los
-// volantes, el de los planes de celular) a frenarlo. Tocarlos los saca de
-// encima; si uno lo alcanza, pierde una vida (tiene 3). Cada tanto viene don
-// pasta, el de traje dorado, que necesita 4 toques. El puntaje son los metros.
+// volantes, el de los planes de celular) a frenarlo, por adelante, por los
+// costados y por atrás. Tocarlos los saca de encima; si uno lo alcanza, se
+// terminó. Cada tanto viene don pasta, el de traje dorado, que necesita 4
+// toques. El puntaje son los metros.
 //
 // Mismo esquema técnico que Larry y remar: simulación pura a 60 ticks
 // (rules.ts) avanzada por el reloj de games/lib, y una traza con los toques
@@ -18,8 +19,8 @@ import { createPointerTracker } from "../lib/taps";
 import { sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { drawScene, scaleFor } from "./draw";
-import { check, DURATION_MS, FIELD_H, FIELD_W, generateStreet, initialState, MAX_SCORE, perfectPolicy, START_LIVES, step, TICKS_PER_S, validate, type EndReason, type Kind, type SimState, type Spawn, type TapEvent, type TraceEvent } from "./rules";
-import { pastosoSprite, shoeSprite, walkerSprite } from "./sprites";
+import { check, DURATION_MS, FIELD_H, FIELD_W, generateStreet, initialState, MAX_SCORE, perfectPolicy, step, TICKS_PER_S, validate, type EndReason, type Kind, type SimState, type Spawn, type TapEvent, type TraceEvent } from "./rules";
+import { pastosoSprite, walkerSprite } from "./sprites";
 
 /** el final ("te frenaron") se ve un segundo antes de pasar al resultado */
 const END_HOLD_MS = 1_000;
@@ -33,14 +34,14 @@ export interface CaminandoDevOptions {
   forceDonPasta?: boolean;
 }
 
-type Hud = { meters: number; lives: number; end: EndReason | null };
+type Hud = { meters: number; end: EndReason | null };
 
 export function CaminandoGame({ seed, onReady, onFinish, onProgress, dev }: GameProps & { dev?: CaminandoDevOptions }) {
   const street = React.useMemo<Spawn[]>(() => {
     const s = generateStreet(seed);
     if (dev?.forceDonPasta) {
       const t = (dev.startTick ?? 0) + 30;
-      const extra: Spawn = { kind: "donpasta", tick: t, side: -1, x: 5, y: 40, arrive: t + 200 };
+      const extra: Spawn = { kind: "donpasta", tick: t, side: "izq", x: 5, y: 40, arrive: t + 200, phrase: -1 };
       return [...s, extra].sort((a, b) => a.tick - b.tick);
     }
     return s;
@@ -55,7 +56,7 @@ export function CaminandoGame({ seed, onReady, onFinish, onProgress, dev }: Game
   const devRef = React.useRef(dev);
   devRef.current = dev;
   const [k, setK] = React.useState(1);
-  const [hud, setHud] = React.useState<Hud>({ meters: 0, lives: START_LIVES, end: null });
+  const [hud, setHud] = React.useState<Hud>({ meters: 0, end: null });
   const startTick = dev?.startTick ?? 0;
 
   React.useEffect(() => {
@@ -114,17 +115,17 @@ export function CaminandoGame({ seed, onReady, onFinish, onProgress, dev }: Game
         taps.push(...step(s, street, now));
       }
       const ctx = canvasRef.current?.getContext("2d");
-      if (ctx) drawScene(ctx, s, kRef.current, { alpha, reduced: reducedRef.current, hitboxes: devRef.current?.hitboxes });
+      if (ctx) drawScene(ctx, s, street, kRef.current, { alpha, reduced: reducedRef.current, hitboxes: devRef.current?.hitboxes });
       if (rootRef.current) {
         rootRef.current.dataset.tick = String(s.tick);
-        rootRef.current.dataset.pastosos = JSON.stringify(s.pastosos.filter((p) => p.phase === "viene").map((p) => [p.kind, Math.round(p.x / 16), Math.round(p.y / 16), p.hits]));
+        rootRef.current.dataset.pastosos = JSON.stringify(s.pastosos.filter((p) => p.phase === "viene").map((p) => [p.kind, Math.round(p.x / 16), Math.round(p.y / 16), p.hits, street[p.i]!.side]));
       }
       if (s.tick !== reportedTick) {
         reportedTick = s.tick;
         const result = resultNow();
         onProgress(result);
         const end = s.end?.reason ?? null;
-        setHud((h) => (h.meters === result.score && h.lives === s.lives && h.end === end ? h : { meters: result.score, lives: s.lives, end }));
+        setHud((h) => (h.meters === result.score && h.end === end ? h : { meters: result.score, end }));
         if (s.end && finishTimer === undefined) finishTimer = window.setTimeout(() => onFinish(result), END_HOLD_MS);
       }
       raf = requestAnimationFrame(frame);
@@ -163,18 +164,13 @@ export function CaminandoGame({ seed, onReady, onFinish, onProgress, dev }: Game
       onContextMenu={(e) => e.preventDefault()}
       data-testid="caminando-area"
       data-meters={hud.meters}
-      data-lives={hud.lives}
       data-end={hud.end ?? ""}
     >
       <div className="flex items-center justify-between px-1">
         <span className="display text-xl text-tinta" data-testid="caminando-meters" aria-live="off">
           {hud.meters} m
         </span>
-        <span className="flex items-center gap-1" data-testid="caminando-lives" aria-label={`${hud.lives} ${hud.lives === 1 ? "vida" : "vidas"}`} role="img">
-          {Array.from({ length: START_LIVES }, (_, i) => (
-            <SpriteSvg key={i} sprite={shoeSprite(i < hud.lives)} height={16} />
-          ))}
-        </span>
+        <span className="eyebrow">un toque y perdés</span>
       </div>
       <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center" data-testid="caminando-field">
         <canvas ref={canvasRef} className="pointer-events-none [image-rendering:pixelated]" style={{ border: "3px solid var(--contorno)", borderRadius: 8 }} aria-label="18 de Julio, el personaje y los pastosos" role="img" />
@@ -238,9 +234,9 @@ export const caminandoPor18: GameModule = {
   id: "caminando-por-18",
   name: "caminando por 18",
   tagline: "no te pares, no firmes nada.",
-  howTo: ["tocá a los pastosos antes de que te alcancen", "si te alcanzan, perdés una vida: tenés 3", "a don pasta, el dorado, hay que tocarlo 4 veces"],
+  howTo: ["tocá a los pastosos antes de que te alcancen", "si uno te toca, perdés", "a don pasta, el dorado, hay que tocarlo 4 veces"],
   durationMs: DURATION_MS,
-  // perder las tres vidas lleva al menos unos 4 s de juego; con la cuenta regresiva y el segundo de cierre, más de 5
+  // el primero llega como muy pronto a los 1,2 s; con la cuenta regresiva y el segundo de cierre, más de 5
   minDurationMs: 5_000,
   scoring: "high",
   minPlausibleScore: 0,

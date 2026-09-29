@@ -1,6 +1,30 @@
 # Reporte: séptimo juego real, "caminando por 18"
 Estado: parcial
-Fecha: 2026-09-29
+Fecha: 2026-09-29 (segunda versión, mismo día)
+
+## Segunda versión: un toque y perdés
+
+La primera versión quedó demasiado fácil y se cambió el mismo día (decisión 168):
+
+- **Un contacto y se termina.** Sin vidas ni invulnerabilidad: si un pastoso o don pasta alcanza al personaje, "te frenaron" en el acto. Se sacaron las zapatillas; arriba dice "un toque y perdés". `howTo` nuevo: "tocá a los pastosos antes de que te alcancen", "si uno te toca, perdés", "a don pasta, el dorado, hay que tocarlo 4 veces".
+- **Por los cuatro lados.** De adelante entran asomando por el borde de arriba y su velocidad relativa suma la caminata; de los costados salen de las puertas; de atrás (desde los 10 s) entran asomando por abajo y son más rápidos que el personaje. El personaje subió a y = 100 para que se vea venir a los de atrás. Don pasta puede venir de cualquier lado. Los que suben se dibujan de espaldas y los que bajan de frente.
+- **Más denso desde el arranque:** 1,4 → 2 → 2,6 → 3,2 pastosos por segundo a los 0, 10, 30 y 60 s (el documento daba 1 → 1,4 → 2 → 2,6 como punto de partida). Tipos: promotor y firmas desde el arranque, volantes desde los 10 s, planes desde los 30 s.
+- **Garantías nuevas:** 700 ms desde que asoma hasta que llega, 6 toques por segundo como máximo, nadie en el segundo de don pasta, y nunca dos desde lados opuestos a menos de 400 ms. Se cumplen por construcción y se prueban en 1.000 calles.
+- **Frases:** cada pastoso común dice al aparecer una de tres al azar con la semilla ("¿tenés fuego, mano?", "manito, ¿qué andás?", "¿tenés un minutito?"); don pasta sigue con las suyas. Dibujos sin cambios: pesados de 18, nadie en situación de calle.
+- **Calibración** con el jugador simulado (reacciona con retraso, un toque cada tanto, a veces al aire):
+
+| jugador simulado | cuartil 1 | mediana | cuartil 3 | llega a 120 s |
+|---|---|---|---|---|
+| 300 ms, un toque cada 250 ms, 10 % al aire | 120 s | 120 s | 120 s | 91 % |
+| 400 ms, un toque cada 300 ms, 15 % al aire | 28 s | 40 s | 55 s | 1 % |
+| 500 ms, un toque cada 350 ms, 20 % al aire | 7 s | 13 s | 22 s | 0 % |
+
+  La típica queda entre 20 y 40 s. Un jugador con puntería perfecta y 3 o 4 toques por segundo sigue sin perder: el techo lo pone la garantía de 6 toques por segundo.
+- **Capturas nuevas** en `reports/caminando-por-18/`: `entra-por-arriba.png`, `entra-por-el-costado.png`, `entra-por-abajo.png`, `partida-30s.png`, `don-pasta.png`, `te-frenaron.png` y `resultado.png` (más `previa.png` y `pastosos.png`).
+- **Tests:** `npm test` 164 de 164 (los 19 de 18 reescritos: un solo contacto termina la partida venga de donde venga, apariciones por los cuatro lados con los de atrás desde los 10 s, don pasta por cualquier lado, las tres frases, las cuatro garantías en 1.000 calles con la de lados opuestos, la llegada prevista igual a la real, el jugador perfecto llega a los 120 s, `validate` rearma la partida). E2E de 18: 3 de 3 en local (la ronda real falló una vez por el refresco en vivo en desarrollo, decisión 113, y pasó al repetirla) y `ronda.spec` en verde; no se volvió a correr la suite completa (tarda 18 minutos con la máquina cargada y solo cambió este juego). Build, typecheck y lint sin errores. Producción: `npx vercel deploy --prod --yes` y la ronda real contra https://playus-lake.vercel.app pasó (grupo al intento 11): el servidor aceptó la traza, el ranking mostró los metros y el jugador que no toca a nadie quedó detrás; `/dev/juego/caminando-por-18` da 404. Quedaron más grupos de prueba "caminando po N" en producción.
+
+Lo que sigue es el reporte de la primera versión, que vale para todo lo que no cambió.
+
 
 ## Qué hice
 
