@@ -28,6 +28,7 @@ src/
   games/los-deseos-de-larry/ los deseos de Larry: lluvia y simulación a 60 ticks (rules.ts), pixel art (sprites.ts), canvas (draw.ts)
   games/remar-vuelve-a-casa/ remar vuelve a casa: río por distancia y simulación a 60 ticks (rules.ts), pixel art (sprites.ts), canvas (draw.ts)
   games/la-parrilla-del-bro/ la parrilla del bro: cronograma del canario (timeline.ts), reglas (rules.ts), pixel art (sprites.ts), canvas (draw.ts)
+  games/pegandole-al-jota/  pegándole al jota: la serie (rounds.ts), reglas y validate (rules.ts), pixel art en SVG (sprites.ts), DOM (index.tsx)
   games/lib/                piezas compartidas: reloj de paso fijo, arrastre de un dedo, toques de un dedo y antiautoclick, escala del canvas, traza, sprites y fuente
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
@@ -78,7 +79,7 @@ npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
 
-Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para Larry, `/dev/juego/los-deseos-de-larry?seed=abc` trae cajas de colisión, cámara lenta y saltos a los 30, 60 y 80 s (también `&desde=60&cajas=1&lento=1`). Para remar, `/dev/juego/remar-vuelve-a-casa?seed=abc` trae cajas y camino seguro, cámara lenta, ×2 forzado y saltos a los 200, 500 y 1.000 m (también `&desde=500&cajas=1&lento=1&x2=1`). Para la parrilla, `/dev/juego/la-parrilla-del-bro?seed=abc` trae la barra del cronograma, cámara lenta, saltos a los 10, 45 y 80 s y cada estado del canario (también `&desde=45&lento=1`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
+Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para Larry, `/dev/juego/los-deseos-de-larry?seed=abc` trae cajas de colisión, cámara lenta y saltos a los 30, 60 y 80 s (también `&desde=60&cajas=1&lento=1`). Para remar, `/dev/juego/remar-vuelve-a-casa?seed=abc` trae cajas y camino seguro, cámara lenta, ×2 forzado y saltos a los 200, 500 y 1.000 m (también `&desde=500&cajas=1&lento=1&x2=1`). Para la parrilla, `/dev/juego/la-parrilla-del-bro?seed=abc` trae la barra del cronograma, cámara lenta, saltos a los 10, 45 y 80 s y cada estado del canario (también `&desde=45&lento=1`). Para el jota, `/dev/juego/pegandole-al-jota?seed=abc` trae la serie con sus respuestas, saltos a la ronda 1, 7 y 13, las caras y la grilla (también `&desde=7`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
 ## PWA y notificaciones
 

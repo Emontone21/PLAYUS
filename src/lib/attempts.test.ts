@@ -14,6 +14,8 @@ import { greedyTrace } from "@/games/los-deseos-de-larry/rules";
 import { soberTrace } from "@/games/remar-vuelve-a-casa/rules";
 import { safeTrace as parrillaTrace } from "@/games/la-parrilla-del-bro/rules";
 import { canarioTimeline } from "@/games/la-parrilla-del-bro/timeline";
+import { playedTrace as jotaTrace } from "@/games/pegandole-al-jota/rules";
+import { jotaRounds } from "@/games/pegandole-al-jota/rounds";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -272,6 +274,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "pegandole-al-jota") {
+    // una ronda acertada: la pista de 3 s y la respuesta un segundo después (el intento dura 5,5 s)
+    const events = jotaTrace(jotaRounds(seed), 1, { answerMs: () => 1_000 });
+    return { score: 1, events };
   }
   if (gameId === "la-parrilla-del-bro") {
     // toques seguros durante 4 s y el cronómetro corta ahí (el intento dura 5,5 s)
