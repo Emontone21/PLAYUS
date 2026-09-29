@@ -23,7 +23,7 @@ Un juego es **un archivo** en `src/games/` que exporta un `GameModule`, más **u
 
 ## Pautas para juegos reales
 
-Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `quedo-re-tarado` (un solo dedo, 200 toques, con `Result` propio y un `validate` que mira el ritmo) y `los-deseos-de-larry` (una simulación entera a 60 ticks por segundo que corre igual en el navegador y en Node; la traza son los cambios de objetivo del dedo por tick y `validate` vuelve a jugar la partida entera). Para los que vengan, dos cosas más allá del contrato:
+Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `quedo-re-tarado` (un solo dedo, 200 toques, con `Result` propio y un `validate` que mira el ritmo) `los-deseos-de-larry` (una simulación entera a 60 ticks por segundo que corre igual en el navegador y en Node; la traza son los cambios de objetivo del dedo por tick y `validate` vuelve a jugar la partida entera) y `remar-vuelve-a-casa` (el mismo esquema, con el río generado por distancia y `unit: "m"`). Las piezas que comparten los dos últimos (reloj de paso fijo, arrastre con un dedo, escala del canvas, traza y sprites) están en `src/games/lib/`: un juego nuevo con simulación puede usarlas tal cual. Para los que vengan, dos cosas más allá del contrato:
 
 1. **Que saber cómo viene la partida dé la menor ventaja posible.** Alguien puede haber jugado ya ese mismo número de intento y contarte cómo viene, o vos podés haber jugado tu primer intento y saber qué esperar del segundo (no: es otra semilla, pero el *tipo* de desafío se repite). Diseñá para que conocer la secuencia ayude poco: que el puntaje dependa de ejecutar (velocidad, precisión, memoria en el momento) más que de saber de antemano; que la información útil aparezca recién cuando hace falta; que no haya un "camino correcto" memorizable de principio a fin. Un juego de reacción donde el verde aparece a los 3, 5 y 4 segundos se gana con un cronómetro en la otra mano; uno donde hay que tocar el objetivo que se enciende entre varios, no tanto.
 
@@ -40,6 +40,7 @@ Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `qu
 | `scoring` | `'high'` gana el más alto, `'low'` gana el más bajo. |
 | `maxPlausibleScore` | cota superior: el servidor rechaza puntajes mayores. |
 | `minPlausibleScore?` | cota inferior (ej. 100 ms de reacción). Default 0. |
+| `unit?` | unidad del puntaje para el ranking, el historial y los avisos (ej. `"m"`). Si falta, los de `'low'` muestran `ms` y los de `'high'` nada. |
 | `validate?(result, seed, meta?)` | chequeo propio sobre `events`. Devolvé `false` para rechazar. El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente) y `meta.elapsedMs`, la duración real del intento medida en el servidor (desde `/start`, con la cuenta regresiva). |
 | `Component` | el juego. Recibe `GameProps`. |
 | `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba muestra la ficha "así es ella"; el tarado, la cara del intento). Recibe `seed`. |

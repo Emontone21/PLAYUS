@@ -82,7 +82,7 @@ test("en la ronda real: la partida se valida en el servidor y llega al ranking e
   test.setTimeout(600_000);
   const a = await freshPage(browser);
   const b = await freshPage(browser);
-  const code = await createGroupWithGame(a.page, "Larry", "los deseos de Larry", 14);
+  const code = await createGroupWithGame(a.page, "Larry", "los deseos de Larry");
   await b.page.goto(`/g/${code}`);
   await b.page.getByPlaceholder("tu nombre").fill("Quieto");
   await b.page.getByRole("button", { name: "entrar al grupo" }).click();

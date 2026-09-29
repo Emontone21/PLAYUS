@@ -27,11 +27,17 @@ import {
   TICKS_PER_S,
   validate,
   type EndReason,
-  type InputEvent,
   type SimState,
   type TraceEvent,
 } from "./rules";
-import { dropSprite, greyed, larrySprite, type Face, type Sprite } from "./sprites";
+import { dropSprite, greyed, larrySprite, type Face } from "./sprites";
+import { createTickClock } from "../lib/tick-clock";
+import { singlePointerDrag } from "../lib/pointer-drag";
+import { sizeCanvas } from "../lib/canvas-scale";
+import { TraceRecorder } from "../lib/trace";
+import { SpriteSvg } from "../lib/sprite-svg";
+
+export { SpriteSvg };
 
 /** el final (cara y cartel) se ve un segundo antes de pasar al resultado */
 const END_HOLD_MS = 1_000;
@@ -53,7 +59,6 @@ export function LarryGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   const areaRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const pending = React.useRef(LARRY_START);
-  const pointer = React.useRef<number | null>(null);
   const kRef = React.useRef(1);
   const reducedRef = React.useRef(false);
   const devRef = React.useRef(dev);
@@ -86,50 +91,36 @@ export function LarryGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = FIELD_W * k;
-    canvas.height = FIELD_H * k;
-    canvas.style.width = `${(FIELD_W * k) / dpr}px`;
-    canvas.style.height = `${(FIELD_H * k) / dpr}px`;
+    sizeCanvas(canvas, FIELD_W, FIELD_H, k, window.devicePixelRatio || 1);
     kRef.current = k;
   }, [k]);
 
   // la partida: simulación a paso fijo, avanzada por el tiempo transcurrido
   React.useEffect(() => {
     const s: SimState = initialState();
-    const inputs: InputEvent[] = [];
+    const trace = new TraceRecorder(s.target);
     // herramienta de desarrollo: el jugador perfecto juega hasta el tick pedido
     while (s.tick < startTick && !s.end) {
-      const x = greedyTarget(s, rain);
-      if (x !== s.target) inputs.push({ tick: s.tick, x });
-      step(s, rain, x);
+      step(s, rain, trace.set(s.tick, greedyTarget(s, rain)));
     }
     pending.current = s.target;
-    const base = s.tick;
-    let simMs = 0;
-    let last = performance.now();
+    const clock = createTickClock(TICKS_PER_S, s.tick, performance.now());
     let raf = 0;
     let reportedTick = -1;
     let finishTimer: number | undefined;
     const resultNow = (): GameResult => {
-      const events: TraceEvent[] = [...inputs, { tick: s.end ? s.end.tick : s.tick, fin: true }];
+      const events: TraceEvent[] = trace.events(s.end ? s.end.tick : s.tick);
       return { score: s.score, events };
     };
 
     const frame = () => {
-      const now = performance.now();
-      simMs += Math.max(0, now - last) * (devRef.current?.slow ? 0.25 : 1);
-      last = now;
-      const exact = (simMs * TICKS_PER_S) / 1000;
-      const want = base + Math.floor(exact);
+      const { want, alpha } = clock.advance(performance.now(), devRef.current?.slow ? 0.25 : 1);
       // si la pestaña estuvo en segundo plano, se pone al día de una (5.400 ticks son nada)
       while (s.tick < want && !s.end) {
-        const x = pending.current;
-        if (x !== s.target) inputs.push({ tick: s.tick, x });
-        step(s, rain, x);
+        step(s, rain, trace.set(s.tick, pending.current));
       }
       const ctx = canvasRef.current?.getContext("2d");
-      if (ctx) drawScene(ctx, s, rain, kRef.current, { alpha: s.end ? 1 : exact - Math.floor(exact), reduced: reducedRef.current, hitboxes: devRef.current?.hitboxes });
+      if (ctx) drawScene(ctx, s, rain, kRef.current, { alpha: s.end ? 1 : alpha, reduced: reducedRef.current, hitboxes: devRef.current?.hitboxes });
       // el tick en curso, para los E2E (sin re-render: se escribe directo)
       if (rootRef.current) rootRef.current.dataset.tick = String(s.tick);
       if (s.tick !== reportedTick) {
@@ -156,28 +147,16 @@ export function LarryGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   }, [rain, startTick, onReady, onProgress, onFinish]);
 
   // un solo dedo: manda el primer puntero apoyado; en escritorio, el mouse con el botón apretado
-  const toUnits = (clientX: number) => {
-    const r = canvasRef.current?.getBoundingClientRect();
-    if (!r || r.width === 0) return pending.current;
-    return Math.max(0, Math.min(FIELD_W, Math.round(((clientX - r.left) / r.width) * FIELD_W)));
-  };
-  function down(e: React.PointerEvent<HTMLDivElement>) {
-    e.preventDefault();
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (pointer.current !== null) return;
-    pointer.current = e.pointerId;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    pending.current = toUnits(e.clientX);
-  }
-  function move(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.pointerId !== pointer.current) return;
-    pending.current = toUnits(e.clientX);
-  }
-  function up(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.pointerId !== pointer.current) return;
-    pointer.current = null;
-    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-  }
+  const drag = React.useRef(
+    singlePointerDrag<number>(
+      (clientX) => {
+        const r = canvasRef.current?.getBoundingClientRect();
+        if (!r || r.width === 0) return pending.current;
+        return Math.max(0, Math.min(FIELD_W, Math.round(((clientX - r.left) / r.width) * FIELD_W)));
+      },
+      (x) => (pending.current = x),
+    ),
+  ).current;
 
   const banner = hud.end === "verdura" ? "¡puaj!" : hud.end === "bandera" ? "¡eso no!" : hud.end === "sin-vidas" ? "sin vidas" : null;
 
@@ -186,11 +165,7 @@ export function LarryGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
       ref={rootRef}
       className="flex h-full w-full select-none flex-col gap-2"
       style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
-      onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
-      onLostPointerCapture={up}
+      {...drag}
       onContextMenu={(e) => e.preventDefault()}
       data-testid="larry-area"
       data-score={hud.score}
@@ -229,27 +204,7 @@ export function LarryGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
 
 const GREY_BURGER = greyed(dropSprite("hamburguesa"));
 
-// ---------------------------------------------------------------------------
-// SVG nítidos para la pantalla previa y la de resultado
-// ---------------------------------------------------------------------------
-
-export function SpriteSvg({ sprite, height, label }: { sprite: Sprite; height: number; label?: string }) {
-  return (
-    <svg
-      viewBox={`0 0 ${sprite.w} ${sprite.h}`}
-      width={(height * sprite.w) / sprite.h}
-      height={height}
-      shapeRendering="crispEdges"
-      role={label ? "img" : undefined}
-      aria-label={label}
-      aria-hidden={label ? undefined : true}
-    >
-      {sprite.px.map((p, i) => (
-        <rect key={i} x={p.x} y={p.y} width={1} height={1} fill={p.c} />
-      ))}
-    </svg>
-  );
-}
+// las pantallas previa y de resultado usan SpriteSvg (games/lib/sprite-svg)
 
 function Intro() {
   return (

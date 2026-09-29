@@ -10,6 +10,7 @@ import { Frog } from "@/components/frog/Frog";
 import { LiveRefresh } from "./live-refresh";
 import { PushCard } from "@/components/push-card";
 import { InstallCard } from "@/components/install-card";
+import { scoreUnit } from "@/games/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
   if (!user || !group) return null;
 
   const t = await loadToday(user.id, group);
-  const unit = t.game.scoring === "low" ? "ms" : undefined;
+  const unit = scoreUnit(t.game) || undefined;
   const attemptsText =
     t.attemptsLeft === 0 ? "no te quedan intentos por hoy" : t.attemptsLeft === 1 ? "te queda 1 intento" : `te quedan ${t.attemptsLeft} intentos`;
 
@@ -76,7 +77,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
           <p className="text-sm" data-testid="yesterday-winner">
             ayer {t.yesterday.tied ? "empató arriba" : "ganó"} <span className="display-bold text-tinta">{t.yesterday.winner.name}</span> con{" "}
             <span className="display-bold text-tinta">{t.yesterday.score}</span>
-            {t.yesterday.game.scoring === "low" ? " ms" : ""} en {t.yesterday.game.name}.
+            {scoreUnit(t.yesterday.game) ? ` ${scoreUnit(t.yesterday.game)}` : ""} en {t.yesterday.game.name}.
           </p>
         ) : null}
       </header>

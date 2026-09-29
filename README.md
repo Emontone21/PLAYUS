@@ -26,6 +26,8 @@ src/
   games/piba-del-ipa/       encontrá a la piba del IPA: mapa puro (map.ts), reglas cliente/servidor (rules.ts), canvas (draw.ts)
   games/quedo-re-tarado/    quedó re tarado: la cara (face.ts), reglas y un solo dedo (rules.ts), canvas (draw.ts)
   games/los-deseos-de-larry/ los deseos de Larry: lluvia y simulación a 60 ticks (rules.ts), pixel art (sprites.ts), canvas (draw.ts)
+  games/remar-vuelve-a-casa/ remar vuelve a casa: río por distancia y simulación a 60 ticks (rules.ts), pixel art (sprites.ts), canvas (draw.ts)
+  games/lib/                piezas compartidas: reloj de paso fijo, arrastre de un dedo, escala del canvas, traza y sprites
   lib/rng.ts                hash de 32 bits + mulberry32: todo el azar de los juegos
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
@@ -75,7 +77,7 @@ npm test                    # tests unitarios (vitest)
 npm run e2e                 # tests Playwright (con la app y Supabase levantados)
 ```
 
-Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para Larry, `/dev/juego/los-deseos-de-larry?seed=abc` trae cajas de colisión, cámara lenta y saltos a los 30, 60 y 80 s (también `&desde=60&cajas=1&lento=1`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
+Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para Larry, `/dev/juego/los-deseos-de-larry?seed=abc` trae cajas de colisión, cámara lenta y saltos a los 30, 60 y 80 s (también `&desde=60&cajas=1&lento=1`). Para remar, `/dev/juego/remar-vuelve-a-casa?seed=abc` trae cajas y camino seguro, cámara lenta, ×2 forzado y saltos a los 200, 500 y 1.000 m (también `&desde=500&cajas=1&lento=1&x2=1`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
 ## PWA y notificaciones
 

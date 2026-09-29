@@ -28,6 +28,11 @@ export interface GameModule {
   /** cota inferior (ej. nadie reacciona en menos de 100 ms). Si falta, 0. */
   minPlausibleScore?: number;
   /**
+   * unidad del puntaje, para el ranking, el historial y los avisos (ej. "m").
+   * Si falta, los juegos de 'low' muestran "ms" y los de 'high' nada.
+   */
+  unit?: string;
+  /**
    * validador propio sobre los eventos. Devuelve false para rechazar.
    * El servidor lo llama después de las cotas, con la semilla del intento y
    * la duración real del intento medida en el servidor (desde /start, con la
@@ -67,6 +72,12 @@ export interface GameResult {
   score: number;
   /** traza mínima para validar en el servidor; el shape lo define cada juego */
   events: unknown[];
+}
+
+/** La unidad que se muestra junto al puntaje ("" si no lleva). */
+export function scoreUnit(game: Pick<GameModule, "scoring" | "unit"> | undefined): string {
+  if (!game) return "";
+  return game.unit ?? (game.scoring === "low" ? "ms" : "");
 }
 
 /** Límites efectivos con los defaults aplicados. Lo usa el servidor en /finish. */

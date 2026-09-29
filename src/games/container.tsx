@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GameModule, GameResult } from "./types";
+import { scoreUnit, type GameModule, type GameResult } from "./types";
 
 // El contenedor de partida. Máquina de estados:
 //   intro → countdown → loading → playing → submitting → result | error
@@ -138,7 +138,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   }, [autoStart]);
 
   const Game = game.Component;
-  const unit = game.scoring === "low" ? "ms" : "";
+  const unit = scoreUnit(game);
 
   if (state.step === "intro") {
     return (

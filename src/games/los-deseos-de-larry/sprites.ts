@@ -4,34 +4,9 @@
 // del resultado, y los tests.
 
 import { FIELD_H, FIELD_W, FLOOR_Y, type Kind } from "./rules";
+import { buildSprite as build, greyedSprite, OUTLINE, type Pixel, type Sprite } from "../lib/sprites";
 
-export interface Pixel {
-  x: number;
-  y: number;
-  c: string;
-}
-
-export interface Sprite {
-  w: number;
-  h: number;
-  px: Pixel[];
-}
-
-function build(rows: readonly string[], palette: Record<string, string>): Sprite {
-  const px: Pixel[] = [];
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      const ch = row[x]!;
-      if (ch === ".") continue;
-      const c = palette[ch];
-      if (!c) throw new Error(`sin color para "${ch}"`);
-      px.push({ x, y, c });
-    }
-  });
-  return { w: Math.max(...rows.map((r) => r.length)), h: rows.length, px };
-}
-
-const OUTLINE = "#141414";
+export type { Pixel, Sprite };
 
 // ---------------------------------------------------------------------------
 // Larry: 14 × 22, de frente. Gorra de visera plana (con la calcomanía dorada),
@@ -221,17 +196,7 @@ export function dropSprite(kind: Kind): Sprite {
 }
 
 /** una vida apagada: la hamburguesita en grises */
-export function greyed(sprite: Sprite): Sprite {
-  return {
-    ...sprite,
-    px: sprite.px.map((p) => {
-      const n = parseInt(p.c.slice(1), 16);
-      const l = Math.round((((n >> 16) & 255) * 3 + ((n >> 8) & 255) * 6 + (n & 255)) / 10 / 2.4) + 30;
-      const h = l.toString(16).padStart(2, "0");
-      return { ...p, c: `#${h}${h}${h}` };
-    }),
-  };
-}
+export const greyed = greyedSprite;
 
 // ---------------------------------------------------------------------------
 // la calle de noche: fija, igual para todos, apagada para no competir

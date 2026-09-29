@@ -3,7 +3,9 @@
 // el tick anterior y el actual (alpha), así se ve fluido a cualquier frame rate.
 
 import { CATCH_Y, FIELD_H, FIELD_W, FLOOR_Y, isWish, LARRY_W, OBJ_SIZE, SUB, type Drop, type Kind, type SimState } from "./rules";
-import { dropSprite, larrySprite, LARRY_SPRITE_H, LARRY_SPRITE_W, SKY, streetRects, type Face, type Sprite } from "./sprites";
+import { dropSprite, larrySprite, LARRY_SPRITE_H, LARRY_SPRITE_W, SKY, streetRects, type Face } from "./sprites";
+import { integerScale, px } from "../lib/canvas-scale";
+import { paintedCanvas, spriteCanvas } from "../lib/sprites";
 
 /** cuánto dura la cara feliz después de agarrar un deseo */
 const HAPPY_TICKS = 24;
@@ -23,7 +25,7 @@ export interface DrawOptions {
 
 /** píxeles del dispositivo por unidad lógica que entran en un espacio dado */
 export function scaleFor(cssWidth: number, cssHeight: number, dpr: number): number {
-  return Math.max(1, Math.floor(Math.min((cssWidth * dpr) / FIELD_W, (cssHeight * dpr) / FIELD_H)));
+  return integerScale(cssWidth, cssHeight, dpr, FIELD_W, FIELD_H);
 }
 
 export function faceFor(state: SimState): Face {
@@ -33,32 +35,9 @@ export function faceFor(state: SimState): Face {
   return "normal";
 }
 
-// sprites y fondo pintados una vez por escala
-const cache = new Map<string, HTMLCanvasElement>();
-function painted(key: string, w: number, h: number, k: number, paint: (ctx: CanvasRenderingContext2D) => void): HTMLCanvasElement {
-  const id = `${key}@${k}`;
-  let c = cache.get(id);
-  if (!c) {
-    c = document.createElement("canvas");
-    c.width = w * k;
-    c.height = h * k;
-    const ctx = c.getContext("2d")!;
-    ctx.imageSmoothingEnabled = false;
-    paint(ctx);
-    cache.set(id, c);
-  }
-  return c;
-}
-function spriteCanvas(key: string, s: Sprite, k: number) {
-  return painted(key, s.w, s.h, k, (ctx) => {
-    for (const p of s.px) {
-      ctx.fillStyle = p.c;
-      ctx.fillRect(p.x * k, p.y * k, k, k);
-    }
-  });
-}
+// sprites y fondo pintados una vez por escala (games/lib/sprites)
 function background(k: number) {
-  return painted("calle", FIELD_W, FIELD_H, k, (ctx) => {
+  return paintedCanvas("larry:calle", FIELD_W, FIELD_H, k, (ctx) => {
     ctx.fillStyle = SKY;
     ctx.fillRect(0, 0, FIELD_W * k, FIELD_H * k);
     for (const r of streetRects()) {
@@ -68,11 +47,8 @@ function background(k: number) {
   });
 }
 function drop(kind: Kind, k: number) {
-  return spriteCanvas(`drop:${kind}`, dropSprite(kind), k);
+  return spriteCanvas(`larry:drop:${kind}`, dropSprite(kind), k);
 }
-
-/** unidades (con fracción) → píxeles del dispositivo, redondeado */
-const px = (units: number, k: number) => Math.round(units * k);
 
 export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, rain: readonly Drop[], k: number, opts: DrawOptions) {
   ctx.imageSmoothingEnabled = false;
@@ -113,7 +89,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, rain: 
   const moving = !state.end && state.larryX !== state.prevLarryX;
   const walk = moving ? ((Math.floor(state.tick / 6) % 2) + 1) as 1 | 2 : 0;
   const face = faceFor(state);
-  ctx.drawImage(spriteCanvas(`larry:${face}:${walk}`, larrySprite(face, walk), k), px(lx - LARRY_SPRITE_W / 2, k), px(FLOOR_Y - LARRY_SPRITE_H, k));
+  ctx.drawImage(spriteCanvas(`larry:cuerpo:${face}:${walk}`, larrySprite(face, walk), k), px(lx - LARRY_SPRITE_W / 2, k), px(FLOOR_Y - LARRY_SPRITE_H, k));
 
   // lo que cae
   for (const f of state.falling) {

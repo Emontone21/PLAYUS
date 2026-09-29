@@ -9,6 +9,7 @@
 // la misma entrada da el mismo resultado en cualquier motor de JavaScript.
 
 import { rngFromSeed } from "../../lib/rng";
+import { elapsedMismatch, parseTrace, type EndEvent, type InputEvent, type TraceEvent } from "../lib/trace";
 
 export const TICKS_PER_S = 60;
 export const DURATION_MS = 90_000;
@@ -339,11 +340,8 @@ function clamp(n: number, lo: number, hi: number) {
 // la traza y la validación
 // ---------------------------------------------------------------------------
 
-/** un cambio de objetivo: desde el tick `tick`, Larry va hacia `x` (unidades enteras, 0 a 90) */
-export type InputEvent = { tick: number; x: number };
-/** cierra la traza: el tick en que terminó la partida (o en que la cortó el cronómetro) */
-export type EndEvent = { tick: number; fin: true };
-export type TraceEvent = InputEvent | EndEvent;
+/** la traza son cambios de objetivo por tick (desde `tick`, Larry va hacia `x`, 0 a 90) y un cierre; el formato vive en games/lib/trace */
+export type { EndEvent, InputEvent, TraceEvent };
 
 export interface SimResult {
   score: number;
@@ -379,32 +377,15 @@ export type Verdict = { ok: true; score: number; endTick: number; endReason: End
 
 /** Revisa la forma de la traza y la vuelve a jugar. */
 export function check(attemptSeed: string, events: unknown, elapsedMs?: number): Verdict {
-  if (!Array.isArray(events) || events.length === 0) return { ok: false, reason: "traza mal armada" };
-  if (events.length > END_TICK + 1) return { ok: false, reason: "traza demasiado larga" };
-  const last = events[events.length - 1] as Partial<EndEvent> | null;
-  if (!last || typeof last !== "object" || last.fin !== true || !Number.isInteger(last.tick)) return { ok: false, reason: "falta el cierre de la traza" };
-  const declared = last.tick as number;
-  if (declared < 1 || declared > END_TICK) return { ok: false, reason: "tick de fin fuera de rango" };
-  const inputs: InputEvent[] = [];
-  let prev = -1;
-  for (let i = 0; i < events.length - 1; i++) {
-    const e = events[i] as Record<string, unknown> | null;
-    if (!e || typeof e !== "object" || !Number.isInteger(e.tick) || !Number.isInteger(e.x) || "fin" in e) return { ok: false, reason: "entrada mal armada" };
-    const tick = e.tick as number;
-    const x = e.x as number;
-    if (tick <= prev) return { ok: false, reason: "ticks fuera de orden" };
-    if (tick >= declared) return { ok: false, reason: "entrada después del final" };
-    if (x < 0 || x > FIELD_W) return { ok: false, reason: "x fuera del campo" };
-    prev = tick;
-    inputs.push({ tick, x });
-  }
-  const sim = simulate(attemptSeed, inputs, declared);
+  const shape = parseTrace(events, FIELD_W, END_TICK);
+  if (!shape.ok) return shape;
+  const declared = shape.endTick;
+  const sim = simulate(attemptSeed, shape.inputs, declared);
   // la partida terminó antes de lo que dice la traza: no es una partida posible
   if (sim.endTick !== declared) return { ok: false, reason: "el final no coincide con la partida" };
   if (elapsedMs !== undefined) {
-    const endMs = Math.floor((declared * 1000) / TICKS_PER_S);
-    if (endMs > elapsedMs) return { ok: false, reason: "la partida duró más que el intento" };
-    if (elapsedMs > endMs + ELAPSED_SLACK_MS) return { ok: false, reason: "el intento duró mucho más que la partida" };
+    const mismatch = elapsedMismatch(declared, TICKS_PER_S, elapsedMs, ELAPSED_SLACK_MS);
+    if (mismatch) return { ok: false, reason: mismatch };
   }
   return { ok: true, score: sim.score, endTick: sim.endTick, endReason: sim.endReason };
 }

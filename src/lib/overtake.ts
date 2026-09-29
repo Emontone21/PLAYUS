@@ -3,6 +3,7 @@ import "server-only";
 import type { AdminClient } from "@/lib/supabase/admin";
 import type { RoundRow } from "@/lib/supabase/types";
 import { getGame } from "@/games";
+import { scoreUnit } from "@/games/types";
 import { overtakenBy, type RankedEntry } from "./scoring";
 import { sendPushToProfiles } from "./push";
 
@@ -25,7 +26,8 @@ export async function notifyOvertaken(
   ]);
   const name = membership?.nickname ?? profile?.display_name ?? "alguien";
   const mine = after.find((e) => e.profileId === finisherId);
-  const unit = game?.scoring === "low" ? " ms" : "";
+  const u = scoreUnit(game);
+  const unit = u ? ` ${u}` : "";
 
   await sendPushToProfiles(admin, losers, {
     title: `${name} te pasó en ${game?.name ?? round.game_id}`,
