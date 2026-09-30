@@ -10,6 +10,7 @@ import { ParrillaDev } from "@/games/la-parrilla-del-bro/dev";
 import { JotaDev } from "@/games/pegandole-al-jota/dev";
 import { CaminandoDev } from "@/games/caminando-por-18/dev";
 import { RastasDev } from "@/games/rastitas-rastotas/dev";
+import { SunnyDev } from "@/games/pisteando-el-sunny/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -22,11 +23,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { id } = await params;
-  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull } = await searchParams;
+  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -44,6 +45,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "pisteando-el-sunny" ? (
+        <SunnyDev seed={seed} from={Math.max(0, Math.min(4500, Number(desde) || 0))} overlay={eje === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "rastitas-rastotas" ? (
         <RastasDev seed={seed} from={Math.max(0, Math.min(179, Number(desde) || 0))} coords={coords === "1"} slow={lento === "1"} redbull={redbull === "1"} />
       ) : game.id === "caminando-por-18" ? (

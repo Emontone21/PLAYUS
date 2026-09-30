@@ -18,6 +18,7 @@ import { playedTrace as jotaTrace } from "@/games/pegandole-al-jota/rules";
 import { jotaRounds } from "@/games/pegandole-al-jota/rounds";
 import { perfectTrace as caminandoTrace } from "@/games/caminando-por-18/rules";
 import { greedyTrace as rastasTrace } from "@/games/rastitas-rastotas/rules";
+import { autoTrace as sunnyTrace } from "@/games/pisteando-el-sunny/rules";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -275,6 +276,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // los tests terminan el intento a minDurationMs + 500 ms (5,5 s): una
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
+    return { score: result.score, events };
+  }
+  if (gameId === "pisteando-el-sunny") {
+    // el conductor automático maneja 5 s y el cronómetro corta ahí
+    const { events, result } = sunnyTrace(seed, 300);
     return { score: result.score, events };
   }
   if (gameId === "rastitas-rastotas") {
