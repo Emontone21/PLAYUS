@@ -18,7 +18,8 @@ import { sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { drawScene, scaleFor } from "./draw";
 import { BOOST_TICKS, check, DURATION_MS, FIELD_H, FIELD_W, greedyPolicy, initialState, MAX_SCORE, rngFor, step, TICKS_PER_S, validate, type Dir, type EndReason, type SimState, type TraceEvent, type TurnEvent } from "./rules";
-import { canSprite, cigSprite, headSprite, liceSprite, rastaSprite } from "./sprites";
+import { canSprite, cigSprite, headSprite, liceSprite } from "./sprites";
+import { pariVisible, rastaIntroSprite } from "./rasta";
 import { composeSprite } from "../lib/sprites";
 
 /** el final se ve un segundo antes de pasar al resultado */
@@ -126,6 +127,7 @@ export function RastasGame({ seed, onReady, onFinish, onProgress, dev }: GamePro
         rootRef.current.dataset.lastmove = String(s.lastMove);
         rootRef.current.dataset.head = String(s.body[0]);
         rootRef.current.dataset.dir = s.dir;
+        rootRef.current.dataset.pari = pariVisible(s) ? "1" : "";
       }
       if (s.tick !== reportedTick) {
         reportedTick = s.tick;
@@ -234,10 +236,9 @@ export function RastasGame({ seed, onReady, onFinish, onProgress, dev }: GamePro
 
 /** la cabeza con tres rastas, para las pantallas previa y de resultado */
 export function headWithRastas(): ReturnType<typeof composeSprite> {
-  return composeSprite(8, 32, [
-    { sprite: rastaSprite(true, 0, true), x: 0, y: 24 },
-    { sprite: rastaSprite(true, 2), x: 0, y: 16 },
-    { sprite: rastaSprite(true, 0), x: 0, y: 8 },
+  const rastas = rastaIntroSprite();
+  return composeSprite(rastas.w, rastas.h, [
+    { sprite: rastas, x: 0, y: 0 },
     { sprite: headSprite("up"), x: 0, y: 0 },
   ]);
 }

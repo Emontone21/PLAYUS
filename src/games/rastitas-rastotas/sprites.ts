@@ -1,5 +1,6 @@
-// Pixel art de la cabeza con rastas, el cigarro, la lata, los piojos y el
-// fondo, sin DOM ni React. Cada casillero mide 8 × 8 unidades (CELL).
+// Pixel art de la cabeza, el cigarro, la lata, los piojos y el fondo, sin DOM
+// ni React. Cada casillero mide 8 × 8 unidades (CELL). Las rastas no son un
+// sprite: se rasterizan como un tubo continuo en rasta.ts.
 
 import { buildSprite as build, OUTLINE, type Sprite } from "../lib/sprites";
 import { CELL, type Dir } from "./rules";
@@ -47,37 +48,6 @@ export function headSprite(dir: Dir): Sprite {
     for (let i = 0; i < turns; i++) rows = rotateRows(rows);
     s = build(rows, HEAD);
     headCache.set(dir, s);
-  }
-  return s;
-}
-
-// ---------------------------------------------------------------------------
-// las rastas: un pedazo de rasta gruesa por casillero, con una cuentita cada
-// tanto; la última termina en una colita. Con Red Bull, brillan.
-// ---------------------------------------------------------------------------
-
-const RASTA: Record<string, string> = { K, R: "#4A2C16", r: "#6B4225", B: "#F7D23E", b: "#E2574C", g: "#6FD3E0", G: "#8EDC66", L: "#9A6A3E" };
-const BEADS = ["B", "b", "g", "G"];
-
-const SEGMENT_V = ["..KKKK..", ".KRrRRK.", ".KRRrRK.", ".KrRRRK.", ".KRRRrK.", ".KRrRRK.", ".KRRRRK.", "..KKKK.."];
-const TAIL_V = ["..KKKK..", ".KRrRRK.", ".KRRRRK.", "..KRRK..", "..KRrK..", "...KK...", "...KL...", "...KL..."];
-
-const rastaCache = new Map<string, Sprite>();
-/** un segmento: `bead` pone una cuentita del color dado; `glow` aclara (Red Bull) */
-export function rastaSprite(vertical: boolean, bead: number, tail = false, glow = false): Sprite {
-  const key = `${vertical}:${bead}:${tail}:${glow}`;
-  let s = rastaCache.get(key);
-  if (!s) {
-    let rows = [...(tail ? TAIL_V : SEGMENT_V)];
-    if (bead > 0 && !tail) {
-      const color = BEADS[(bead - 1) % BEADS.length]!;
-      rows[3] = `.KR${color}${color}RK.`;
-      rows[4] = `.KR${color}${color}RK.`;
-    }
-    if (!vertical) rows = rotateRows(rows);
-    const palette = glow ? { ...RASTA, R: "#6B4225", r: "#8A5A35", K: "#3B2314" } : RASTA;
-    s = build(rows, palette);
-    rastaCache.set(key, s);
   }
   return s;
 }

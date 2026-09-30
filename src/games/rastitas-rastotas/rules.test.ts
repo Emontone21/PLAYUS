@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BOOST_MIN,
   BOOST_TICKS,
+  CELL,
   CELLS,
   cellOf,
   check,
@@ -37,7 +38,8 @@ import {
   type TraceEvent,
   type TurnEvent,
 } from "./rules";
-import { canSprite, cigSprite, headSprite, liceSprite, rastaSprite } from "./sprites";
+import { canSprite, cigSprite, headSprite, liceSprite } from "./sprites";
+import { AXIS, BEAD_COLORS, cellsAhead, centersOf, pariBox, pariVisible, PARI_TICKS, radiusAt, rasterRastas, rastaIntroSprite, RASTA_WIDTH, type Pt } from "./rasta";
 
 const SEED = "intento-1";
 const SEEDS = Array.from({ length: 1000 }, (_, i) => `semilla-${i}`);
@@ -351,10 +353,126 @@ describe("sprites", () => {
     const dirs: Dir[] = ["up", "down", "left", "right"];
     const shapes = new Set(dirs.map((d) => JSON.stringify(headSprite(d).px)));
     expect(shapes.size).toBe(4);
-    for (const sp of [headSprite("up"), cigSprite(), canSprite(), liceSprite(0), liceSprite(1), rastaSprite(true, 0), rastaSprite(false, 2, false, true), rastaSprite(true, 0, true)]) {
+    for (const sp of [headSprite("up"), cigSprite(), canSprite(), liceSprite(0), liceSprite(1)]) {
       expect([sp.w, sp.h]).toEqual([8, 8]);
     }
-    expect(rastaSprite(true, 1).px).not.toEqual(rastaSprite(true, 0).px);
     expect(liceSprite(0).px).not.toEqual(liceSprite(1).px);
+    const intro = rastaIntroSprite();
+    expect(intro.w).toBe(8);
+    expect(intro.px.length).toBeGreaterThan(100);
+  });
+});
+
+describe("las rastas como tubo", () => {
+  const straight = (n: number): Pt[] => Array.from({ length: n }, (_, i) => ({ x: 7 * CELL + AXIS, y: 4 * CELL + AXIS + i * CELL }));
+  type R = ReturnType<typeof rasterRastas>;
+  const opaque = (r: R, x: number, y: number) => r.data[(y * r.w + x) * 4 + 3]! > 0;
+  const rowWidth = (r: R, y: number) => {
+    let n = 0;
+    for (let x = 0; x < r.w; x++) if (opaque(r, x, y)) n++;
+    return n;
+  };
+  const hexAt = (r: R, i: number) => `#${[0, 1, 2].map((j) => r.data[i * 4 + j]!.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+
+  it("ocupa 7 de 8 unidades, es continuo entre casilleros y se afina en los últimos dos", () => {
+    const r = rasterRastas(straight(12));
+    // en el medio del cuerpo: 7 unidades (u 8 con un bultito) en cada fila, también en las uniones
+    for (let y = 5 * CELL; y < 8 * CELL; y++) expect([RASTA_WIDTH, RASTA_WIDTH + 1]).toContain(rowWidth(r, y));
+    // la punta: más angosta que el cuerpo, y termina en una colita de 1 o 2 unidades
+    const tipY = 4 * CELL + 4 + 11 * CELL + 3;
+    expect(rowWidth(r, tipY)).toBeLessThanOrEqual(2);
+    expect(rowWidth(r, tipY)).toBeGreaterThan(0);
+    expect(rowWidth(r, 4 * CELL + 4 + 10 * CELL)).toBeLessThan(RASTA_WIDTH);
+    expect(radiusAt(0, 1)).toBeLessThan(radiusAt(40, 1));
+    // tres tonos de marrón más el contorno (en tramos sin cuentita)
+    const colors = new Set<string>();
+    for (let y = 7 * CELL + 2; y < 9 * CELL + 2; y++) for (let x = 0; x < r.w; x++) if (opaque(r, x, y)) colors.add(hexAt(r, y * r.w + x));
+    expect(colors.size).toBe(4);
+  });
+
+  it("las curvas quedan llenas (sin cortes en las esquinas) y las cuentitas son pocas", () => {
+    const pts: Pt[] = [];
+    for (let i = 0; i < 6; i++) pts.push({ x: 4 + i * CELL, y: 4 + 6 * CELL });
+    for (let i = 1; i < 6; i++) pts.push({ x: 4 + 5 * CELL, y: 4 + (6 - i) * CELL });
+    for (let i = 1; i < 4; i++) pts.push({ x: 4 + (5 + i) * CELL, y: 4 + CELL });
+    pts.reverse(); // la cabeza primero
+    const r = rasterRastas(pts);
+    // cada centro del recorrido está pintado, y también el punto medio entre centros (la unión)
+    for (let i = 1; i + 1 < pts.length; i++) {
+      const a = pts[i]!;
+      const b = pts[i + 1]!;
+      expect(opaque(r, Math.floor(a.x), Math.floor(a.y))).toBe(true);
+      expect(opaque(r, Math.floor((a.x + b.x) / 2), Math.floor((a.y + b.y) / 2))).toBe(true);
+    }
+    // la esquina interior de la curva también está llena (redondeada, no cortada)
+    expect(opaque(r, 4 + 5 * CELL - 3, 4 + 6 * CELL - 3)).toBe(true);
+    let beads = 0;
+    for (let i = 0; i < r.w * r.h; i++) if (r.data[i * 4 + 3]! > 0 && (BEAD_COLORS as readonly string[]).includes(hexAt(r, i))) beads++;
+    // 14 puntos (13 tramos): dos cuentitas de 3 × 3
+    expect(beads).toBe(2 * 9);
+  });
+
+  it("con Red Bull el brillo va encima de la textura: los tonos siguen ahí y aparece el halo", () => {
+    const plain = rasterRastas(straight(10));
+    const glow = rasterRastas(straight(10), { boosted: true, pulse: 1 });
+    expect(rowWidth(glow, 6 * CELL)).toBeGreaterThan(rowWidth(plain, 6 * CELL));
+    const tones = new Set<string>();
+    for (let y = 5 * CELL; y < 8 * CELL; y++) for (let x = 0; x < glow.w; x++) if (glow.data[(y * glow.w + x) * 4 + 3] === 255) tones.add(hexAt(glow, y * glow.w + x));
+    expect(tones.size).toBeGreaterThanOrEqual(4);
+  });
+
+  it("los centros interpolan entre el paso anterior y el actual", () => {
+    const rng = rngFor(SEED);
+    const s = initialState(rng);
+    while (s.lastMove === 0) step(s, rng);
+    const before = centersOf(s, 0);
+    const after = centersOf(s, 1);
+    expect(after[0]!.y - before[0]!.y).toBe(-CELL);
+  });
+});
+
+describe("el globo ¡PARI!", () => {
+  const dirs: Dir[] = ["up", "down", "left", "right"];
+  it("nunca tapa los tres casilleros de adelante y siempre entra en la grilla", () => {
+    for (const dir of dirs) {
+      for (let cx = 0; cx < COLS; cx++) {
+        for (let cy = 0; cy < ROWS; cy++) {
+          const b = pariBox(cx * CELL, cy * CELL, dir);
+          expect(b.x).toBeGreaterThanOrEqual(0);
+          expect(b.y).toBeGreaterThanOrEqual(0);
+          expect(b.x + b.w).toBeLessThanOrEqual(COLS * CELL);
+          expect(b.y + b.h).toBeLessThanOrEqual(ROWS * CELL);
+          for (const c of cellsAhead(cx * CELL, cy * CELL, dir)) {
+            const overlaps = b.x < c.x + CELL && b.x + b.w > c.x && b.y < c.y + CELL && b.y + b.h > c.y;
+            expect(overlaps).toBe(false);
+          }
+        }
+      }
+    }
+    // en el medio va del lado contrario; pegado al borde de atrás, a un costado
+    expect(pariBox(7 * CELL, 10 * CELL, "up").side).toBe("down");
+    expect(pariBox(7 * CELL, 20 * CELL, "up").side).not.toBe("down");
+    expect(["up", "down"]).toContain(pariBox(0, 10 * CELL, "right").side);
+  });
+
+  it("aparece al comer un cigarro o una Red Bull, dura 42 ticks y vuelve a empezar si se come otra cosa", () => {
+    const rng = rngFor(SEED);
+    const s = initialState(rng);
+    expect(pariVisible(s)).toBe(false);
+    const bot = greedyPolicy();
+    while (s.cigs < 1 && !s.end) {
+      const d = bot(s);
+      step(s, rng, d ? [d] : []);
+    }
+    expect(pariVisible(s)).toBe(true);
+    const ate = s.lastEat;
+    while (s.tick - ate < PARI_TICKS - 1) step(s, rng);
+    expect(pariVisible(s)).toBe(true);
+    s.boostUntil = s.tick + BOOST_TICKS; // como si agarrara una Red Bull ahora
+    step(s, rng);
+    step(s, rng);
+    expect(pariVisible(s)).toBe(true);
+    s.tick += PARI_TICKS;
+    expect(pariVisible(s)).toBe(false);
   });
 });

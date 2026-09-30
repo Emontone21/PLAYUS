@@ -2,6 +2,19 @@
 Estado: parcial
 Fecha: 2026-09-30
 
+## Segunda versión: rastas gruesas y "¡PARI!"
+
+Dos cambios visuales el mismo día, sin tocar la simulación, las reglas ni `validate` (decisiones 177 y 178):
+
+- **Las rastas como un tubo continuo.** Ya no hay un sprite por casillero: `rasta.ts` rasteriza las rastas a una unidad por píxel como un campo de distancia a la línea de centros interpolados. El tubo mide 7 de 8 unidades, no tiene cortes entre casilleros y las uniones y las curvas quedan redondeadas. Textura de franjas diagonales en tres tonos de marrón que se mueven con las rastas, contorno una unidad más oscuro, bultitos cada tanto de un lado, la punta se afina en los últimos dos casilleros y termina en colita, cuentitas de color una cada seis tramos, y nace de atrás de la cabeza con el mismo grosor. Con Red Bull los tonos se aclaran y una línea de brillo y un halo semitransparentes van encima de la textura (sin pulso con `prefers-reduced-motion`).
+- **"¡PARI!" al comer.** Al comer un cigarro o agarrar una Red Bull, un globo con "¡PARI!" junto a la cabeza durante 700 ms; si come otra cosa antes, vuelve a empezar. Va del lado contrario a la dirección de avance y, si ahí no entra en la grilla, a un costado: nunca tapa los tres casilleros de adelante (comprobado en el test para todas las posiciones y direcciones). Fondo claro y contorno oscuro con letras grandes de la fuente de píxeles; con Red Bull, azul con letras amarillas como la lata. Entra con un saltito; con `prefers-reduced-motion`, sin animación.
+- **Herramienta:** `/dev/juego/rastitas-rastotas` tiene abajo una vista de rastas largas con curvas en las cuatro direcciones, con casillas para verla con Red Bull y con el globo.
+- **Capturas nuevas** en `reports/rastitas-rastotas/`: `vista-rastas-curvas.png` y `vista-rastas-curvas-red-bull.png` (la vista de la herramienta), `pari-cigarro.png` y `pari-red-bull.png` (el globo en la partida), y `previa.png` y `partida-rastas-largas.png` rehechas con el arte nuevo. El resto de las capturas es de la primera versión (los piojos, el aviso y los finales no cambiaron).
+- **Tests:** los 15 del juego más 6 nuevos (ancho, continuidad en las curvas, punta, tonos y cuentitas del tubo; el brillo encima de la textura; la interpolación de centros; el globo nunca tapa lo de adelante y dura lo que tiene que durar). E2E: la vista de la herramienta se comprueba en la prueba de `simulate`; los tres E2E del juego pasaron en local (la ronda real al segundo intento, por el refresco en vivo del ranking de la decisión 113). `npm test` 185 de 185; build, lint y tipos limpios; publicado, y la ronda real contra producción pasó.
+- **Deuda:** el globo se ve grande en la grilla de 15 casilleros (6,5 de ancho): si molesta en el teléfono, bajar las letras a escala simple es un cambio de una línea.
+
+Lo que sigue es el reporte de la primera versión, que vale para todo lo que no cambió.
+
 ## Qué hice
 
 El octavo juego real está construido, probado y publicado en **https://playus-lake.vercel.app**. Desde la próxima ronda, el mazo de cada grupo reparte los ocho juegos; la ronda de hoy no cambia. El estado es parcial por lo de siempre: "se juega cómodo deslizando con un pulgar", "los giros rápidos no se pierden" y "la Red Bull se siente como una apuesta" piden un teléfono de verdad. Todo lo demás está hecho y verificado, incluida una partida en producción.

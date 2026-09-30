@@ -33,6 +33,8 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
   await page.goto("/dev/juego/rastitas-rastotas?seed=abc");
   await expect(page.getByTestId("rastas-card")).toBeVisible();
   await page.waitForFunction(() => "__rastas" in window);
+  // la vista de rastas largas de la herramienta
+  await expect(page.getByTestId("rastas-vista")).toBeVisible();
   for (const seed of SEEDS) {
     const inBrowser = await page.evaluate((s) => {
       type Trace = { events: Array<{ tick: number; fin?: true }>; result: { score: number; cigs: number; endTick: number; endReason: string | null } };
