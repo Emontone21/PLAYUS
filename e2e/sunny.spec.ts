@@ -24,7 +24,7 @@ function summary(seed: string) {
   const lazy = simulate(seed, []);
   return JSON.stringify({
     auto: { n: a.events.length, first: a.events.slice(0, 40), score: a.result.score, endTick: a.result.endTick, reason: a.result.endReason },
-    replay: { x: replay.x, y: replay.y, h: replay.h, m: replay.m, mq: replay.mq, heat: replay.heat, idx: replay.idx, meters: replay.meters, offset: replay.offset },
+    replay: { x: replay.x, y: replay.y, h: replay.h, m: replay.m, mq: replay.mq, heat: replay.heat, idx: replay.idx, progress: replay.progress, meters: replay.meters, offset: replay.offset },
     lazy: { score: lazy.score, endTick: lazy.endTick, reason: lazy.endReason, x: lazy.state.x, y: lazy.state.y },
   });
 }
@@ -33,11 +33,11 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
   await page.goto("/dev/juego/pisteando-el-sunny?seed=abc");
   await expect(page.getByTestId("sunny-card")).toBeVisible();
   await page.waitForFunction(() => "__sunny" in window);
-  await expect(page.getByTestId("dev-rotations")).toBeVisible();
+  await expect(page.getByTestId("dev-viewer")).toBeVisible();
   for (const seed of SEEDS) {
     const inBrowser = await page.evaluate((s) => {
       type Ev = { tick: number; fin?: true; steer?: number };
-      type St = { x: number; y: number; h: number; m: number; mq: number; heat: number; idx: number; meters: number; offset: number };
+      type St = { x: number; y: number; h: number; m: number; mq: number; heat: number; idx: number; progress: number; meters: number; offset: number };
       type R = {
         autoTrace: (s: string) => { events: Ev[]; result: { score: number; endTick: number; endReason: string | null } };
         simulate: (s: string, t: unknown[]) => { score: number; endTick: number; endReason: string | null; state: St };
@@ -49,7 +49,7 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
       const lazy = R.simulate(s, []);
       return JSON.stringify({
         auto: { n: a.events.length, first: a.events.slice(0, 40), score: a.result.score, endTick: a.result.endTick, reason: a.result.endReason },
-        replay: { x: replay.x, y: replay.y, h: replay.h, m: replay.m, mq: replay.mq, heat: replay.heat, idx: replay.idx, meters: replay.meters, offset: replay.offset },
+        replay: { x: replay.x, y: replay.y, h: replay.h, m: replay.m, mq: replay.mq, heat: replay.heat, idx: replay.idx, progress: replay.progress, meters: replay.meters, offset: replay.offset },
         lazy: { score: lazy.score, endTick: lazy.endTick, reason: lazy.endReason, x: lazy.state.x, y: lazy.state.y },
       });
     }, seed);

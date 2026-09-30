@@ -1,25 +1,30 @@
-// "pisteando el sunny": un Nissan Sunny acelera solo por una ruta llena de
-// curvas que flota en el vacío. Se dobla manteniendo apretada una mitad de la
+// "pisteando el sunny": un Nissan Sunny acelera solo por una ruta en zigzag
+// que flota en el vacío. Se dobla manteniendo apretada una mitad de la
 // pantalla (o las flechas); a velocidad derrapa. Si se sale de la ruta, se
 // cae. El puntaje son los metros por el eje de la ruta.
 //
 // Mismo esquema técnico que los otros juegos de acción: simulación pura a 60
 // ticks (rules.ts) avanzada por el reloj de games/lib, y una traza con los
-// cambios del control que `validate` vuelve a jugar entera.
+// cambios del control que `validate` vuelve a jugar entera. El dibujo es 3D
+// low-poly con three (scene.ts), cargado con import() dinámico solo acá: la
+// excepción a la estética de pixel art de Frog (decisión 189).
 //
 // Hooks como React.useState (decisión 8): el servidor importa este módulo.
 
 import * as React from "react";
 import type { GameModule, GameProps, GameResult } from "../types";
 import { createTickClock } from "../lib/tick-clock";
-import { sizeCanvas } from "../lib/canvas-scale";
-import { SpriteSvg } from "../lib/sprite-svg";
-import { createVisuals, drawScene, scaleFor, updateVisuals } from "./draw";
-import { autoPolicy, check, DURATION_MS, FIELD_H, FIELD_W, generateCourse, initialState, kmh, MAX_SCORE, slipOf, step, TICKS_PER_S, validate, type EndReason, type SimState, type Steer, type SteerEvent, type TraceEvent } from "./rules";
-import { carSprite, introSprite } from "./sprites";
+import { autoPolicy, check, DURATION_MS, generateCourse, initialState, kmh, MAX_SCORE, slipOf, step, TICKS_PER_S, validate, type Course, type EndReason, type SimState, type Steer, type SteerEvent, type TraceEvent } from "./rules";
+import { createVisuals, FALL_TICKS, updateVisuals } from "./visuals";
+import type { GameScene, Spinner } from "./scene";
 
 /** la caída se ve un segundo antes de pasar al resultado */
 const END_HOLD_MS = 1_000;
+/** si el renderer no cargó en este tiempo, la partida arranca igual */
+const LOAD_GRACE_MS = 4_000;
+
+/** el degradé del cielo (el mismo de scene.ts, sin importarlo: three solo se carga con import()) */
+const SKY_CSS = "linear-gradient(180deg, #5FA8E6 0%, #C9E6FB 100%)";
 
 export interface SunnyDevOptions {
   overlay?: boolean;
@@ -32,20 +37,24 @@ export interface SunnyDevOptions {
 
 type Hud = { meters: number; kmh: number; end: EndReason | null };
 
+/** carga el renderer 3D una sola vez (three entra en un chunk aparte, solo de este juego) */
+let sceneModule: Promise<typeof import("./scene")> | null = null;
+function loadScene() {
+  if (!sceneModule) sceneModule = import("./scene");
+  return sceneModule;
+}
+
 export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProps & { dev?: SunnyDevOptions }) {
-  const course = React.useMemo(() => generateCourse(seed), [seed]);
+  const course = React.useMemo<Course>(() => generateCourse(seed), [seed]);
   const rootRef = React.useRef<HTMLDivElement>(null);
-  const areaRef = React.useRef<HTMLDivElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const stageRef = React.useRef<HTMLDivElement>(null);
   /** el control vigente: lo que el dedo o el teclado piden ahora */
   const steerRef = React.useRef<Steer>(0);
   const pointerRef = React.useRef<number | null>(null);
   const keysRef = React.useRef<Steer[]>([]);
-  const kRef = React.useRef(1);
   const reducedRef = React.useRef(false);
   const devRef = React.useRef(dev);
   devRef.current = dev;
-  const [k, setK] = React.useState(1);
   const [hud, setHud] = React.useState<Hud>({ meters: 0, kmh: 60, end: null });
   const startMeters = dev?.startMeters ?? 0;
 
@@ -57,27 +66,10 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
     return () => mq.removeEventListener("change", sync);
   }, []);
 
+  // la partida: simulación a paso fijo, avanzada por el tiempo transcurrido; el renderer se carga aparte
   React.useEffect(() => {
-    const area = areaRef.current;
-    if (!area) return;
-    const measure = () => {
-      const r = area.getBoundingClientRect();
-      setK(scaleFor(r.width, r.height, window.devicePixelRatio || 1));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(area);
-    return () => ro.disconnect();
-  }, []);
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    sizeCanvas(canvas, FIELD_W, FIELD_H, k, window.devicePixelRatio || 1);
-    kRef.current = k;
-  }, [k]);
-
-  // la partida: simulación a paso fijo, avanzada por el tiempo transcurrido
-  React.useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
     const s: SimState = initialState();
     const inputs: SteerEvent[] = [];
     let current: Steer = 0;
@@ -95,21 +87,34 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
     steerRef.current = 0;
     keysRef.current = [];
     pointerRef.current = null;
-    const clock = createTickClock(TICKS_PER_S, s.tick, performance.now());
+
+    let scene: GameScene | null = null;
+    let disposed = false;
+    let clock: ReturnType<typeof createTickClock> | null = null;
     let raf = 0;
     let reportedTick = -1;
     let finishTimer: number | undefined;
+    let ready = false;
     const resultNow = (): GameResult => {
       const events: TraceEvent[] = [...inputs, { tick: s.end ? s.end.tick : s.tick, fin: true }];
       return { score: s.meters, events };
     };
+    const start = () => {
+      if (ready || disposed) return;
+      ready = true;
+      clock = createTickClock(TICKS_PER_S, s.tick, performance.now());
+      onProgress(resultNow());
+      onReady();
+      raf = requestAnimationFrame(frame);
+    };
 
     const frame = () => {
+      if (!clock) return;
       const { want, alpha } = clock.advance(performance.now(), devRef.current?.slow ? 0.25 : 1);
       while (s.tick < want) {
         if (s.end) {
           // la caída sigue animándose un rato
-          if (vis.lastTick >= s.end.tick + 60) break;
+          if (vis.lastTick >= s.end.tick + FALL_TICKS) break;
           vis.lastTick++;
           updateVisuals(vis, { ...s, tick: vis.lastTick }, reducedRef.current);
           continue;
@@ -117,8 +122,7 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
         apply(devRef.current?.auto ? bot(s, course) : steerRef.current);
         updateVisuals(vis, s, reducedRef.current);
       }
-      const ctx = canvasRef.current?.getContext("2d");
-      if (ctx) drawScene(ctx, s, course, kRef.current, vis, { alpha, reduced: reducedRef.current, overlay: devRef.current?.overlay });
+      scene?.render(s, alpha, vis, { reduced: reducedRef.current, overlay: !!devRef.current?.overlay });
       if (rootRef.current) {
         const d = rootRef.current.dataset;
         d.tick = String(s.tick);
@@ -126,6 +130,7 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
         d.steer = String(s.steer);
         d.slip = String(slipOf(s));
         d.kmh = String(kmh(s.v));
+        d.scene = scene ? "1" : "";
       }
       if (s.tick !== reportedTick) {
         reportedTick = s.tick;
@@ -138,9 +143,18 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
       }
       raf = requestAnimationFrame(frame);
     };
-    raf = requestAnimationFrame(frame);
-    onProgress(resultNow());
-    onReady();
+
+    // el renderer: three se carga recién acá; la partida arranca cuando está (o a los 4 s, pase lo que pase)
+    const grace = window.setTimeout(start, LOAD_GRACE_MS);
+    loadScene()
+      .then((mod) => {
+        if (disposed) return;
+        scene = mod.createGameScene(stage, course);
+        start();
+      })
+      .catch(() => start());
+    const ro = new ResizeObserver(() => scene?.resize());
+    ro.observe(stage);
 
     // las flechas del teclado: la última apretada manda
     const keyOf = (e: KeyboardEvent): Steer | null => (e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : null);
@@ -163,10 +177,15 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
     return () => {
+      disposed = true;
+      window.clearTimeout(grace);
       cancelAnimationFrame(raf);
+      ro.disconnect();
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
       if (finishTimer !== undefined) window.clearTimeout(finishTimer);
+      scene?.dispose();
+      scene = null;
     };
   }, [course, startMeters, onReady, onProgress, onFinish]);
 
@@ -196,8 +215,8 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   return (
     <div
       ref={rootRef}
-      className="flex h-full w-full select-none flex-col gap-2"
-      style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+      className="relative h-full w-full select-none overflow-hidden rounded-lg"
+      style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none", background: SKY_CSS, border: "3px solid var(--contorno)", minHeight: 320 }}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -207,31 +226,30 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
       data-testid="sunny-area"
       data-end={hud.end ?? ""}
     >
-      <div className="flex items-center justify-between px-1">
-        <span className="display text-xl text-tinta" data-testid="sunny-meters" aria-live="off">
+      <div ref={stageRef} className="absolute inset-0" data-testid="sunny-stage" role="img" aria-label="la ruta en zigzag flotando en el cielo y el sunny" />
+      {/* los metros bien grandes y el velocímetro debajo */}
+      <div className="pointer-events-none absolute inset-x-0 top-2 flex flex-col items-center">
+        <span className="display leading-none text-white" style={{ fontSize: 52, fontWeight: 700, WebkitTextStroke: "2px #1B1B1B", paintOrder: "stroke fill", textShadow: "0 3px 0 rgba(0,0,0,0.25)" }} data-testid="sunny-meters" aria-live="off">
           {hud.meters} m
         </span>
-        <span className="display text-base text-tinta-media" data-testid="sunny-kmh">
+        <span className="display text-white" style={{ fontSize: 20, fontWeight: 700, WebkitTextStroke: "1px #1B1B1B", paintOrder: "stroke fill" }} data-testid="sunny-kmh">
           {hud.kmh} km/h
         </span>
       </div>
-      <div ref={areaRef} className="relative flex min-h-0 flex-1 items-center justify-center" data-testid="sunny-field">
-        <canvas ref={canvasRef} className="pointer-events-none [image-rendering:pixelated]" style={{ border: "3px solid var(--contorno)", borderRadius: 8 }} aria-label="la ruta en el vacío y el sunny" role="img" />
-        {/* dónde tocar: una marca sutil abajo de cada mitad */}
-        <span className="pointer-events-none absolute bottom-3 left-4 text-3xl text-tinta-suave opacity-50" aria-hidden="true">
-          ‹
-        </span>
-        <span className="pointer-events-none absolute bottom-3 right-4 text-3xl text-tinta-suave opacity-50" aria-hidden="true">
-          ›
-        </span>
-        {hud.end === "caida" ? (
-          <div className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center">
-            <span className="note-alert display text-3xl" role="status" data-testid="sunny-banner">
-              ¡se fue el sunny!
-            </span>
-          </div>
-        ) : null}
-      </div>
+      {/* dónde tocar: una marca sutil abajo de cada mitad */}
+      <span className="pointer-events-none absolute bottom-2 left-4 text-3xl text-white opacity-60" aria-hidden="true">
+        ‹
+      </span>
+      <span className="pointer-events-none absolute bottom-2 right-4 text-3xl text-white opacity-60" aria-hidden="true">
+        ›
+      </span>
+      {hud.end === "caida" ? (
+        <div className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center">
+          <span className="note-alert display text-3xl" role="status" data-testid="sunny-banner">
+            ¡se fue el sunny!
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -240,14 +258,33 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
 // la pantalla previa y la de resultado
 // ---------------------------------------------------------------------------
 
+/** el sunny girando despacio sobre un pedazo de losa (three, cargado aparte) */
+export function SunnyPreview({ height = 150, label = "el sunny girando sobre un pedazo de losa" }: { height?: number; label?: string }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let spinner: Spinner | null = null;
+    let disposed = false;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    loadScene().then((mod) => {
+      if (disposed) return;
+      spinner = mod.createPreview(el, reduced);
+    });
+    return () => {
+      disposed = true;
+      spinner?.dispose();
+    };
+  }, []);
+  return <div ref={ref} className="w-full overflow-hidden rounded-lg" style={{ height, background: SKY_CSS }} role="img" aria-label={label} data-testid="sunny-preview" />;
+}
+
 function Intro() {
   return (
-    <div className="card card-c flex items-center gap-5" data-testid="sunny-card">
-      <SpriteSvg sprite={introSprite()} height={140} label="el sunny derrapando sobre la ruta, con el vacío alrededor" />
-      <ul className="flex flex-col gap-3 text-sm text-tinta-media">
-        <li className="flex items-center gap-2">
-          <SpriteSvg sprite={carSprite(0)} height={40} label="el sunny" /> acelera solo
-        </li>
+    <div className="card card-c flex flex-col gap-3" data-testid="sunny-card">
+      <SunnyPreview />
+      <ul className="flex flex-col gap-2 text-sm text-tinta-media">
+        <li>el sunny acelera solo</li>
         <li>‹ y › doblan mientras apretás</li>
         <li>los metros por la ruta son el puntaje</li>
       </ul>
@@ -260,7 +297,6 @@ function Result({ result, seed, cutByTimer }: { result: GameResult; seed: string
   const reason: EndReason | null = v.ok ? (v.endReason ?? (cutByTimer ? "tiempo" : null)) : null;
   return (
     <div className="flex flex-col items-center gap-3" data-testid="sunny-result" data-reason={reason ?? ""}>
-      <SpriteSvg sprite={carSprite(reason === "caida" ? 5 : 0)} height={90} label="el sunny" />
       <p className="display-lg text-tinta" style={{ fontSize: 88 }}>
         <span data-testid="game-score">{result.score}</span>
         <span className="ml-2 text-3xl text-tinta-suave">m</span>
@@ -274,7 +310,7 @@ export const pisteandoElSunny: GameModule = {
   id: "pisteando-el-sunny",
   name: "pisteando el sunny",
   tagline: "la cola afuera, las ruedas adentro.",
-  howTo: ["mantené apretado a la izquierda o a la derecha para doblar", "a velocidad el sunny derrapa: doblá antes de la curva", "si te salís de la ruta, te caés"],
+  howTo: ["mantené apretado a la izquierda o a la derecha para doblar", "a velocidad el sunny derrapa: doblá antes de la esquina", "si te salís de la ruta, te caés"],
   durationMs: DURATION_MS,
   // caerse lleva al menos un par de segundos, más la cuenta regresiva y el segundo de la caída
   minDurationMs: 3_000,
