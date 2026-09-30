@@ -54,16 +54,26 @@ export function rearWheels(state: SimState): [{ x: number; y: number }, { x: num
 export function updateVisuals(vis: Visuals, state: SimState, reduced: boolean, rand: () => number = Math.random): void {
   if (state.tick === vis.lastTick) return;
   vis.lastTick = state.tick;
-  if (state.end?.reason === "caida") {
+  if (state.end?.reason === "caida" || state.end?.reason === "choque") {
     if (vis.fallT === 0) {
       vis.fallX = state.x;
       vis.fallY = state.y;
       vis.fallH = state.h;
     }
     vis.fallT = Math.min(FALL_TICKS, vis.fallT + 1);
-    // sigue deslizando hacia el vacío
-    vis.fallX += (state.v * sinA(state.m)) >> 12;
-    vis.fallY -= (state.v * cosA(state.m)) >> 12;
+    if (state.end.reason === "caida") {
+      // sigue deslizando hacia el vacío
+      vis.fallX += (state.v * sinA(state.m)) >> 12;
+      vis.fallY -= (state.v * cosA(state.m)) >> 12;
+    } else {
+      // rebota: vuelve para atrás a media velocidad y se va de costado hacia el vacío
+      const side = state.offset >= 0 ? 1 : -1;
+      vis.fallX -= (state.v * sinA(state.m)) >> 13;
+      vis.fallY += (state.v * cosA(state.m)) >> 13;
+      vis.fallX += (side * (state.v * cosA(state.h))) >> 12;
+      vis.fallY += (side * (state.v * sinA(state.h))) >> 12;
+      vis.fallH = (vis.fallH + 14) % 1024;
+    }
   }
   for (const p of vis.smoke) {
     p.age++;

@@ -59,7 +59,8 @@ test("simulate da exactamente lo mismo en el navegador y en Node", async ({ page
 
 test("la pantalla previa, el área sin scroll, mantener apretado dobla, y una partida que suelta y se cae", async ({ browser }) => {
   const a = await freshPage(browser);
-  await a.page.goto("/dev/juego/pisteando-el-sunny?seed=abc");
+  // en cámara lenta: apretando a fondo desde el arranque, a velocidad normal el auto se cae en menos de 2 s
+  await a.page.goto("/dev/juego/pisteando-el-sunny?seed=abc&lento=1");
   const card = a.page.getByTestId("sunny-card");
   await expect(card).toContainText("acelera solo");
   await a.page.getByTestId("game-play").click();
@@ -86,7 +87,7 @@ test("la pantalla previa, el área sin scroll, mantener apretado dobla, y una pa
   const score = await playSunny(b.page, "abc", 4);
   expect(score).toBeGreaterThanOrEqual(40);
   await expect(b.page.getByTestId("game-score")).toHaveText(String(score));
-  await expect(b.page.getByTestId("sunny-result")).toHaveAttribute("data-reason", "caida");
+  await expect(b.page.getByTestId("sunny-result")).toHaveAttribute("data-reason", /caida|choque/);
   await b.context.close();
 });
 

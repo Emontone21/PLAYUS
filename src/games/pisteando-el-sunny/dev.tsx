@@ -16,8 +16,8 @@ import type { Spinner } from "./scene";
 
 const JUMPS = [0, 500, 1500, 3000] as const;
 
-export function SunnyDev({ seed, from = 0, overlay = false, slow = false, auto = false }: { seed: string; from?: number; overlay?: boolean; slow?: boolean; auto?: boolean }) {
-  const [opts, setOpts] = React.useState({ overlay, slow, auto });
+export function SunnyDev({ seed, from = 0, overlay = false, slow = false, auto = false, hitboxes = false }: { seed: string; from?: number; overlay?: boolean; slow?: boolean; auto?: boolean; hitboxes?: boolean }) {
+  const [opts, setOpts] = React.useState({ overlay, slow, auto, hitboxes });
   const [start, setStart] = React.useState(from);
   const [run, setRun] = React.useState(0);
   const optsRef = React.useRef<SunnyDevOptions>({});
@@ -49,6 +49,10 @@ export function SunnyDev({ seed, from = 0, overlay = false, slow = false, auto =
           eje y vectores
         </label>
         <label className="chip flex items-center gap-1">
+          <input type="checkbox" checked={opts.hitboxes} onChange={(e) => setOpts((o) => ({ ...o, hitboxes: e.target.checked }))} data-testid="dev-hitboxes" />
+          cajas de choque
+        </label>
+        <label className="chip flex items-center gap-1">
           <input type="checkbox" checked={opts.slow} onChange={(e) => setOpts((o) => ({ ...o, slow: e.target.checked }))} data-testid="dev-slow" />
           ×0,25
         </label>
@@ -73,7 +77,8 @@ export function SunnyDev({ seed, from = 0, overlay = false, slow = false, auto =
       </div>
       <p className="text-xs text-tinta-suave">
         los saltos usan el conductor automático hasta esos metros. Esta ruta tiene {course.corners.length} esquinas: {angles.a} hasta los 1.000 m, {angles.b} hasta los 2.000, {angles.c} hasta los 3.000 y {angles.d} después;{" "}
-        {course.relax === 0 ? "ninguna necesitó ajuste" : `${course.relax} ${course.relax === 1 ? "ajuste" : "ajustes"} para que el conductor automático la complete`}.
+        {course.relax === 0 ? "ninguna necesitó ajuste" : `${course.relax} ${course.relax === 1 ? "ajuste" : "ajustes"} para que el conductor automático la complete`}. Obstáculos: {course.obstacles.length}
+        {course.removed > 0 ? ` (${course.removed} sacados por el conductor automático)` : ""}.
       </p>
       <GameContainer key={run} game={game} seed={seed} autoStart={run > 0} onDone={() => setRun((r) => r + 1)} note="modo desarrollo: no consume intentos ni guarda nada." />
       <ModelViewer />

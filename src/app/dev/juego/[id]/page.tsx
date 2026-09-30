@@ -46,7 +46,7 @@ export default async function DevGamePage({
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "pisteando-el-sunny" ? (
-        <SunnyDev seed={seed} from={Math.max(0, Math.min(4500, Number(desde) || 0))} overlay={eje === "1"} slow={lento === "1"} auto={auto === "1"} />
+        <SunnyDev seed={seed} from={Math.max(0, Math.min(5500, Number(desde) || 0))} overlay={eje === "1"} slow={lento === "1"} auto={auto === "1"} hitboxes={cajas === "1"} />
       ) : game.id === "rastitas-rastotas" ? (
         <RastasDev seed={seed} from={Math.max(0, Math.min(179, Number(desde) || 0))} coords={coords === "1"} slow={lento === "1"} redbull={redbull === "1"} />
       ) : game.id === "caminando-por-18" ? (

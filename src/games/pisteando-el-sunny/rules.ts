@@ -31,17 +31,19 @@ export const M_SUB = UNITS_PER_M * SUB;
 export const CAR_W = 10;
 export const CAR_L = 16;
 
-/** ancho de la ruta: 5 anchos de auto al arrancar, 2,5 a los 3.000 m */
+/** ancho de la ruta: 5 anchos de auto al arrancar, 2,5 a los 1.500 m */
 export const WIDTH_START = 5 * CAR_W;
 export const WIDTH_END = 2.5 * CAR_W;
-export const WIDTH_END_M = 3000;
+export const WIDTH_END_M = 1500;
+/** las esquinas cerradas (más de 80°) aparecen desde los 600 m: el ángulo base llega a su techo a los 1.200 */
+export const CORNER_RAMP_M = 1200;
 /** el centro puede salir de la ruta hasta medio auto antes de caer */
 export const FALL_MARGIN = CAR_W / 2;
 
-/** velocidad en subunidades por tick: 60 km/h al arrancar, 140 a los 90 s */
-export const V_MIN = 284;
-export const V_MAX = 664;
-export const V_RAMP_TICKS = 90 * TICKS_PER_S;
+/** velocidad en subunidades por tick: 80 km/h al arrancar, 170 a los 60 s */
+export const V_MIN = 379;
+export const V_MAX = 806;
+export const V_RAMP_TICKS = 60 * TICKS_PER_S;
 /** giro del rumbo por tick, en direcciones (12 = 4,2°) */
 export const TURN = 12;
 /** cuánto puede girar por tick la dirección de movimiento a velocidad máxima */
@@ -59,18 +61,32 @@ export const HEAT_DOWN = 8;
 /** con más de esto de deslizamiento, hay marcas y humo (solo visual) */
 export const SLIP_MARK = 12;
 
-/** metros de ruta generados */
-export const COURSE_M = 5000;
+/** metros de ruta generados (más que lo recorrible en 120 s) */
+export const COURSE_M = 6000;
 /** ningún tramo apunta a más de 70° de la vertical */
 export const ROAD_MAX_HEADING = 199;
 /** las esquinas: de 30° al principio a 110° a los 3.000 m (en direcciones: 85 a 313) */
 export const CORNER_MIN = 85;
 export const CORNER_MAX = 313;
-/** metros recorribles en 120 s a velocidad máxima: 664 × 7200 / 1024 = 4.669 */
-export const MAX_SCORE = 4700;
+/** metros recorribles en 120 s a velocidad máxima: 806 × 7200 / 1024 = 5.667 */
+export const MAX_SCORE = 5700;
+/** obstáculos: desde los 300 m, solo en tramos rectos */
+export const OBSTACLE_FROM_M = 300;
+/** reacción mínima para verlos al salir de una esquina: 600 ms */
+export const OBSTACLE_REACTION_TICKS = 36;
+/** el hueco libre para pasar: 1,6 anchos de auto (unidades) */
+export const OBSTACLE_GAP = 16;
+/** separación mínima entre obstáculos de un mismo tramo por el eje (metros) */
+export const OBSTACLE_SPACING_M = 9;
+/** el auto choca como un círculo de 4 unidades; las cajas de choque son más chicas que el dibujo */
+export const CAR_HIT_R = 4;
+export const OBSTACLE_KINDS = [
+  { name: "cono", drawR: 2.4, hitR: 1.6 },
+  { name: "barril", drawR: 3.2, hitR: 2.3 },
+] as const;
 
 export type Steer = -1 | 0 | 1;
-export type EndReason = "caida" | "tiempo";
+export type EndReason = "caida" | "choque" | "tiempo";
 
 // ---------------------------------------------------------------------------
 // la velocidad y el ancho
@@ -113,6 +129,20 @@ export interface Corner {
   relax: number;
 }
 
+export interface Obstacle {
+  /** posición, en subunidades */
+  x: number;
+  y: number;
+  /** tramo, metro del eje y desvío lateral (subunidades, positivo a la derecha) */
+  leg: number;
+  at: number;
+  offset: number;
+  /** 0 cono, 1 barril */
+  kind: 0 | 1;
+  /** radio de la caja de choque, en subunidades */
+  hitR: number;
+}
+
 export interface Course {
   /** las esquinas (vértices de la poligonal), en subunidades; n tramos, n + 1 vértices */
   vx: Int32Array;
@@ -134,14 +164,19 @@ export interface Course {
   mry: Int32Array;
   n: number;
   corners: Corner[];
+  /** los obstáculos y, por tramo, sus índices */
+  obstacles: Obstacle[];
+  obsByLeg: number[][];
   /** cuántas veces hubo que ajustar esquinas para que el conductor automático la complete */
   relax: number;
+  /** cuántos obstáculos se sacaron para que el conductor automático la complete */
+  removed: number;
 }
 
-/** largo de los tramos (metros) según la distancia: de 60 a 30 (y nunca menos de lo que pide el radio de giro) */
+/** largo de los tramos (metros) según la distancia: de 60 a 32 a los 1.500 m (y nunca menos de lo que pide el radio de giro) */
 export function legLenAt(m: number): number {
   const t = Math.min(1, Math.max(0, m) / WIDTH_END_M);
-  return 60 - 30 * t;
+  return 60 - 28 * t;
 }
 
 // a qué velocidad llega el auto a cada metro (si sigue el eje): la suma de speedAt tick a tick
@@ -171,11 +206,11 @@ export function speedAtMeter(m: number): number {
  * que trae: un arco tangente a los dos tramos con el radio de giro del auto
  * se mete hacia adentro R × (1/cos(θ/2) − 1) desde el vértice, y la punta
  * interior de la losa (con el margen) está a (hw + margen)/cos(θ/2). Con un
- * 40 % de resguardo: R × (1 − cos(θ/2)) ≤ 0,6 × (hw + margen).
+ * 50 % de resguardo: R × (1 − cos(θ/2)) ≤ 0,5 × (hw + margen).
  */
 export function maxCornerAt(m: number): number {
   const R = turnRadiusAt(speedAtMeter(m));
-  const room = Math.floor((0.6 * (halfWidthAt(m) + FALL_MARGIN * SUB) * TRIG_SCALE) / R); // Q12: 0,6 (hw + margen) / R
+  const room = Math.floor((0.5 * (halfWidthAt(m) + FALL_MARGIN * SUB) * TRIG_SCALE) / R); // Q12: 0,5 (hw + margen) / R
   if (room >= TRIG_SCALE) return CORNER_MAX;
   const cMin = TRIG_SCALE - room;
   let angle = CORNER_MAX;
@@ -189,9 +224,9 @@ export function legForCorner(m: number, angle: number): number {
   const half = Math.floor(angle / 2);
   return Math.ceil((3.2 * R * sinA(half)) / Math.max(1, cosA(half)) / M_SUB + 4);
 }
-/** ángulo base de las esquinas (direcciones) según la distancia: de 30° a 110° */
+/** ángulo base de las esquinas (direcciones) según la distancia: de 30° a 110° a los 1.200 m (más de 80° desde los 600) */
 export function cornerAngleAt(m: number): number {
-  const t = Math.min(1, Math.max(0, m) / WIDTH_END_M);
+  const t = Math.min(1, Math.max(0, m) / CORNER_RAMP_M);
   return Math.round(CORNER_MIN + (CORNER_MAX - CORNER_MIN) * t);
 }
 /** probabilidad de que la próxima esquina vaya para el otro lado (zigzag encadenado) */
@@ -209,7 +244,17 @@ export function signedHeading(h: number): number {
   return h > ANGLES / 2 ? h - ANGLES : h;
 }
 
-function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>): Course {
+/** metros después de una esquina hasta el primer obstáculo posible: 600 ms a la velocidad de ese punto, más 4 m */
+export function obstacleClearanceAt(m: number): number {
+  return Math.ceil((speedAtMeter(m) * OBSTACLE_REACTION_TICKS) / M_SUB) + 4;
+}
+
+/** separación por el eje entre obstáculos de un grupo: 9 m más 0,35 s a la velocidad de ese punto (para cruzar de lado) */
+export function groupSpacingAt(m: number): number {
+  return OBSTACLE_SPACING_M + Math.ceil((speedAtMeter(m) * 21) / M_SUB);
+}
+
+function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>, removed: ReadonlySet<string>): Course {
   const rng = rngFromSeed(seed);
   const vx: number[] = [0];
   const vy: number[] = [0];
@@ -243,6 +288,7 @@ function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>): Course
     const jitter = rng.range(0.75, 1.25);
     const u = rng.next();
     const lenJitter = rng.range(0.7, 1.3);
+    const longU = rng.next();
     let angle = Math.round(cornerAngleAt(m) * jitter * Math.max(0.3, 1 - 0.2 * r));
     angle = Math.max(60, Math.min(CORNER_MAX, maxCornerAt(m), angle));
     let dir: Steer = lastDir !== 0 && u < chainProbAt(m) ? (lastDir === 1 ? -1 : 1) : u < 0.5 ? -1 : 1;
@@ -258,7 +304,10 @@ function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>): Course
     lastDir = dir;
     // el tramo que sigue: más largo si la próxima esquina pidió ajuste
     const rNext = relaxOf.get(corners.length) ?? 0;
-    const L = Math.max(minLegAt(m), legForCorner(m, angle), Math.round(legLenAt(m) * lenJitter * (1 + 0.3 * rNext)));
+    let L = Math.max(minLegAt(m), legForCorner(m, angle), Math.round(legLenAt(m) * lenJitter * (1 + 0.3 * rNext)));
+    // desde los 700 m, cada tanto un tramo largo con lugar para un grupo de obstáculos (más seguido cuanto más lejos)
+    const tl = Math.min(1, Math.max(0, (m - 700) / 1500));
+    if (m >= 700 && longU < 0.3 + 0.35 * tl) L = Math.max(L, obstacleClearanceAt(m) + 2 * groupSpacingAt(m) + 14);
     addLeg(L);
   }
 
@@ -299,6 +348,55 @@ function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>): Course
     mrx.push(vx[j]! + b.x);
     mry.push(vy[j]! + b.y);
   }
+  // los obstáculos: en tramos rectos desde los 300 m, lejos de las esquinas, siempre con un hueco de 1,6 autos
+  const obstacles: Obstacle[] = [];
+  const obsByLeg: number[][] = Array.from({ length: n }, () => []);
+  let removedCount = 0;
+  for (let i = 0; i < n; i++) {
+    const startM = Math.floor(cum[i]! / M_SUB);
+    const endM = Math.floor(cum[i + 1]! / M_SUB);
+    // los sorteos van siempre en el mismo orden, con o sin obstáculos sacados
+    const u = rng.next();
+    const groupU = rng.next();
+    const sideU = rng.next();
+    const posU = rng.range(0, 1);
+    const kindU = rng.next();
+    if (endM < OBSTACLE_FROM_M) continue;
+    const t = Math.min(1, Math.max(0, (startM - OBSTACLE_FROM_M) / 1500));
+    if (u > 0.45 + 0.5 * t) continue;
+    const from = Math.max(startM, OBSTACLE_FROM_M) + obstacleClearanceAt(startM);
+    const to = endM - 8;
+    if (to - from < 4) continue;
+    const count = t < 0.25 ? 1 : groupU < 0.35 ? 1 : groupU < 0.8 ? 2 : 3;
+    let side = sideU < 0.5 ? -1 : 1;
+    let atM = from + Math.floor((to - from) * posU * 0.6);
+    for (let k = 0; k < count; k++) {
+      if (atM > to) break;
+      const kind: 0 | 1 = ((kindU * 7 + k) % 1 < 0.6 ? 0 : 1) as 0 | 1;
+      const spec = OBSTACLE_KINDS[kind];
+      const hw = halfWidthAt(atM);
+      // pegado a un lado (queda todo el otro lado libre) o, si la ruta es ancha, un poco más adentro
+      const drawR = Math.round(spec.drawR * SUB);
+      const room = hw - drawR;
+      const inner = Math.max(0, Math.floor(((2 * hw - 2 * drawR - OBSTACLE_GAP * SUB) * 0.5)));
+      const offset = side * (room - Math.min(inner, Math.floor(room * 0.5)));
+      const rel = atM * M_SUB - cum[i]!;
+      const h = hs[i]!;
+      const ax = vx[i]! + Math.floor((rel * sinA(h)) / TRIG_SCALE);
+      const ay = vy[i]! - Math.floor((rel * cosA(h)) / TRIG_SCALE);
+      const ox = ax + Math.floor((offset * cosA(h)) / TRIG_SCALE);
+      const oy = ay + Math.floor((offset * sinA(h)) / TRIG_SCALE);
+      const key = `${i}:${atM}`;
+      if (removed.has(key)) removedCount++;
+      else {
+        obsByLeg[i]!.push(obstacles.length);
+        obstacles.push({ x: ox, y: oy, leg: i, at: atM, offset, kind, hitR: Math.round(spec.hitR * SUB) });
+      }
+      // el próximo del grupo, del otro lado, con lugar para cruzar
+      side = -side;
+      atM += groupSpacingAt(atM);
+    }
+  }
   let relaxTotal = 0;
   for (const v of relaxOf.values()) relaxTotal += v;
   return {
@@ -318,7 +416,10 @@ function buildCourse(seed: string, relaxOf: ReadonlyMap<number, number>): Course
     mry: Int32Array.from(mry),
     n,
     corners,
+    obstacles,
+    obsByLeg,
     relax: relaxTotal,
+    removed: removedCount,
   };
 }
 
@@ -327,7 +428,8 @@ const courseCache = new Map<string, Course>();
 /**
  * La ruta de la semilla, garantizada: el conductor automático la completa. Si
  * se cae, la esquina donde se cayó se achica un 20 % y el tramo anterior se
- * alarga un 30 %, y se vuelve a generar (hasta 200 veces). Además, cada
+ * alarga un 30 %; si choca, ese obstáculo se saca; y se vuelve a generar
+ * (hasta 200 veces). Además, cada
  * esquina nace acotada por lo que el auto puede doblar a la velocidad que
  * trae a esa altura (maxCornerAt) y con tramos que dan lugar (legForCorner).
  */
@@ -335,9 +437,17 @@ export function generateCourse(seed: string): Course {
   const cached = courseCache.get(seed);
   if (cached) return cached;
   const relaxOf = new Map<number, number>();
-  let course = buildCourse(seed, relaxOf);
+  const removed = new Set<string>();
+  let course = buildCourse(seed, relaxOf, removed);
   for (let i = 0; i < 200; i++) {
     const { result } = playBot(course, autoPolicy(), END_TICK);
+    if (result.endReason === "choque") {
+      // se saca el obstáculo que chocó
+      const o = course.obstacles[result.state.hit]!;
+      removed.add(`${o.leg}:${o.at}`);
+      course = buildCourse(seed, relaxOf, removed);
+      continue;
+    }
     if (result.endReason !== "caida") break;
     // la esquina que viene después del tramo donde se cayó (o la anterior, si se cayó apenas pasada)
     const idx = result.state.idx;
@@ -345,7 +455,7 @@ export function generateCourse(seed: string): Course {
     const corner = rel < course.len[idx]! / 2 ? idx - 1 : idx;
     const k = Math.max(0, Math.min(course.corners.length - 1, corner));
     relaxOf.set(k, (relaxOf.get(k) ?? 0) + 1);
-    course = buildCourse(seed, relaxOf);
+    course = buildCourse(seed, relaxOf, removed);
   }
   if (courseCache.size > 64) courseCache.clear();
   courseCache.set(seed, course);
@@ -412,11 +522,21 @@ export interface SimState {
   meters: number;
   /** distancia lateral al eje del tramo, en subunidades, con signo (positivo a la derecha) */
   offset: number;
+  /** el índice del obstáculo chocado, o -1 */
+  hit: number;
   end: { tick: number; reason: EndReason } | null;
 }
 
 export function initialState(): SimState {
-  return { tick: 0, x: 0, y: 0, prevX: 0, prevY: 0, h: 0, m: 0, prevH: 0, prevM: 0, mq: 0, heat: 0, v: V_MIN, steer: 0, idx: 0, progress: 0, meters: 0, offset: 0, end: null };
+  return { tick: 0, x: 0, y: 0, prevX: 0, prevY: 0, h: 0, m: 0, prevH: 0, prevM: 0, mq: 0, heat: 0, v: V_MIN, steer: 0, idx: 0, progress: 0, meters: 0, offset: 0, hit: -1, end: null };
+}
+
+/** ¿el auto (un círculo de CAR_HIT_R) toca la caja de choque del obstáculo? */
+export function hitsObstacle(o: Obstacle, px: number, py: number): boolean {
+  const r = o.hitR + CAR_HIT_R * SUB;
+  const dx = px - o.x;
+  const dy = py - o.y;
+  return dx * dx + dy * dy < r * r;
 }
 
 /** deslizamiento: cuánto se separa el rumbo de la dirección de movimiento (con signo) */
@@ -494,6 +614,20 @@ export function step(state: SimState, course: Course, steer: Steer): void {
   const meters = Math.floor(best.progress / M_SUB);
   if (meters > state.meters) state.meters = meters;
   if (!onRoad(course, bestI, state.x, state.y)) state.end = { tick: t + 1, reason: "caida" };
+  else {
+    // los obstáculos del tramo y sus vecinos
+    for (const i of [bestI, bestI + 1, bestI - 1]) {
+      const list = i >= 0 && i < course.n ? course.obsByLeg[i]! : [];
+      for (const k of list) {
+        if (hitsObstacle(course.obstacles[k]!, state.x, state.y)) {
+          state.hit = k;
+          state.end = { tick: t + 1, reason: "choque" };
+          break;
+        }
+      }
+      if (state.end) break;
+    }
+  }
 
   state.tick = t + 1;
   if (!state.end && state.tick >= END_TICK) state.end = { tick: END_TICK, reason: "tiempo" };
@@ -557,7 +691,7 @@ export function check(attemptSeed: string, events: unknown, elapsedMs?: number):
     inputs.push({ tick, steer: e.steer });
   }
   const r = simulate(attemptSeed, inputs, endTick);
-  if (r.endReason === "caida" && r.endTick !== endTick) return { ok: false, reason: "el fin no coincide con la caída" };
+  if ((r.endReason === "caida" || r.endReason === "choque") && r.endTick !== endTick) return { ok: false, reason: "el fin no coincide con la caída" };
   if (elapsedMs !== undefined) {
     const mismatch = elapsedMismatch(endTick, TICKS_PER_S, elapsedMs, ELAPSED_SLACK_MS);
     if (mismatch) return { ok: false, reason: mismatch };
@@ -592,11 +726,40 @@ export function turnRadiusAt(v: number): number {
  * alineado con el tramo siguiente, y ahí vuelve a seguir el eje. Zona muerta
  * de 6 direcciones y el rumbo corregido por la mitad de lo que ya desliza.
  */
+/**
+ * El desvío lateral (subunidades) que conviene en el tramo i a la altura
+ * `progress`: el medio del hueco libre más grande alrededor del primer
+ * obstáculo que viene (en 1 s a esa velocidad, más 10 m); sin obstáculos, 0.
+ */
+export function laneOffsetFor(course: Course, i: number, progress: number, v: number): number {
+  if (i < 0 || i >= course.n) return 0;
+  const look = v * 60 + 10 * M_SUB;
+  let next: Obstacle | null = null;
+  for (const k of course.obsByLeg[i]!) {
+    const o = course.obstacles[k]!;
+    const at = o.at * M_SUB;
+    if (at + 2 * M_SUB < progress || at > progress + look) continue;
+    if (!next || at < next.at * M_SUB) next = o;
+  }
+  if (!next) return 0;
+  const hw = course.hws[i]! - (FALL_MARGIN * SUB) / 2;
+  const block = next.hitR + CAR_HIT_R * SUB + 2 * SUB;
+  const leftGap = next.offset - block + hw;
+  const rightGap = hw - (next.offset + block);
+  return leftGap >= rightGap ? Math.floor((-hw + (next.offset - block)) / 2) : Math.floor((next.offset + block + hw) / 2);
+}
+
 export function autoPolicy(): Policy {
   return (s, course) => {
     const ahead = Math.max(10, Math.min(30, Math.floor((s.v * 36) / M_SUB))) * M_SUB;
     const i = s.idx;
     let target: { x: number; y: number };
+    const lane = laneOffsetFor(course, i, s.progress, s.v);
+    const withLane = (p: { x: number; y: number; leg: number }) => {
+      if (lane === 0) return p;
+      const h = course.hs[p.leg]!;
+      return { x: p.x + Math.floor((lane * cosA(h)) / TRIG_SCALE), y: p.y + Math.floor((lane * sinA(h)) / TRIG_SCALE), leg: p.leg };
+    };
     const corner = course.corners[i];
     if (corner && i + 1 < course.n) {
       const vertexAt = course.cum[i + 1]!;
@@ -610,10 +773,10 @@ export function autoPolicy(): Policy {
         if (Math.abs(d) > 8) return d > 0 ? 1 : -1;
         target = axisPoint(course, vertexAt + ahead);
       } else {
-        target = axisPoint(course, Math.min(vertexAt, s.progress + ahead));
+        target = withLane(axisPoint(course, Math.min(vertexAt, s.progress + ahead)));
       }
     } else {
-      target = axisPoint(course, s.progress + ahead);
+      target = withLane(axisPoint(course, s.progress + ahead));
     }
     const tx = target.x - s.x;
     const ty = target.y - s.y;

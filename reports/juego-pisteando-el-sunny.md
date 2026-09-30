@@ -2,6 +2,19 @@
 Estado: parcial
 Fecha: 2026-09-30
 
+## Tercera versión: más velocidad, más exigencia y obstáculos
+
+Quedó fácil; el mismo día se endureció y se sumaron obstáculos, sin tocar la estética, la física, el control ni la traza (decisiones 192 a 194).
+
+- **Velocidad y exigencia** (192): de 80 a 170 km/h a los 60 s (antes 60 a 140 a los 90); el ancho baja a 2,5 autos en los primeros 1.500 m; las esquinas cerradas (más de 80°) desde los 600 m; los tramos de 60 a 32 m. A 170 km/h el radio de giro es de 11,6 m y las esquinas quedan en 71°; entre los 600 y los 2.000 m llegan a 100°.
+- **Obstáculos** (193): conos naranjas y barriles low-poly de sombreado plano desde los 300 m, solo en tramos rectos y nunca en los primeros metros después de una esquina (600 ms a la velocidad de ese punto más 4 m); siempre un hueco de 1,6 autos; primero sueltos, desde los 675 m grupos de 2 o 3 alternando de lado que obligan a cruzar dentro del tramo (para que quepan, cada tanto un tramo largo). Cajas de choque más chicas que el dibujo. Chocar termina la partida: el sunny rebota, gira y se cae de la losa, "¡chocaste el sunny!". Todo sale de la semilla y es parte de `simulate`.
+- **Justicia** (194): el conductor automático elige el hueco libre de cada obstáculo; si igual choca, la generación saca ese obstáculo (menos del 1 % en 1.000 semillas). Completa los 120 s en las 1.000 semillas sin caerse ni chocar.
+- **Calibración:** jugadores simulados con 100 ms de reacción, 30 s de mediana; con 150 ms, 16 s. La partida típica pedida (25 a 45 s) corresponde al jugador rápido; un jugador que no dobla se cae a los 2,4 s. Si en el teléfono resulta demasiado, el primer botón es la rampa de velocidad.
+- **Tests:** obstáculos solo en tramos rectos, distancia mínima después de cada esquina según la velocidad, hueco de 1,6 anchos, separación dentro del grupo, sobre la losa; chocar termina la partida y `validate` rearma una traza que choca; el conductor automático con las velocidades nuevas en 1.000 semillas (más de 4.000 m). Se mantiene todo lo demás. Herramienta: casilla "cajas de choque" (`&cajas=1`).
+- **Capturas nuevas** en `reports/pisteando-el-sunny/`: `obstaculo-suelto-400m.png`, `grupo-obstaculos-1500m.png`, `choque.png` y `resultado-choque.png`.
+- **Resultados:** `npm test` 203 de 203 (18 del juego; en la corrida completa el test de intentos contra la base local falló una vez y pasa solo, como ya pasó antes); `e2e/sunny.spec.ts` 3 de 3 en local (la prueba de mantener apretado pasó a cámara lenta: con el giro nuevo, apretando a fondo desde el arranque el auto se cae en menos de 2 s); build, typecheck y lint limpios.
+- **Publicación:** por la sección 5, después de medianoche (Montevideo) y solo si ese día no le toca el sunny a ningún grupo. `scripts/sunny-gate.ts 2026-10-01` dice que el único grupo (jdjs) no lo tiene mañana: se puede publicar apenas pase la medianoche con `npm run build && npx vercel deploy --prod --yes`. Hoy sí le toca a jdjs (lo puse a mano), y una partida de hoy con la versión vieja no valida con esta.
+
 ## Segunda versión: ruta en zigzag y 3D low-poly
 
 El mismo día cambió la forma de la ruta y la estética (decisiones 185 a 190). Lo que no cambió: id, duración, unidad, la física del derrape, el control, la traza y `validate`, la caída con margen de medio auto y el conductor automático como garantía.

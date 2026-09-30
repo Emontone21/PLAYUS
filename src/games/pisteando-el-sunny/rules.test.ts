@@ -10,11 +10,17 @@ import {
   END_TICK,
   FALL_MARGIN,
   generateCourse,
+  groupSpacingAt,
   halfWidthAt,
+  hitsObstacle,
   initialState,
   insideLeg,
   kmh,
   M_SUB,
+  OBSTACLE_FROM_M,
+  OBSTACLE_GAP,
+  OBSTACLE_KINDS,
+  obstacleClearanceAt,
   MAX_SCORE,
   MAX_SLIP,
   maxCornerAt,
@@ -120,8 +126,40 @@ describe("en 1.000 semillas, la ruta en zigzag", () => {
     let relaxed = 0;
     let sharpest = 0;
     let overCap = 0;
+    let removed = 0;
+    let obstaclesTotal = 0;
+    let groups = 0;
     for (const seed of SEEDS) {
       const c = generateCourse(seed);
+      // los obstáculos: desde los 300 m, solo en tramos rectos (lejos de las esquinas según la velocidad), con hueco de 1,6 autos y separados
+      removed += c.removed;
+      obstaclesTotal += c.obstacles.length;
+      let badObs = "";
+      for (let l = 0; l < c.n && !badObs; l++) {
+        const list = c.obsByLeg[l]!;
+        if (list.length > 1) groups++;
+        const startM = Math.floor(c.cum[l]! / M_SUB);
+        const endM = Math.floor(c.cum[l + 1]! / M_SUB);
+        let prevAt = -1e9;
+        for (const k of list) {
+          const o = c.obstacles[k]!;
+          if (o.leg !== l) badObs = `${seed}: obstáculo ${k} en el tramo equivocado`;
+          else if (o.at < OBSTACLE_FROM_M) badObs = `${seed}: obstáculo antes de los 300 m (${o.at})`;
+          else if (o.at - startM < obstacleClearanceAt(startM)) badObs = `${seed}: obstáculo a ${o.at - startM} m de la esquina (pide ${obstacleClearanceAt(startM)})`;
+          else if (endM - o.at < 8) badObs = `${seed}: obstáculo pegado a la esquina siguiente`;
+          else if (o.at - prevAt < groupSpacingAt(prevAt)) badObs = `${seed}: obstáculos demasiado juntos`;
+          else {
+            const hw = halfWidthAt(o.at);
+            const drawR = Math.round(OBSTACLE_KINDS[o.kind].drawR * SUB);
+            const gap = Math.max(o.offset - drawR + hw, hw - (o.offset + drawR));
+            if (gap < OBSTACLE_GAP * SUB) badObs = `${seed}: hueco de ${gap / SUB} unidades`;
+            // el obstáculo está sobre la ruta
+            if (!insideLeg(c, l, o.x, o.y)) badObs = `${seed}: obstáculo fuera de la losa`;
+          }
+          prevAt = o.at;
+        }
+      }
+      expect(badObs).toBe("");
       let bad = "";
       expect(c.cum[c.n]! / M_SUB).toBeGreaterThanOrEqual(COURSE_M);
       for (let i = 0; i < c.n && !bad; i++) {
@@ -171,22 +209,29 @@ describe("en 1.000 semillas, la ruta en zigzag", () => {
       }
       expect(retro, seed).toBe(false);
       expect(s.end?.reason, seed).toBe("tiempo");
-      expect(s.meters).toBeGreaterThan(3000);
+      expect(s.meters).toBeGreaterThan(4000);
       expect(s.meters).toBeLessThanOrEqual(MAX_SCORE);
     }
     expect(overCap).toBe(0);
-    // alguna esquina pasa de 90°; los ajustes son la excepción (acá, ninguno)
+    // alguna esquina pasa de 90°; los ajustes de esquinas son la excepción (acá, ninguno) y los obstáculos sacados, pocos
     expect(deg(sharpest)).toBeGreaterThan(90);
     expect(relaxed).toBe(0);
-  }, 300_000);
+    expect(obstaclesTotal / SEEDS.length).toBeGreaterThan(30);
+    expect(groups / SEEDS.length).toBeGreaterThan(5);
+    expect(removed / obstaclesTotal).toBeLessThan(0.03);
+  }, 600_000);
 
-  it("el ancho va de 5 anchos de auto a 2,5 a los 3.000 m; las esquinas se cierran y los tramos se acortan con la distancia", () => {
+  it("el ancho va de 5 anchos de auto a 2,5 a los 1.500 m; las esquinas se cierran y los tramos se acortan con la distancia (salvo los largos para grupos de obstáculos)", () => {
     expect(halfWidthAt(0)).toBe((WIDTH_START * SUB) / 2);
     expect(halfWidthAt(WIDTH_END_M)).toBe((WIDTH_END * SUB) / 2);
     expect(halfWidthAt(WIDTH_END_M * 2)).toBe(halfWidthAt(WIDTH_END_M));
+    expect(WIDTH_END_M).toBe(1500);
     const c = generateCourse(SEED);
-    const early = c.corners.filter((k) => k.at < 800);
-    const late = c.corners.filter((k) => k.at > 2200 && k.at < 3000);
+    const early = c.corners.filter((k) => k.at < 400);
+    const late = c.corners.filter((k) => k.at > 700 && k.at < 1500);
+    // esquinas cerradas (más de 80°) desde los 600 m, no antes de los 500
+    expect(c.corners.some((k) => k.at >= 600 && k.at < 1200 && deg(k.angle) > 80)).toBe(true);
+    expect(c.corners.every((k) => k.at >= 500 || deg(k.angle) <= 80)).toBe(true);
     const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
     expect(avg(late.map((k) => k.angle))).toBeGreaterThan(avg(early.map((k) => k.angle)) * 1.5);
     const legs = (lo: number, hi: number) => {
@@ -194,23 +239,24 @@ describe("en 1.000 semillas, la ruta en zigzag", () => {
       for (let i = 0; i < c.n; i++) if (c.cum[i]! / M_SUB >= lo && c.cum[i]! / M_SUB < hi) out.push(c.len[i]! / M_SUB);
       return out;
     };
-    expect(avg(legs(2200, 3000))).toBeLessThan(avg(legs(0, 800)));
+    const median = (arr: number[]) => [...arr].sort((x, y) => x - y)[Math.floor(arr.length / 2)]!;
+    expect(median(legs(1000, 1500))).toBeLessThan(median(legs(0, 400)));
     // zigzags encadenados: hay esquinas seguidas para lados opuestos
     let chained = 0;
     for (let i = 1; i < c.corners.length; i++) if (c.corners[i]!.dir !== c.corners[i - 1]!.dir) chained++;
     expect(chained).toBeGreaterThan(c.corners.length / 3);
     // la esquina más cerrada posible baja con la velocidad: a 140 km/h el auto dobla en unos 10 m
     expect(maxCornerAt(4000)).toBeLessThan(maxCornerAt(100));
-    expect(turnRadiusAt(V_MAX) / M_SUB).toBeLessThan(11);
-    expect(turnRadiusAt(V_MIN) / M_SUB).toBeLessThan(5);
+    expect(turnRadiusAt(V_MAX) / M_SUB).toBeLessThan(13);
+    expect(turnRadiusAt(V_MIN) / M_SUB).toBeLessThan(6);
   });
 });
 
 describe("reglas", () => {
-  it("la velocidad sube sola de 60 a 140 km/h en 90 s y no hay acelerador", () => {
-    expect(kmh(speedAt(0))).toBe(60);
-    expect(kmh(speedAt(45 * TICKS_PER_S))).toBe(100);
-    expect(kmh(speedAt(90 * TICKS_PER_S))).toBe(140);
+  it("la velocidad sube sola de 80 a 170 km/h en 60 s y no hay acelerador", () => {
+    expect(kmh(speedAt(0))).toBe(80);
+    expect(kmh(speedAt(30 * TICKS_PER_S))).toBe(125);
+    expect(kmh(speedAt(60 * TICKS_PER_S))).toBe(170);
     expect(speedAt(END_TICK)).toBe(V_MAX);
     expect(MAX_SCORE).toBeGreaterThanOrEqual(Math.ceil((V_MAX * END_TICK) / (4 * SUB)));
   });
@@ -265,7 +311,7 @@ describe("reglas", () => {
     for (let i = 0; i < 12; i++) step(slow, course, 1);
     const slowSlip = Math.abs(slipOf(slow));
     const fast = initialState();
-    fast.tick = 90 * TICKS_PER_S;
+    fast.tick = 60 * TICKS_PER_S;
     for (let i = 0; i < 12; i++) step(fast, course, 1);
     const fastSlip = Math.abs(slipOf(fast));
     expect(fastSlip).toBeGreaterThan(slowSlip * 1.5);
@@ -294,7 +340,7 @@ describe("reglas", () => {
   it("lo visual no toca la simulación: las marcas salen de las ruedas de atrás cuando desliza, y el humo no con prefers-reduced-motion", () => {
     const course = generateCourse(SEED);
     const s = initialState();
-    s.tick = 90 * TICKS_PER_S;
+    s.tick = 60 * TICKS_PER_S;
     const vis = createVisuals();
     const before = JSON.stringify(s);
     updateVisuals(vis, s, false);
@@ -325,11 +371,51 @@ describe("validate de pisteando el sunny", () => {
 
   it("acepta una traza real (cortada por el cronómetro) y una caída", () => {
     expect(validate({ score: real.result.score, events: real.events }, SEED, { elapsedMs: elapsedFor(real.events) })).toBe(true);
-    expect(fall.r.endReason).toBe("caida");
+    expect(["caida", "choque"]).toContain(fall.r.endReason);
     const events: TraceEvent[] = [...fall.inputs, { tick: fall.r.endTick, fin: true }];
     expect(validate({ score: fall.r.score, events }, SEED, { elapsedMs: elapsedFor(events) })).toBe(true);
     const v = check(SEED, events);
-    expect(v.ok && v.endReason).toBe("caida");
+    expect(v.ok && v.endReason).toBe(fall.r.endReason);
+  });
+
+  it("chocar un obstáculo termina la partida con choque, y validate lo rearma igual; pasar por afuera de la caja no", () => {
+    const course = generateCourse(SEED);
+    const o = course.obstacles[0]!;
+    // el auto puesto justo sobre el obstáculo, un tick
+    const s = initialState();
+    s.x = o.x;
+    s.y = o.y;
+    s.idx = o.leg;
+    step(s, course, 0);
+    expect(s.end?.reason).toBe("choque");
+    expect(s.hit).toBe(0);
+    // apenas por afuera de la caja (que es más chica que el dibujo): pasa
+    expect(hitsObstacle(o, o.x + o.hitR + 4 * SUB + 3 * SUB, o.y)).toBe(false);
+    expect(o.hitR).toBeLessThan(OBSTACLE_KINDS[o.kind].drawR * SUB);
+    // una traza que choca de verdad: el conductor automático hasta cerca del obstáculo y después la trompa hacia él
+    const bot = autoPolicy();
+    const t = initialState();
+    const inputs: SteerEvent[] = [];
+    let cur: Steer = 0;
+    const push = (st: Steer) => {
+      if (st !== cur) {
+        inputs.push({ tick: t.tick, steer: st });
+        cur = st;
+      }
+      step(t, course, st);
+    };
+    while (!t.end && t.progress < (o.at - 30) * M_SUB) push(bot(t, course));
+    while (!t.end) {
+      const dx = o.x - t.x;
+      const dy = o.y - t.y;
+      const cross = sinA(t.h) * dy + cosA(t.h) * dx;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      push(cross > len * sinA(4) ? 1 : cross < -len * sinA(4) ? -1 : 0);
+    }
+    expect(t.end?.reason).toBe("choque");
+    const events: TraceEvent[] = [...inputs, { tick: t.end!.tick, fin: true }];
+    expect(validate({ score: t.meters, events }, SEED, { elapsedMs: elapsedFor(events) })).toBe(true);
+    expect(check(SEED, [...inputs, { tick: t.end!.tick + 10, fin: true }]).ok).toBe(false);
   });
 
   it("rechaza metros inflados", () => {

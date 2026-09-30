@@ -8,7 +8,7 @@
 // una unidad de escena (4 por metro).
 
 import * as THREE from "three";
-import { FALL_MARGIN, SUB, slipOf, type Course, type SimState } from "./rules";
+import { CAR_HIT_R, FALL_MARGIN, OBSTACLE_KINDS, SUB, slipOf, type Course, type SimState } from "./rules";
 import { cosA, sinA, TRIG_SCALE, ANGLES } from "./trig";
 import { carPos, FALL_TICKS, SMOKE_LIFE, type Visuals } from "./visuals";
 
@@ -195,6 +195,57 @@ export function buildCar(): CarModel {
   return { group, body, wheels };
 }
 
+/** los obstáculos: conos naranjas y barriles, low-poly, sombreado plano */
+export function buildObstacles(course: Course): { group: THREE.Group; hitboxes: THREE.Group } {
+  const group = new THREE.Group();
+  const hitboxes = new THREE.Group();
+  const orange = new THREE.MeshLambertMaterial({ color: 0xff7a1a, flatShading: true });
+  const white = new THREE.MeshLambertMaterial({ color: 0xf4f4f4, flatShading: true });
+  const drum = new THREE.MeshLambertMaterial({ color: 0x2f6fd6, flatShading: true });
+  const band = new THREE.MeshLambertMaterial({ color: 0xe8e2c8, flatShading: true });
+  const base = new THREE.MeshLambertMaterial({ color: 0x2a2f3a, flatShading: true });
+  const ring = new THREE.LineBasicMaterial({ color: 0xff6f91 });
+  const coneGeo = new THREE.ConeGeometry(OBSTACLE_KINDS[0].drawR, 5.5, 8);
+  const coneBase = new THREE.BoxGeometry(OBSTACLE_KINDS[0].drawR * 2.2, 0.5, OBSTACLE_KINDS[0].drawR * 2.2);
+  const coneStripe = new THREE.CylinderGeometry(OBSTACLE_KINDS[0].drawR * 0.62, OBSTACLE_KINDS[0].drawR * 0.78, 0.9, 8);
+  const drumGeo = new THREE.CylinderGeometry(OBSTACLE_KINDS[1].drawR, OBSTACLE_KINDS[1].drawR, 6.4, 10);
+  const drumBand = new THREE.CylinderGeometry(OBSTACLE_KINDS[1].drawR + 0.12, OBSTACLE_KINDS[1].drawR + 0.12, 0.7, 10);
+  for (const o of course.obstacles) {
+    const [x, z] = toScene(o.x, o.y);
+    if (o.kind === 0) {
+      const c = new THREE.Mesh(coneGeo, orange);
+      c.position.set(x, 2.75, z);
+      const b = new THREE.Mesh(coneBase, base);
+      b.position.set(x, 0.25, z);
+      const st = new THREE.Mesh(coneStripe, white);
+      st.position.set(x, 3.3, z);
+      group.add(c, b, st);
+    } else {
+      const d = new THREE.Mesh(drumGeo, drum);
+      d.position.set(x, 3.2, z);
+      const b1 = new THREE.Mesh(drumBand, band);
+      b1.position.set(x, 1.6, z);
+      const b2 = new THREE.Mesh(drumBand, band);
+      b2.position.set(x, 4.8, z);
+      group.add(d, b1, b2);
+    }
+    // la caja de choque: el círculo del obstáculo más el radio del auto, y el del obstáculo solo
+    const r = (o.hitR + CAR_HIT_R * SUB) / SUB;
+    for (const rr of [r, o.hitR / SUB]) {
+      const pts: number[] = [];
+      for (let k = 0; k <= 24; k++) {
+        const a = (k / 24) * Math.PI * 2;
+        pts.push(x + Math.cos(a) * rr, 0.5, z + Math.sin(a) * rr);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+      hitboxes.add(new THREE.Line(g, ring));
+    }
+  }
+  hitboxes.visible = false;
+  return { group, hitboxes };
+}
+
 /** un pedazo de losa suelto, para la previa y el visor */
 export function buildSlabPiece(w = 44, d = 64): THREE.Group {
   const g = new THREE.Group();
@@ -255,6 +306,8 @@ function disposeAll(root: THREE.Object3D) {
 export interface RenderOptions {
   reduced: boolean;
   overlay: boolean;
+  /** las cajas de choque de los obstáculos (solo desarrollo) */
+  hitboxes?: boolean;
 }
 
 export interface GameScene {
@@ -276,6 +329,8 @@ export function createGameScene(container: HTMLElement, course: Course): GameSce
   addLights(scene);
   const road = buildRoad(course);
   scene.add(road);
+  const obstacles = buildObstacles(course);
+  scene.add(obstacles.group, obstacles.hitboxes);
   const car = buildCar();
   scene.add(car.group);
 
@@ -360,7 +415,8 @@ export function createGameScene(container: HTMLElement, course: Course): GameSce
     const pos = carPos(state, a);
     let cx = pos.x;
     let cz = pos.y;
-    const falling = state.end?.reason === "caida";
+    const falling = state.end?.reason === "caida" || state.end?.reason === "choque";
+    const crashed = state.end?.reason === "choque";
     if (falling) {
       cx = vis.fallX / SUB;
       cz = vis.fallY / SUB;
@@ -370,9 +426,11 @@ export function createGameScene(container: HTMLElement, course: Course): GameSce
     car.group.position.set(cx, falling ? -0.5 * 0.12 * vis.fallT * vis.fallT : 0, cz);
     car.group.rotation.set(0, -heading * RAD, 0);
     if (falling) {
-      fallSpin += 0.11;
-      car.group.rotation.x = fallSpin * 0.9;
-      car.group.rotation.z = fallSpin * 0.6;
+      fallSpin += crashed ? 0.16 : 0.11;
+      // el choque rebota: primero salta y gira sobre sí mismo, después cae
+      car.group.rotation.x = fallSpin * (crashed ? 0.5 : 0.9);
+      car.group.rotation.z = fallSpin * (crashed ? 1.1 : 0.6);
+      if (crashed) car.group.position.y += Math.max(0, 6 - 0.35 * vis.fallT);
       car.group.visible = vis.fallT < FALL_TICKS;
     } else {
       fallSpin = 0;
@@ -441,6 +499,7 @@ export function createGameScene(container: HTMLElement, course: Course): GameSce
     camera.lookAt(camAnchor.clone().add(LOOK_OFFSET));
 
     overlay.visible = opts.overlay;
+    obstacles.hitboxes.visible = !!opts.hitboxes;
     if (opts.overlay) {
       setVec(headingLine, pos.x, pos.y, state.h, 26);
       setVec(moveLine, pos.x, pos.y, state.m, 20);

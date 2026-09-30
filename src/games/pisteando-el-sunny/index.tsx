@@ -28,6 +28,8 @@ const SKY_CSS = "linear-gradient(180deg, #5FA8E6 0%, #C9E6FB 100%)";
 
 export interface SunnyDevOptions {
   overlay?: boolean;
+  /** las cajas de choque de los obstáculos */
+  hitboxes?: boolean;
   slow?: boolean;
   /** arrancar en estos metros, con el conductor automático hasta ahí */
   startMeters?: number;
@@ -122,7 +124,7 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
         apply(devRef.current?.auto ? bot(s, course) : steerRef.current);
         updateVisuals(vis, s, reducedRef.current);
       }
-      scene?.render(s, alpha, vis, { reduced: reducedRef.current, overlay: !!devRef.current?.overlay });
+      scene?.render(s, alpha, vis, { reduced: reducedRef.current, overlay: !!devRef.current?.overlay, hitboxes: !!devRef.current?.hitboxes });
       if (rootRef.current) {
         const d = rootRef.current.dataset;
         d.tick = String(s.tick);
@@ -243,10 +245,10 @@ export function SunnyGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
       <span className="pointer-events-none absolute bottom-2 right-4 text-3xl text-white opacity-60" aria-hidden="true">
         ›
       </span>
-      {hud.end === "caida" ? (
+      {hud.end === "caida" || hud.end === "choque" ? (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center">
           <span className="note-alert display text-3xl" role="status" data-testid="sunny-banner">
-            ¡se fue el sunny!
+            {hud.end === "choque" ? "¡chocaste el sunny!" : "¡se fue el sunny!"}
           </span>
         </div>
       ) : null}
@@ -285,7 +287,7 @@ function Intro() {
       <SunnyPreview />
       <ul className="flex flex-col gap-2 text-sm text-tinta-media">
         <li>el sunny acelera solo</li>
-        <li>‹ y › doblan mientras apretás</li>
+        <li>‹ y › doblan mientras apretás; esquivá los conos y barriles</li>
         <li>los metros por la ruta son el puntaje</li>
       </ul>
     </div>
@@ -301,7 +303,7 @@ function Result({ result, seed, cutByTimer }: { result: GameResult; seed: string
         <span data-testid="game-score">{result.score}</span>
         <span className="ml-2 text-3xl text-tinta-suave">m</span>
       </p>
-      <p className="text-lg text-tinta-media">{reason === "caida" ? "se fue el sunny." : reason === "tiempo" ? "llegaste a los 2 minutos sin caerte." : null}</p>
+      <p className="text-lg text-tinta-media">{reason === "caida" ? "se fue el sunny." : reason === "choque" ? "chocaste el sunny." : reason === "tiempo" ? "llegaste a los 2 minutos sin caerte ni chocar." : null}</p>
     </div>
   );
 }
@@ -310,7 +312,7 @@ export const pisteandoElSunny: GameModule = {
   id: "pisteando-el-sunny",
   name: "pisteando el sunny",
   tagline: "la cola afuera, las ruedas adentro.",
-  howTo: ["mantené apretado a la izquierda o a la derecha para doblar", "a velocidad el sunny derrapa: doblá antes de la esquina", "si te salís de la ruta, te caés"],
+  howTo: ["mantené apretado a la izquierda o a la derecha para doblar", "a velocidad el sunny derrapa: doblá antes de la esquina", "esquivá los conos y barriles; si te salís de la ruta, te caés"],
   durationMs: DURATION_MS,
   // caerse lleva al menos un par de segundos, más la cuenta regresiva y el segundo de la caída
   minDurationMs: 3_000,
