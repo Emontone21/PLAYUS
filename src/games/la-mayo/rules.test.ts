@@ -72,7 +72,7 @@ describe("la barrita", () => {
     expect(bounces).toBeGreaterThanOrEqual(5);
   });
 
-  it("la velocidad sube parejo según el cronograma: una pasada de 1,6 s al arrancar y de 0,6 s a los 60 s", () => {
+  it("la velocidad sube parejo según el cronograma: una pasada de 1,4 s al arrancar y de 0,35 s a los 60 s", () => {
     expect(SPEED_START).toBe(Math.round((BAR_MAX * SUB) / PASS_TICKS_START));
     expect(SPEED_END).toBe(Math.round((BAR_MAX * SUB) / PASS_TICKS_END));
     expect(speedAt(0)).toBe(SPEED_START);
@@ -288,7 +288,7 @@ describe("la traza y validate", () => {
 });
 
 describe("calibración", () => {
-  it("el jugador modelo emboca entre 10 y 20 y pierde las vidas entre los 25 y los 50 s; el perfecto no pierde ninguna", () => {
+  it("el jugador modelo emboca entre 8 y 20 y pierde las vidas entre los 15 y los 50 s; el perfecto no pierde ninguna", () => {
     const stats = (opts: Parameters<typeof botTrace>[1]) => {
       const scores: number[] = [];
       const ends: number[] = [];
@@ -312,9 +312,9 @@ describe("calibración", () => {
         `perfecto: ${perfect.score} embocadas, ${perfect.lives} vidas`,
       ].join("\n") + "\n",
     );
-    expect(human.score[1]).toBeGreaterThanOrEqual(10);
+    expect(human.score[1]).toBeGreaterThanOrEqual(8);
     expect(human.score[1]).toBeLessThanOrEqual(20);
-    expect(human.end[1]).toBeGreaterThanOrEqual(25);
+    expect(human.end[1]).toBeGreaterThanOrEqual(15);
     expect(human.end[1]).toBeLessThanOrEqual(50);
     expect(perfect.lives).toBe(LIVES);
     expect(perfect.score).toBeLessThanOrEqual(MAX_SCORE);

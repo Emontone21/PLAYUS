@@ -26,9 +26,9 @@ export const SUB = 64;
 /** medio ancho de la zona: 60 al arrancar (de 440 a 560), 25 a los 60 s (de 475 a 525) */
 export const ZONE_HALF_START = 60;
 export const ZONE_HALF_END = 25;
-/** una pasada de extremo a extremo: 1,6 s al arrancar (96 ticks), 0,6 s a los 60 s (36 ticks); calibración, decisión 219 */
-export const PASS_TICKS_START = 96;
-export const PASS_TICKS_END = 36;
+/** una pasada de extremo a extremo: 1,4 s al arrancar (84 ticks), 0,35 s a los 60 s (21 ticks); decisión 219 */
+export const PASS_TICKS_START = 84;
+export const PASS_TICKS_END = 21;
 /** velocidad en subunidades por tick en cada extremo del cronograma */
 export const SPEED_START = Math.round((BAR_MAX * SUB) / PASS_TICKS_START);
 export const SPEED_END = Math.round((BAR_MAX * SUB) / PASS_TICKS_END);
