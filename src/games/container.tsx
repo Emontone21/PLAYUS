@@ -241,8 +241,8 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
           <game.Result result={state.result} seed={activeSeed ?? seed ?? ""} cutByTimer={state.cutByTimer} />
         ) : (
           <p className="display-lg text-[7rem] text-tinta" data-testid="game-score">
-            {state.result.score}
-            {unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
+            {game.formatScore ? game.formatScore(state.result.score) : state.result.score}
+            {!game.formatScore && unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
           </p>
         )}
         <p className="text-tinta-suave">{state.saved ? "quedó guardado." : "partida de prueba: no se guardó."}</p>

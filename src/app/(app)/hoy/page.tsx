@@ -10,7 +10,7 @@ import { Frog } from "@/components/frog/Frog";
 import { LiveRefresh } from "./live-refresh";
 import { PushCard } from "@/components/push-card";
 import { InstallCard } from "@/components/install-card";
-import { scoreUnit } from "@/games/types";
+import { scoreText, scoreUnit } from "@/games/types";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         rank: r.rank,
         value: r.bestScore,
         unit,
+        valueText: t.game.formatScore ? t.game.formatScore(r.bestScore) : undefined,
         detail: `+${r.points}`,
         isMe: r.profileId === user.id,
         champion: r.profileId === t.championId,
@@ -76,8 +77,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         {t.yesterday ? (
           <p className="text-sm" data-testid="yesterday-winner">
             ayer {t.yesterday.tied ? "empató arriba" : "ganó"} <span className="display-bold text-tinta">{t.yesterday.winner.name}</span> con{" "}
-            <span className="display-bold text-tinta">{t.yesterday.score}</span>
-            {scoreUnit(t.yesterday.game) ? ` ${scoreUnit(t.yesterday.game)}` : ""} en {t.yesterday.game.name}.
+            <span className="display-bold text-tinta">{scoreText(t.yesterday.game, t.yesterday.score)}</span> en {t.yesterday.game.name}.
           </p>
         ) : null}
       </header>
@@ -169,8 +169,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
             <div className="flex flex-col gap-1">
               <p className="text-sm text-rana">ranking de hoy: {t.game.name}</p>
               <p className="eyebrow" data-testid="attempts-left">
-                tu mejor: <span className="display text-tinta">{t.myBest}</span>
-                {unit ? ` ${unit}` : ""}. {attemptsText}.
+                tu mejor: <span className="display text-tinta">{scoreText(t.game, t.myBest ?? 0)}</span>. {attemptsText}.
               </p>
             </div>
             {t.attemptsLeft > 0 ? (
@@ -184,8 +183,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
             <div className="relative ml-6 mt-2" data-testid="overtaken">
               <Frog pose="sorpresa" size={80} tilt={-12} className="absolute -left-9 -top-6 z-10" />
               <p className="note-alert pl-12 text-sm">
-                <span className="display-bold">{t.overtaker.member.name}</span> te pasó por {t.overtaker.diff}
-                {unit ? ` ${unit}` : ""}. mañana te la cobrás.
+                <span className="display-bold">{t.overtaker.member.name}</span> te pasó por {scoreText(t.game, t.overtaker.diff)}. mañana te la cobrás.
               </p>
             </div>
           ) : null}

@@ -33,6 +33,12 @@ export interface GameModule {
    */
   unit?: string;
   /**
+   * Cómo se muestra el puntaje cuando el número crudo no alcanza (ej. ms que
+   * se muestran como "34,7 s"). Devuelve el texto entero, con la unidad. Si
+   * falta, se muestra el número y `unit`.
+   */
+  formatScore?: (score: number) => string;
+  /**
    * validador propio sobre los eventos. Devuelve false para rechazar.
    * El servidor lo llama después de las cotas, con la semilla del intento y
    * la duración real del intento medida en el servidor (desde /start, con la
@@ -72,6 +78,13 @@ export interface GameResult {
   score: number;
   /** traza mínima para validar en el servidor; el shape lo define cada juego */
   events: unknown[];
+}
+
+/** El puntaje como texto, con su unidad: lo que ve el jugador en el ranking, en Hoy y en los avisos. */
+export function scoreText(game: Pick<GameModule, "scoring" | "unit" | "formatScore"> | undefined, score: number): string {
+  if (game?.formatScore) return game.formatScore(score);
+  const u = scoreUnit(game);
+  return u ? `${score} ${u}` : `${score}`;
 }
 
 /** La unidad que se muestra junto al puntaje ("" si no lleva). */

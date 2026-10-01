@@ -11,6 +11,8 @@ export interface RankingRow {
   /** el número grande de la fila */
   value: number;
   unit?: string;
+  /** si el juego formatea el puntaje (ej. "34,7 s"), el texto entero en lugar de value + unit */
+  valueText?: string;
   /** texto chico a la derecha del valor (ej. "+10") */
   detail?: string;
   isMe: boolean;
@@ -72,8 +74,8 @@ export function Ranking({
                abajo, para que el nombre no quede en tres letras */
             <span className="flex shrink-0 flex-col items-end gap-1 min-[420px]:flex-row min-[420px]:items-baseline min-[420px]:gap-2">
               <span className={`display text-3xl min-[420px]:text-4xl ${r.rank === 1 ? "text-luciernaga" : ""}`} data-testid="ranking-value">
-                {r.value}
-                {r.unit ? <span className="ml-0.5 text-xs text-tinta-suave min-[420px]:ml-1 min-[420px]:text-sm">{r.unit}</span> : null}
+                {r.valueText ?? r.value}
+                {!r.valueText && r.unit ? <span className="ml-0.5 text-xs text-tinta-suave min-[420px]:ml-1 min-[420px]:text-sm">{r.unit}</span> : null}
               </span>
               {r.detail ? <span className="chip-points">{r.detail}</span> : null}
             </span>

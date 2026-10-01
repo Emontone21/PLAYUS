@@ -20,6 +20,7 @@ import { perfectTrace as caminandoTrace } from "@/games/caminando-por-18/rules";
 import { greedyTrace as rastasTrace } from "@/games/rastitas-rastotas/rules";
 import { autoTrace as sunnyTrace } from "@/games/pisteando-el-sunny/rules";
 import { honestTrace as parisTrace } from "@/games/busca-los-paris/rules";
+import { autoTrace as colgadoTrace } from "@/games/colgado-del-121/rules";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -277,6 +278,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // los tests terminan el intento a minDurationMs + 500 ms (5,5 s): una
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
+    return { score: result.score, events };
+  }
+  if (gameId === "colgado-del-121") {
+    // el jugador automático aguanta 5 s y el cronómetro corta ahí
+    const { events, result } = colgadoTrace(seed, 300);
     return { score: result.score, events };
   }
   if (gameId === "busca-los-paris") {
