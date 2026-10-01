@@ -1,4 +1,4 @@
-// "la torre": apilar con física. Los objetos bajan de a uno sobre una tabla;
+// "apila las boludeces" (antes "la torre"): apilar con física. Los objetos bajan de a uno sobre una tabla;
 // el que espera se hamaca de lado a lado, "girar" lo da vuelta de a 90° y un
 // toque en cualquier otro lado lo suelta donde está. El puntaje es la altura
 // máxima (en cm) que alcanzó la torre estando quieta; si algo se cae de la
@@ -272,9 +272,9 @@ function Result({ result, cutByTimer }: { result: GameResult; seed: string; cutB
   );
 }
 
-export const laTorre: GameModule = {
-  id: "la-torre",
-  name: "la torre",
+export const apilaLasBoludeces: GameModule = {
+  id: "apila-las-boludeces",
+  name: "apila las boludeces",
   tagline: "apilá lo que venga sin que se caiga.",
   howTo: ["el objeto se hamaca arriba de la torre: tocá la pantalla para soltarlo", "girar lo da vuelta de a 90°", "vale la altura máxima con la torre quieta; si algo se cae de la tabla, se terminó"],
   durationMs: DURATION_MS,

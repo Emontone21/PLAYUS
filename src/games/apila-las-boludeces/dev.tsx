@@ -3,12 +3,12 @@
 // Solo desarrollo: las formas de choque, el estado de reposo de cada cuerpo,
 // cámara lenta y el modo libre (lo que se cae se saca y la partida sigue).
 // Deja las reglas en window.__torre para el E2E de determinismo.
-// /dev/juego/la-torre?seed=…&cajas=1&reposo=1&lento=1&libre=1
+// /dev/juego/apila-las-boludeces?seed=…&cajas=1&reposo=1&lento=1&libre=1
 
 import * as React from "react";
 import { GameContainer } from "../container";
 import type { GameModule, GameProps } from "../types";
-import { TorreGame, laTorre, type TorreDevOptions } from "./index";
+import { TorreGame, apilaLasBoludeces, type TorreDevOptions } from "./index";
 import { autoTrace, check, generatePlan, simulate, swayX, validate } from "./rules";
 import { loadRapier } from "./physics";
 import { KINDS, shapeArea, siluetteArea } from "./objects";
@@ -24,7 +24,7 @@ export function TorreDev({ seed, colliders = false, rest = false, slow = false, 
     function DevTorre(p: GameProps) {
       return <TorreGame {...p} dev={optsRef.current} />;
     }
-    return { ...laTorre, Component: DevTorre };
+    return { ...apilaLasBoludeces, Component: DevTorre };
   }, []);
 
   React.useEffect(() => {

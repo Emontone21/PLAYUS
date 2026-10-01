@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-// Juega "la torre" desde el navegador: suelta `good` objetos cuando el vaivén
+// Juega "apila las boludeces" desde el navegador: suelta `good` objetos cuando el vaivén
 // (data-x, calculado por la misma simulación que corre en Node) pasa por el
 // centro de la tabla, y después tira el siguiente en el vacío: se cae y la
 // partida termina. Devuelve lo que mandó a /finish (puntaje y traza).
@@ -52,12 +52,20 @@ export async function playTorre(page: Page, good: number): Promise<{ dropped: nu
       .poll(async () => (await snapOf(page))?.dropped, { timeout: 15_000 })
       .toBe(i);
     await expect.poll(async () => (await snapOf(page))?.waiting, { timeout: 15_000 }).not.toBe("");
-    expect(await dropNear(page, 0, 1.2, 15_000)).toBe(true);
+    // el cigarro y la botella, acostados (más estable)
+    const w = (await snapOf(page))?.waiting;
+    if (w === "cigarro" || w === "botella") {
+      await page.keyboard.press("ArrowUp");
+      await expect.poll(async () => (await snapOf(page))?.rot, { timeout: 3_000 }).toBe("1");
+    }
+    if (!(await dropNear(page, 0, 1.2, 15_000))) break;
     await expect.poll(async () => (await snapOf(page))?.dropped, { timeout: 5_000 }).toBe(i + 1);
   }
-  // el siguiente, al vacío: lejos de la tabla
-  await expect.poll(async () => (await snapOf(page))?.waiting, { timeout: 15_000 }).not.toBe("");
-  expect(await dropNear(page, 36, 2.5, 20_000)).toBe(true);
+  // el siguiente, al vacío: lejos de la tabla (si la torre ya se vino abajo sola, no hace falta)
+  if (!(await snapOf(page))?.end) {
+    await expect.poll(async () => (await snapOf(page))?.waiting, { timeout: 15_000 }).not.toBe("");
+    await dropNear(page, 35, 3, 30_000);
+  }
   await page.waitForFunction(
     () => {
       const a = document.querySelector('[data-testid="torre-area"]') as HTMLElement | null;

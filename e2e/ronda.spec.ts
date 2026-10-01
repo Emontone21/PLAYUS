@@ -122,7 +122,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "la torre"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 

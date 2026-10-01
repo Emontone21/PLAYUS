@@ -1,4 +1,4 @@
-// El motor de física de "la torre": Rapier 2D en su versión determinística
+// El motor de física de "apila las boludeces": Rapier 2D en su versión determinística
 // (WASM, paquete "compat", que trae el binario adentro en base64 y carga igual
 // en Node y en el navegador). Se carga con import() dinámico solo en este
 // juego. Acá vive lo que habla con el motor: el mundo con la base, los

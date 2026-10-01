@@ -10,12 +10,12 @@ import { rastitasRastotas } from "./rastitas-rastotas";
 import { pisteandoElSunny } from "./pisteando-el-sunny";
 import { buscaLosParis } from "./busca-los-paris";
 import { colgadoDel121 } from "./colgado-del-121";
-import { laTorre } from "./la-torre";
+import { apilaLasBoludeces } from "./apila-las-boludeces";
 
 // Registry. Agregar un juego = una línea acá. Los ids se ordenan
 // alfabéticamente para armar el mazo (decisión 6), así que el orden no importa.
 // Los juegos de relleno de la etapa 4 se borraron (decisión 114).
-const ALL: GameModule[] = [pibaDelIpa, quedoReTarado, losDeseosDeLarry, remarVuelveACasa, laParrillaDelBro, pegandoleAlJota, caminandoPor18, rastitasRastotas, pisteandoElSunny, buscaLosParis, colgadoDel121, laTorre];
+const ALL: GameModule[] = [pibaDelIpa, quedoReTarado, losDeseosDeLarry, remarVuelveACasa, laParrillaDelBro, pegandoleAlJota, caminandoPor18, rastitasRastotas, pisteandoElSunny, buscaLosParis, colgadoDel121, apilaLasBoludeces];
 
 export const GAMES: Readonly<Record<string, GameModule>> = Object.freeze(Object.fromEntries(ALL.map((g) => [g.id, g])));
 

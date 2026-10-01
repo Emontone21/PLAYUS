@@ -21,8 +21,8 @@ import { greedyTrace as rastasTrace } from "@/games/rastitas-rastotas/rules";
 import { autoTrace as sunnyTrace } from "@/games/pisteando-el-sunny/rules";
 import { honestTrace as parisTrace } from "@/games/busca-los-paris/rules";
 import { autoTrace as colgadoTrace } from "@/games/colgado-del-121/rules";
-import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwayX } from "@/games/la-torre/rules";
-import { loadRapier, type Rapier } from "@/games/la-torre/physics";
+import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwayX } from "@/games/apila-las-boludeces/rules";
+import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -284,7 +284,7 @@ function validResult(gameId: string, seed: string, n: number) {
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
   }
-  if (gameId === "la-torre") {
+  if (gameId === "apila-las-boludeces") {
     // suelta el primer objeto apenas el vaivén lo pone sobre la tabla y el cronómetro corta a los 2,5 s (tick 150)
     const plan = torrePlan(seed);
     let t = 1;

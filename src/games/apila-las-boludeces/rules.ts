@@ -1,4 +1,4 @@
-// "la torre": las reglas de la partida, compartidas por el navegador y el
+// "apila las boludeces": las reglas de la partida, compartidas por el navegador y el
 // servidor. Objetos que bajan de a uno sobre una tabla: el que espera se
 // hamaca de lado a lado, se puede girar de a 90° y cae donde está cuando se
 // toca la pantalla. La física es de Rapier (physics.ts); acá viven la

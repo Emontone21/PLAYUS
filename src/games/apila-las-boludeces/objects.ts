@@ -1,4 +1,4 @@
-// Los cuatro objetos de "la torre": su pixel art (mapas de letras) y su forma
+// Los cuatro objetos de "apila las boludeces": su pixel art (mapas de letras) y su forma
 // de choque, armada con piezas simples (cajas y polígonos convexos) que
 // siguen la silueta. Sin DOM, sin React y sin el motor de física: acá solo
 // hay datos; physics.ts los convierte en colisionadores.
