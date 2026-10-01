@@ -19,6 +19,7 @@ import { jotaRounds } from "@/games/pegandole-al-jota/rounds";
 import { perfectTrace as caminandoTrace } from "@/games/caminando-por-18/rules";
 import { greedyTrace as rastasTrace } from "@/games/rastitas-rastotas/rules";
 import { autoTrace as sunnyTrace } from "@/games/pisteando-el-sunny/rules";
+import { honestTrace as parisTrace } from "@/games/busca-los-paris/rules";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -277,6 +278,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "busca-los-paris") {
+    // un jugador honesto juega 4,5 s y el cronómetro corta ahí
+    const { events, score } = parisTrace(seed, { untilMs: 4_500, rand: mulberry32(5) });
+    return { score, events };
   }
   if (gameId === "pisteando-el-sunny") {
     // el conductor automático maneja 5 s y el cronómetro corta ahí
