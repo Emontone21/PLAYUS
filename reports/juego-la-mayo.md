@@ -27,7 +27,7 @@ En `reports/la-mayo/`: `previa.png` (la pantalla previa con la herramienta y las
 
 ## Publicación
 
-Publicado en https://playus-lake.vercel.app. Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con la mayo como juego de hoy): tres embocadas y tres errores llegan al ranking con 3, y `/dev/juego/la-mayo` da 404.
+Publicado en https://playus-lake.vercel.app (commit `c2f2615`). Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con la mayo como juego de hoy): tres embocadas y tres errores llegan al ranking con 3, y `/dev/juego/la-mayo` da 404.
 
 ## Cómo verificarlo
 
