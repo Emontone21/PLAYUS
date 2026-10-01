@@ -2,6 +2,21 @@
 Estado: parcial
 Fecha: 2026-10-01
 
+## Segunda versión: más brusco, base más chica y sacudones
+
+Quedó fácil; el mismo día se endureció la simulación, sin tocar el arte ni el control (decisiones 204 y 205).
+
+- **Movimientos más bruscos:** inclinación ×1,6 en todo el cronograma (amplitud de 832 a 1600, tope 1600; 1000 sigue siendo 12° en el dibujo), puntos clave el doble de juntos (cada 50 a 18 ticks) y límite de cambio por tick al doble (28 a 70).
+- **Sacudones:** desde los 10 s, un golpe corto y fuerte hacia un lado (900 a 1400, de 300 a 500 ms) cada 4 a 8 s al principio y cada 2 a 4 s a los 60 s, sin aviso, sumado a la curva suave. En la herramienta, el gráfico los marca con bandas rosas.
+- **La base** baja de 40 a 12 en los primeros 30 s y después despacio hasta 8 a los 60 s.
+- **Justicia:** el jugador automático de 250 ms tiene que aguantar 15 s; si se cae, se suaviza el sacudón que estaba pegando (no la base). En 1.000 semillas no hizo falta ningún ajuste: aguanta de 15,6 a 32 s.
+- **Calibración:** el empuje de la inclinación baja de 18 a 15 por cada 1000. Sin tocar, se cae a los 1,8 s (5,6 en el peor caso). Jugadores simulados con 300 ms de reacción: 17,6 s de mediana (15 a 20); con 350 ms, 10,8 s. La partida típica queda entre 15 y 30 s para quien reacciona en 300 ms.
+- **Tests:** el nuevo cronograma de la base, los sacudones desde los 10 s con su frecuencia creciente (y que pegan de verdad), el límite de cambio por tick sobre la curva suave (la inclinación es la curva más los sacudones), y el umbral de 15 s del jugador automático. `npm test`: 219 de 219. E2E del juego: 3 de 3 en local con la versión nueva. Build, typecheck y lint limpios.
+- **Capturas nuevas:** `grafico-sacudones.png` (el gráfico con las bandas rosas), `sacudon.png` (en el primer sacudón, con el jugador automático) y `partida-20s.png` (la base ya angosta a los 20 s). Las de la primera versión (10 s, 50 s y la caída) quedan como referencia del arte.
+- **Publicación:** publicada en el día por decisión del usuario (205). Producción: la ronda real de `e2e/colgado.spec.ts` contra https://playus-lake.vercel.app pasó con la segunda versión; `/dev/juego/colgado-del-121` da 404 allá.
+
+Lo que sigue es el reporte de la primera versión, que vale para todo lo que no cambió.
+
 ## Qué hice
 
 El juego está construido, probado y publicado en **https://playus-lake.vercel.app**. Desde la próxima ronda, el mazo de cada grupo reparte los once juegos; la ronda de hoy no cambia. El estado es parcial por lo de siempre: "se juega cómodo con un pulgar" y "mantener al pasajero en el medio exige atención todo el tiempo" piden un teléfono y una persona de verdad. Todo lo demás está hecho y verificado, incluida una partida en producción.

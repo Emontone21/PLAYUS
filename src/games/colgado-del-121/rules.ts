@@ -27,35 +27,49 @@ export const SUB = 256;
 /** la vista: 120 × 150 unidades */
 export const FIELD_W = 120;
 export const FIELD_H = 150;
-/** la base: 40 unidades de cada lado del centro al arrancar, 12 a los 90 s */
+/** la base: 40 unidades de cada lado del centro al arrancar, 12 a los 30 s, y después despacio hasta 8 a los 60 s */
 export const BASE_START = 40;
-export const BASE_END = 12;
-export const BASE_END_TICK = 90 * TICKS_PER_S;
+export const BASE_MID = 12;
+export const BASE_MID_TICK = 30 * TICKS_PER_S;
+export const BASE_END = 8;
+export const BASE_END_TICK = 60 * TICKS_PER_S;
 /** cerca del borde: a menos de este tanto del ancho de la base (Q8: 0,7) */
 export const NEAR_EDGE_Q8 = 180;
 
-/** la inclinación va de -1000 a 1000 (1000 ≈ 12° en el dibujo) */
-export const TILT_MAX = 1000;
-/** amplitud de los puntos clave: de 380 al arrancar a 1000 a los 90 s */
-export const AMP_START = 520;
-export const AMP_END = 1000;
-/** intervalo entre puntos clave (ticks): de 100 a 36 a los 90 s, ±40 % */
-export const INTERVAL_START = 100;
-export const INTERVAL_END = 36;
-/** límite de cambio de la inclinación por tick: de 14 a 34 a los 90 s */
-export const RATE_START = 14;
-export const RATE_END = 34;
+/** la inclinación va de -1600 a 1600; 1000 es la unidad de la física (y 12° en el dibujo) */
+export const TILT_MAX = 1600;
+export const TILT_UNIT = 1000;
+/** amplitud de los puntos clave: de 832 al arrancar a 1600 a los 90 s (×1,6 de la primera versión) */
+export const AMP_START = 832;
+export const AMP_END = 1600;
+/** intervalo entre puntos clave (ticks): de 50 a 18 a los 90 s, ±40 % (el doble de juntos) */
+export const INTERVAL_START = 50;
+export const INTERVAL_END = 18;
+/** límite de cambio de la inclinación por tick: de 28 a 70 a los 90 s (el doble) */
+export const RATE_START = 28;
+export const RATE_END = 70;
 export const RAMP_TICK = 90 * TICKS_PER_S;
+/** los sacudones: desde los 10 s, cada 6 s ±33 % al principio (4 a 8) y cada 3 s ±33 % a los 60 s; duran de 300 a 500 ms y pegan de 900 a 1400 */
+export const SHAKE_FROM_TICK = 10 * TICKS_PER_S;
+export const SHAKE_GAP_START_S = 6;
+export const SHAKE_GAP_END_S = 3;
+export const SHAKE_GAP_RAMP_TICK = 60 * TICKS_PER_S;
+export const SHAKE_MIN_TICKS = 18;
+export const SHAKE_MAX_TICKS = 30;
+export const SHAKE_MAG_MIN = 900;
+export const SHAKE_MAG_MAX = 1400;
+/** el sacudón sube y baja en 4 ticks (más rápido que el límite normal: es un golpe) */
+export const SHAKE_EDGE_TICKS = 4;
 
-/** la física del pasajero (subunidades por tick²): el empuje de la inclinación a 1000, la inestabilidad (x / 2048 por tick²), el dedo y el rozamiento (Q8 por tick) */
-export const K_TILT = 18;
+/** la física del pasajero (subunidades por tick²): el empuje de la inclinación por cada 1000, la inestabilidad (x / 2048 por tick²), el dedo y el rozamiento (Q8 por tick) */
+export const K_TILT = 15;
 export const K_UNSTABLE = 1;
 export const K_PUSH = 34;
 export const K_FRICTION = 18;
 
-/** el jugador automático de la garantía: 250 ms de demora */
+/** el jugador automático de la garantía: 250 ms de demora, 15 s aguantados */
 export const FAIR_DELAY_TICKS = 15;
-export const FAIR_SURVIVE_TICKS = 30 * TICKS_PER_S;
+export const FAIR_SURVIVE_TICKS = 15 * TICKS_PER_S;
 
 export type Push = -1 | 0 | 1;
 export type EndReason = "caida" | "tiempo";
@@ -67,10 +81,11 @@ function progress(tick: number): number {
   return Math.min(1, Math.max(0, tick / RAMP_TICK));
 }
 
-/** medio ancho de la base en ese tick, en subunidades */
+/** medio ancho de la base en ese tick, en subunidades: 40 → 12 en 30 s, 12 → 8 de los 30 a los 60 s, y 8 después */
 export function baseHalfAt(tick: number): number {
-  const t = Math.min(tick, BASE_END_TICK);
-  return BASE_START * SUB - Math.floor(((BASE_START - BASE_END) * SUB * t) / BASE_END_TICK);
+  if (tick <= BASE_MID_TICK) return BASE_START * SUB - Math.floor(((BASE_START - BASE_MID) * SUB * Math.max(0, tick)) / BASE_MID_TICK);
+  const t = Math.min(tick, BASE_END_TICK) - BASE_MID_TICK;
+  return BASE_MID * SUB - Math.floor(((BASE_MID - BASE_END) * SUB * t) / (BASE_END_TICK - BASE_MID_TICK));
 }
 export function amplitudeAt(tick: number): number {
   return Math.round(lerp(AMP_START, AMP_END, progress(tick)));
@@ -95,12 +110,40 @@ export interface Segment {
   relax: number;
 }
 
-export interface Course {
-  /** la inclinación de cada tick, de -1000 a 1000 */
-  tilts: Int16Array;
-  segments: Segment[];
-  /** cuántos frenos hubo que poner */
+export interface Shake {
+  from: number;
+  to: number;
+  dir: -1 | 1;
+  mag: number;
+  /** cuántas veces se suavizó para que el jugador automático aguante */
   relax: number;
+}
+
+export interface Course {
+  /** la inclinación de cada tick, de -1600 a 1600: la curva suave más los sacudones */
+  tilts: Int16Array;
+  /** la curva suave sola (respeta el límite de cambio por tick) */
+  base: Int16Array;
+  segments: Segment[];
+  shakes: Shake[];
+  /** cuántos frenos y suavizados hubo que poner */
+  relax: number;
+}
+
+/** el intervalo medio entre sacudones en ese tick, en segundos */
+export function shakeGapAt(tick: number): number {
+  const t = Math.min(1, Math.max(0, (tick - SHAKE_FROM_TICK) / (SHAKE_GAP_RAMP_TICK - SHAKE_FROM_TICK)));
+  return lerp(SHAKE_GAP_START_S, SHAKE_GAP_END_S, t);
+}
+
+/** la forma del sacudón en ese tick: sube en 4 ticks, se sostiene y baja en 4, en Q10 */
+export function shakeEnvelopeQ10(sh: Shake, tick: number): number {
+  if (tick < sh.from || tick > sh.to) return 0;
+  const inT = tick - sh.from;
+  const outT = sh.to - tick;
+  if (inT < SHAKE_EDGE_TICKS) return Math.floor((1024 * (inT + 1)) / (SHAKE_EDGE_TICKS + 1));
+  if (outT < SHAKE_EDGE_TICKS) return Math.floor((1024 * (outT + 1)) / (SHAKE_EDGE_TICKS + 1));
+  return 1024;
 }
 
 /** 3u² − 2u³ en Q10: la curva suave entre dos puntos clave */
@@ -109,7 +152,7 @@ export function smoothQ10(u: number): number {
   return Math.floor((uu * uu * (3 * 1024 - 2 * uu)) / (1024 * 1024));
 }
 
-function buildTilts(seed: string, relaxOf: ReadonlyMap<number, number>): Course {
+function buildTilts(seed: string, relaxOf: ReadonlyMap<number, number>, shakeRelax: ReadonlyMap<number, number>): Course {
   const rng = rngFromSeed(`121:${seed}`);
   const tilts = new Int16Array(END_TICK + 1);
   const segments: Segment[] = [];
@@ -150,7 +193,37 @@ function buildTilts(seed: string, relaxOf: ReadonlyMap<number, number>): Course 
     t0 = to;
     k++;
   }
-  return { tilts, segments, relax: relaxTotal };
+  const base = Int16Array.from(tilts);
+  // los sacudones: un golpe corto y fuerte hacia un lado, cada vez más seguidos
+  const shakes: Shake[] = [];
+  let t = SHAKE_FROM_TICK + rng.int(0, TICKS_PER_S);
+  let n = 0;
+  while (t < END_TICK) {
+    const dur = rng.int(SHAKE_MIN_TICKS, SHAKE_MAX_TICKS);
+    const dir: -1 | 1 = rng.next() < 0.5 ? -1 : 1;
+    const magU = rng.range(SHAKE_MAG_MIN, SHAKE_MAG_MAX);
+    const gap = shakeGapAt(t) * rng.range(0.67, 1.33);
+    const r = shakeRelax.get(n) ?? 0;
+    relaxTotal += r;
+    const sh: Shake = { from: t, to: Math.min(END_TICK, t + dur), dir, mag: Math.round(magU * Math.pow(0.7, r)), relax: r };
+    shakes.push(sh);
+    for (let tt = sh.from; tt <= sh.to; tt++) {
+      const v = base[tt]! + Math.floor((sh.dir * sh.mag * shakeEnvelopeQ10(sh, tt)) / 1024);
+      tilts[tt] = Math.max(-TILT_MAX, Math.min(TILT_MAX, v));
+    }
+    t = sh.to + Math.round(gap * TICKS_PER_S);
+    n++;
+  }
+  return { tilts, base, segments, shakes, relax: relaxTotal };
+}
+
+/** el sacudón que estaba pegando (o acababa de pegar) en ese tick, si hay */
+export function shakeNear(course: Course, tick: number): number {
+  for (let i = 0; i < course.shakes.length; i++) {
+    const sh = course.shakes[i]!;
+    if (tick >= sh.from && tick <= sh.to + 90) return i;
+  }
+  return -1;
 }
 
 export function segmentAt(course: Course, tick: number): number {
@@ -168,22 +241,28 @@ const courseCache = new Map<string, Course>();
 
 /**
  * La inclinación de la semilla, garantizada: el jugador automático con 250
- * ms de demora aguanta 30 s. Si se cae antes, se frena el tramo donde se
- * cayó y el anterior (menos amplitud, menos velocidad de cambio, un poco
- * más largos) y se vuelve a generar, hasta 40 veces.
+ * ms de demora aguanta 15 s. Si se cae antes, se suaviza el sacudón que
+ * estaba pegando (o acababa de pegar) y, si no había sacudón, se frena el
+ * tramo donde se cayó y el anterior (menos amplitud, menos velocidad de
+ * cambio, un poco más largos); la base no se toca. Hasta 40 veces.
  */
 export function generateCourse(seed: string): Course {
   const cached = courseCache.get(seed);
   if (cached) return cached;
   const relaxOf = new Map<number, number>();
-  let course = buildTilts(seed, relaxOf);
+  const shakeRelax = new Map<number, number>();
+  let course = buildTilts(seed, relaxOf, shakeRelax);
   for (let i = 0; i < 40; i++) {
     const { result } = playBot(course, delayedPolicy(FAIR_DELAY_TICKS), FAIR_SURVIVE_TICKS);
     if (result.endReason !== "caida") break;
-    const k = segmentAt(course, result.endTick);
-    relaxOf.set(k, (relaxOf.get(k) ?? 0) + 1);
-    if (k > 0) relaxOf.set(k - 1, (relaxOf.get(k - 1) ?? 0) + 1);
-    course = buildTilts(seed, relaxOf);
+    const sh = shakeNear(course, result.endTick);
+    if (sh >= 0) shakeRelax.set(sh, (shakeRelax.get(sh) ?? 0) + 1);
+    else {
+      const k = segmentAt(course, result.endTick);
+      relaxOf.set(k, (relaxOf.get(k) ?? 0) + 1);
+      if (k > 0) relaxOf.set(k - 1, (relaxOf.get(k - 1) ?? 0) + 1);
+    }
+    course = buildTilts(seed, relaxOf, shakeRelax);
   }
   if (courseCache.size > 64) courseCache.clear();
   courseCache.set(seed, course);
@@ -220,7 +299,7 @@ export function step(state: SimState, course: Course, push: Push): void {
   state.push = push;
   const tilt = tiltAt(course, t);
   // la inclinación lo empuja, lejos del centro se va más (péndulo invertido), el dedo empuja y el rozamiento frena
-  const a = Math.trunc((tilt * K_TILT) / TILT_MAX) + Math.trunc((state.x * K_UNSTABLE) / 2048) + push * K_PUSH - Math.trunc((state.v * K_FRICTION) / 256);
+  const a = Math.trunc((tilt * K_TILT) / TILT_UNIT) + Math.trunc((state.x * K_UNSTABLE) / 2048) + push * K_PUSH - Math.trunc((state.v * K_FRICTION) / 256);
   state.v += a;
   state.x += state.v;
   if (Math.abs(state.x) > baseHalfAt(t)) state.end = { tick: t + 1, reason: "caida" };
@@ -332,7 +411,7 @@ export function delayedPolicy(delayTicks: number, deadUnits = 2): Policy {
     const seen = hist[0]!;
     const tilt = tiltAt(course, Math.max(0, s.tick - delayTicks));
     const horizon = delayTicks + 8;
-    const est = seen.x + seen.v * horizon + Math.trunc((tilt * K_TILT * horizon * horizon) / (2 * TILT_MAX));
+    const est = seen.x + seen.v * horizon + Math.trunc((tilt * K_TILT * horizon * horizon) / (2 * TILT_UNIT));
     const dead = deadUnits * SUB;
     if (est > dead) return -1;
     if (est < -dead) return 1;

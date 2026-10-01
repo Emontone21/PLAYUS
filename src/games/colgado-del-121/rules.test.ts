@@ -5,6 +5,8 @@ import {
   autoTrace,
   BASE_END,
   BASE_END_TICK,
+  BASE_MID,
+  BASE_MID_TICK,
   BASE_START,
   baseHalfAt,
   check,
@@ -19,6 +21,10 @@ import {
   msAt,
   playBot,
   rateAt,
+  SHAKE_FROM_TICK,
+  SHAKE_MAX_TICKS,
+  SHAKE_MIN_TICKS,
+  shakeGapAt,
   simulate,
   smoothQ10,
   step,
@@ -57,7 +63,7 @@ describe("la simulación es entera y determinística", () => {
 });
 
 describe("la inclinación", () => {
-  it("nunca cambia más que el límite por tick, es continua, y la amplitud y la frecuencia suben según lo previsto", () => {
+  it("la curva suave nunca cambia más que el límite por tick; la amplitud y la frecuencia suben según lo previsto; los sacudones empiezan a los 10 s, duran de 300 a 500 ms y vienen cada vez más seguidos", () => {
     expect(amplitudeAt(0)).toBeLessThan(amplitudeAt(45 * TICKS_PER_S));
     expect(amplitudeAt(45 * TICKS_PER_S)).toBeLessThan(amplitudeAt(90 * TICKS_PER_S));
     expect(amplitudeAt(90 * TICKS_PER_S)).toBe(TILT_MAX);
@@ -67,18 +73,41 @@ describe("la inclinación", () => {
     let maxLate = 0;
     let segsEarly = 0;
     let segsLate = 0;
+    let shakesEarly = 0;
+    let shakesLate = 0;
+    const gapsEarly: number[] = [];
     for (const seed of SEEDS.slice(0, 300)) {
       const c = generateCourse(seed);
       expect(c.tilts.length).toBe(END_TICK + 1);
       let bad = "";
+      const inShake = (t: number) => c.shakes.some((sh) => t >= sh.from && t <= sh.to);
       for (let t = 1; t <= END_TICK && !bad; t++) {
-        const d = Math.abs(c.tilts[t]! - c.tilts[t - 1]!);
-        if (d > rateAt(t)) bad = `${seed} tick ${t}: cambió ${d} (límite ${rateAt(t)})`;
+        const d = Math.abs(c.base[t]! - c.base[t - 1]!);
+        if (d > rateAt(t)) bad = `${seed} tick ${t}: la curva cambió ${d} (límite ${rateAt(t)})`;
         if (Math.abs(c.tilts[t]!) > TILT_MAX) bad = `${seed} tick ${t}: fuera de rango`;
+        // fuera de los sacudones, la inclinación es la curva suave; adentro, la curva más el golpe
+        if (!inShake(t) && c.tilts[t] !== c.base[t]) bad = `${seed} tick ${t}: sacudón fuera de lugar`;
       }
       expect(bad).toBe("");
-      for (let t = 0; t < 20 * TICKS_PER_S; t++) maxEarly = Math.max(maxEarly, Math.abs(c.tilts[t]!));
-      for (let t = 80 * TICKS_PER_S; t <= END_TICK; t++) maxLate = Math.max(maxLate, Math.abs(c.tilts[t]!));
+      expect(c.shakes.length).toBeGreaterThan(10);
+      let prevTo = -1;
+      for (const sh of c.shakes) {
+        if (sh.from < SHAKE_FROM_TICK) bad = `${seed}: sacudón antes de los 10 s`;
+        const dur = sh.to - sh.from;
+        if (sh.to < END_TICK && (dur < SHAKE_MIN_TICKS || dur > SHAKE_MAX_TICKS)) bad = `${seed}: sacudón de ${dur} ticks`;
+        if (prevTo >= 0 && sh.from - prevTo < 0.6 * shakeGapAt(prevTo) * TICKS_PER_S) bad = `${seed}: sacudones demasiado juntos`;
+        if (prevTo >= 0 && sh.from < 40 * TICKS_PER_S) gapsEarly.push((sh.from - prevTo) / TICKS_PER_S);
+        if (sh.from < 40 * TICKS_PER_S) shakesEarly++;
+        if (sh.from >= 60 * TICKS_PER_S && sh.from < 90 * TICKS_PER_S) shakesLate++;
+        // el golpe pega de verdad: en el medio del sacudón la inclinación se separa de la curva hacia su lado (salvo tope)
+        const mid = Math.floor((sh.from + sh.to) / 2);
+        const delta = (c.tilts[mid]! - c.base[mid]!) * sh.dir;
+        if (delta <= 0 && Math.abs(c.tilts[mid]!) < TILT_MAX) bad = `${seed}: el sacudón no pega`;
+        prevTo = sh.to;
+      }
+      expect(bad).toBe("");
+      for (let t = 0; t < 20 * TICKS_PER_S; t++) maxEarly = Math.max(maxEarly, Math.abs(c.base[t]!));
+      for (let t = 80 * TICKS_PER_S; t <= END_TICK; t++) maxLate = Math.max(maxLate, Math.abs(c.base[t]!));
       for (const s of c.segments) {
         if (s.from < 20 * TICKS_PER_S) segsEarly++;
         if (s.from >= 80 * TICKS_PER_S && s.from < 100 * TICKS_PER_S) segsLate++;
@@ -87,21 +116,30 @@ describe("la inclinación", () => {
     // más fuerte y más seguido con el tiempo
     expect(maxLate).toBeGreaterThan(maxEarly);
     expect(segsLate).toBeGreaterThan(segsEarly * 1.5);
+    // los sacudones: cada 4 a 8 s al principio, y más seguidos después
+    const meanGap = gapsEarly.reduce((a, b) => a + b, 0) / gapsEarly.length;
+    expect(meanGap).toBeGreaterThan(4);
+    expect(meanGap).toBeLessThan(8);
+    expect(shakesLate / 300).toBeGreaterThan((shakesEarly / 300) * 1.4);
+    expect(rateAt(0)).toBe(28);
+    expect(rateAt(90 * TICKS_PER_S)).toBe(70);
   });
 });
 
 describe("la base", () => {
-  it("se achica de 40 a 12 según el cronograma y queda ahí", () => {
+  it("se achica de 40 a 12 en los primeros 30 s, después despacio hasta 8 a los 60 s, y queda ahí", () => {
     expect(baseHalfAt(0)).toBe(BASE_START * SUB);
+    expect(baseHalfAt(BASE_MID_TICK)).toBe(BASE_MID * SUB);
     expect(baseHalfAt(BASE_END_TICK)).toBe(BASE_END * SUB);
     expect(baseHalfAt(END_TICK)).toBe(BASE_END * SUB);
-    expect(baseHalfAt(45 * TICKS_PER_S)).toBe(26 * SUB);
+    expect(baseHalfAt(15 * TICKS_PER_S)).toBe(26 * SUB);
+    expect(baseHalfAt(45 * TICKS_PER_S)).toBe(10 * SUB);
     for (let t = 1; t <= END_TICK; t++) expect(baseHalfAt(t)).toBeLessThanOrEqual(baseHalfAt(t - 1));
   });
 });
 
 describe("justicia", () => {
-  it("sin tocar, se cae antes de los 8 s en el 99 % de las semillas; el jugador automático con 250 ms aguanta 30 s o más en el 99,9 %", () => {
+  it("sin tocar, se cae antes de los 8 s en el 99 % de las semillas; el jugador automático con 250 ms aguanta 15 s o más en el 99,9 %", () => {
     let fast = 0;
     let survives = 0;
     let relaxed = 0;
@@ -112,7 +150,7 @@ describe("justicia", () => {
       while (!s.end) step(s, c, 0);
       if (s.end!.tick < 8 * TICKS_PER_S) fast++;
       const { result } = playBot(c, delayedPolicy(FAIR_DELAY_TICKS), END_TICK);
-      if (result.endTick >= 30 * TICKS_PER_S) survives++;
+      if (result.endTick >= 15 * TICKS_PER_S) survives++;
     }
     expect(fast / SEEDS.length).toBeGreaterThanOrEqual(0.99);
     expect(survives / SEEDS.length).toBeGreaterThanOrEqual(0.999);

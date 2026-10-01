@@ -68,7 +68,7 @@ export function ColgadoDev({ seed, from = 0, debug = false, slow = false, auto =
       <TiltGraph seed={seed} />
       <p className="text-xs text-tinta-suave">
         los saltos usan el jugador automático (con la demora elegida) hasta ese segundo. Esta inclinación tiene {course.segments.length} tramos
-        {course.relax === 0 ? " y ninguno necesitó freno" : ` y ${course.relax} ${course.relax === 1 ? "freno" : "frenos"} para que el jugador automático de 250 ms aguante 30 s`}.
+{" "}y {course.shakes.length} sacudones{course.relax === 0 ? "; ninguno necesitó ajuste" : `; ${course.relax} ${course.relax === 1 ? "ajuste" : "ajustes"} para que el jugador automático de 250 ms aguante 15 s`}.
       </p>
       <GameContainer key={run} game={game} seed={seed} autoStart={run > 0} onDone={() => setRun((r) => r + 1)} note="modo desarrollo: no consume intentos ni guarda nada." />
     </div>
@@ -102,6 +102,9 @@ function TiltGraph({ seed }: { seed: string }) {
     ctx.moveTo(0, H / 2);
     ctx.lineTo(W, H / 2);
     ctx.stroke();
+    // los sacudones: una banda rosa
+    ctx.fillStyle = "rgba(255,111,145,0.45)";
+    for (const sh of course.shakes) ctx.fillRect((sh.from / END_TICK) * W, 0, Math.max(2, ((sh.to - sh.from) / END_TICK) * W), H);
     // la inclinación
     ctx.strokeStyle = "#6FD3E0";
     ctx.beginPath();
@@ -126,7 +129,7 @@ function TiltGraph({ seed }: { seed: string }) {
   return (
     <figure className="flex flex-col gap-1" data-testid="dev-graph">
       <canvas ref={ref} className="w-full rounded-lg" style={{ border: "2px solid var(--contorno)", imageRendering: "auto" }} aria-label="la inclinación y el ancho de la base a lo largo del tiempo" role="img" />
-      <figcaption className="text-xs text-tinta-suave">celeste: la inclinación (de -1000 a 1000); verde: el medio ancho de la base (de 40 a 12 unidades); una raya cada 10 s.</figcaption>
+      <figcaption className="text-xs text-tinta-suave">celeste: la inclinación (de -1600 a 1600); rosa: los sacudones; verde: el medio ancho de la base (de 40 a 8 unidades); una raya cada 10 s.</figcaption>
     </figure>
   );
 }

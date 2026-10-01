@@ -6,7 +6,7 @@
 
 import { integerScale, px } from "../lib/canvas-scale";
 import { spriteCanvas } from "../lib/sprites";
-import { baseHalfAt, FIELD_H, FIELD_W, nearEdge, SUB, TILT_MAX, tiltAt, type Course, type SimState } from "./rules";
+import { baseHalfAt, FIELD_H, FIELD_W, nearEdge, SUB, TILT_UNIT, tiltAt, type Course, type SimState } from "./rules";
 import { AISLE_X, FLOOR_Y, INT_H, INT_W, interiorRects, passengerSprite, windowRects, type Pose } from "./sprites";
 
 export interface DrawOptions {
@@ -112,7 +112,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, state: SimState, course
   ctx.fillStyle = "#1B2430";
   ctx.fillRect(0, 0, FIELD_W * k, FIELD_H * k);
   const tilt = tiltNow(course, state, opts.alpha);
-  const angle = (tilt / TILT_MAX) * MAX_ANGLE_RAD;
+  const angle = (tilt / TILT_UNIT) * MAX_ANGLE_RAD;
   ctx.save();
   // el centro de giro: el piso del pasillo, en el medio de la vista
   ctx.translate(px(FIELD_W / 2, k), px(FIELD_H * 0.78, k));
