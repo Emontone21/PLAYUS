@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import https from "node:https";
 import crypto from "node:crypto";
@@ -8,7 +8,18 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import webpush from "web-push";
 import type { Database, GroupRow } from "@/lib/supabase/types";
-import { localTime } from "./reminders";
+import { localTime, REMINDER_MESSAGES, REMINDER_TITLE } from "./reminders";
+
+// se captura lo que manda el recordatorio (título y cuerpo) sin tocar el envío real
+const captured = vi.hoisted(() => ({ sent: [] as Array<{ title: string; body: string }> }));
+vi.mock("./push", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("./push")>();
+  const wrapped: typeof mod.sendPushToProfiles = async (admin, ids, payload) => {
+    captured.sent.push({ title: payload.title, body: payload.body });
+    return mod.sendPushToProfiles(admin, ids, payload);
+  };
+  return { ...mod, sendPushToProfiles: wrapped };
+});
 
 // Envío de Web Push de verdad (cifrado aes128gcm + VAPID) contra un push
 // service falso: un servidor HTTPS local con certificado autofirmado. Y el
@@ -144,6 +155,13 @@ describe.skipIf(!up)("web push contra un push service falso", () => {
     const mine = body.groups.find((g) => g.group === group.id);
     expect(mine).toMatchObject({ sent: 1 });
     expect(received.length).toBe(before + 1);
+    // la notificación de prueba sale con el título "frog" y uno de los cuatro textos nuevos
+    const last = captured.sent[captured.sent.length - 1]!;
+    expect(last.title).toBe(REMINDER_TITLE);
+    expect(REMINDER_MESSAGES).toContain(last.body);
+    process.stdout.write(`
+recordatorio de prueba: "${last.title}" / "${last.body}"
+`);
 
     // se creó la ronda de hoy y quedó registrado el envío
     const { data: rem } = await admin.from("group_reminders").select("*").eq("group_id", group.id);

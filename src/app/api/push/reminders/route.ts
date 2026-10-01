@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getGame } from "@/games";
 import { ensureRound } from "@/lib/rounds";
-import { isReminderDue, localDate } from "@/lib/reminders";
+import { isReminderDue, localDate, pendingProfiles, REMINDER_TITLE, reminderMessageIndex, REMINDER_MESSAGES } from "@/lib/reminders";
 import { pushConfigured, sendPushToProfiles } from "@/lib/push";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 // 15 minutos (o cualquier scheduler) con Authorization: Bearer CRON_SECRET.
 // Para cada grupo cuya hora local de recordatorio cae en esta ventana y que
 // todavía no recibió el de hoy: asegura la ronda, y avisa a los integrantes
-// que aún no completaron una partida. group_reminders evita repetir.
+// que aún no completaron una partida, con uno de los cuatro textos de
+// REMINDER_MESSAGES (varía por persona y por día). group_reminders evita
+// repetir.
 export async function POST(req: Request) {
   return run(req);
 }
@@ -54,17 +56,30 @@ async function run(req: Request) {
       admin.from("group_members").select("profile_id").eq("group_id", group.id),
       admin.from("attempts").select("profile_id").eq("round_id", round.id).eq("status", "completed"),
     ]);
-    const played = new Set((done ?? []).map((a) => a.profile_id));
-    const pending = (members ?? []).map((m) => m.profile_id).filter((id) => !played.has(id));
+    const pending = pendingProfiles(
+      (members ?? []).map((m) => m.profile_id),
+      (done ?? []).map((a) => a.profile_id),
+    );
 
-    const report = await sendPushToProfiles(admin, pending, {
-      title: `${group.name}: hoy toca ${game?.name ?? round.game_id}`,
-      body: "todavía no jugaste. si no jugás hoy, mañana ya no vale.",
-      url: "/hoy",
-      tag: `recordatorio-${group.id}-${today}`,
-    });
-    await admin.from("group_reminders").update({ sent_count: report.sent }).eq("group_id", group.id).eq("play_date", today);
-    summary.push({ group: group.id, date: today, sent: report.sent });
+    // a cada persona le toca un mensaje distinto según el día: se agrupan por mensaje y se manda cada grupo
+    const byMessage = new Map<number, string[]>();
+    for (const id of pending) {
+      const k = reminderMessageIndex(id, today);
+      byMessage.set(k, [...(byMessage.get(k) ?? []), id]);
+    }
+    let sent = 0;
+    for (const [k, ids] of byMessage) {
+      const report = await sendPushToProfiles(admin, ids, {
+        title: REMINDER_TITLE,
+        body: REMINDER_MESSAGES[k]!,
+        url: "/hoy",
+        tag: `recordatorio-${group.id}-${today}`,
+      });
+      sent += report.sent;
+    }
+    void game;
+    await admin.from("group_reminders").update({ sent_count: sent }).eq("group_id", group.id).eq("play_date", today);
+    summary.push({ group: group.id, date: today, sent });
   }
 
   return NextResponse.json({ ok: true, at: now.toISOString(), groups: summary });

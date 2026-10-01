@@ -1,4 +1,5 @@
 import type { DateString } from "./time";
+import { hash32 } from "./rng";
 
 // El recordatorio diario: cada grupo elige una hora local. Un scheduler llama
 // al endpoint cada 15 minutos y acá se decide si un grupo "está en hora":
@@ -38,4 +39,37 @@ export function isReminderDue(
   const target = minutesOf(reminderTime);
   const current = minutesOf(localTime(tz, now));
   return current >= target && current < target + windowMinutes;
+}
+
+// ---------------------------------------------------------------------------
+// el texto del recordatorio: cuatro mensajes que van variando por persona y
+// por día. Para sumar o cambiar mensajes, tocá solo esta lista.
+// ---------------------------------------------------------------------------
+
+export const REMINDER_TITLE = "frog";
+export const REMINDER_MESSAGES: readonly string[] = ["Bro que masa no has jugado hoy", "Vas a jugar bro o sos un sopa barbaro?", "Pari es hora de jugar dale", "Juga Frog Juga Sabor"];
+
+/** número de día (días desde 1970) de una fecha local "YYYY-MM-DD" */
+export function dayNumber(date: DateString): number {
+  return Math.floor(Date.parse(`${date}T00:00:00Z`) / 86_400_000);
+}
+
+/**
+ * Qué mensaje le toca a una persona un día: (número de día + hash corto del
+ * profile_id) módulo la cantidad de mensajes. Cada persona recorre los
+ * cuatro en cuatro días seguidos, y no a todos los del grupo les llega el
+ * mismo el mismo día.
+ */
+export function reminderMessageIndex(profileId: string, date: DateString, count = REMINDER_MESSAGES.length): number {
+  return (((dayNumber(date) + (hash32(profileId) % 1000)) % count) + count) % count;
+}
+
+export function reminderBodyFor(profileId: string, date: DateString): string {
+  return REMINDER_MESSAGES[reminderMessageIndex(profileId, date)]!;
+}
+
+/** quiénes reciben el recordatorio: los integrantes que todavía no completaron una partida ese día */
+export function pendingProfiles(members: readonly string[], completed: readonly string[]): string[] {
+  const played = new Set(completed);
+  return members.filter((id) => !played.has(id));
 }

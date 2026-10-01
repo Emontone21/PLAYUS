@@ -281,8 +281,8 @@ function validResult(gameId: string, seed: string, n: number) {
     return { score: result.score, events };
   }
   if (gameId === "colgado-del-121") {
-    // el jugador automático aguanta 5 s y el cronómetro corta ahí
-    const { events, result } = colgadoTrace(seed, 300);
+    // el jugador automático aguanta 1,5 s y el cronómetro corta ahí (el intento de prueba dura minDurationMs + 500 ms = 2,5 s)
+    const { events, result } = colgadoTrace(seed, 90);
     return { score: result.score, events };
   }
   if (gameId === "busca-los-paris") {
@@ -291,8 +291,8 @@ function validResult(gameId: string, seed: string, n: number) {
     return { score, events };
   }
   if (gameId === "pisteando-el-sunny") {
-    // el conductor automático maneja 5 s y el cronómetro corta ahí
-    const { events, result } = sunnyTrace(seed, 300);
+    // el conductor automático maneja 2,5 s y el cronómetro corta ahí (el intento de prueba dura minDurationMs + 500 ms = 3,5 s)
+    const { events, result } = sunnyTrace(seed, 150);
     return { score: result.score, events };
   }
   if (gameId === "rastitas-rastotas") {
