@@ -24,6 +24,7 @@ import { autoTrace as colgadoTrace } from "@/games/colgado-del-121/rules";
 import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwayX } from "@/games/apila-las-boludeces/rules";
 import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
 import { loadSeasonSeries } from "@/lib/season-series";
+import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -310,6 +311,12 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "la-mayo") {
+    // emboca dos y el cronómetro corta a los 2,5 s (tick 150)
+    const { events, result } = mayoTrace(seed, { maxTaps: 2 });
+    const taps = events.filter((e) => !("fin" in e));
+    return { score: result.score, events: [...taps, { tick: 150, fin: true }] };
   }
   if (gameId === "apila-las-boludeces") {
     // suelta el primer objeto apenas el vaivén lo pone sobre la tabla y el cronómetro corta a los 2,5 s (tick 150)

@@ -14,6 +14,7 @@ import { SunnyDev } from "@/games/pisteando-el-sunny/dev";
 import { ParisDev } from "@/games/busca-los-paris/dev";
 import { ColgadoDev } from "@/games/colgado-del-121/dev";
 import { TorreDev } from "@/games/apila-las-boludeces/dev";
+import { MayoDev } from "@/games/la-mayo/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -48,6 +49,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "la-mayo" ? (
+        <MayoDev seed={seed} from={Math.max(0, Math.min(59, Number(desde) || 0))} debug={datos === "1"} slow={lento === "1"} />
       ) : game.id === "apila-las-boludeces" ? (
         <TorreDev seed={seed} colliders={cajas === "1"} rest={reposo === "1"} slow={lento === "1"} free={libre === "1"} />
       ) : game.id === "colgado-del-121" ? (
