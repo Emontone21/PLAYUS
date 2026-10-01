@@ -13,6 +13,7 @@ import { RastasDev } from "@/games/rastitas-rastotas/dev";
 import { SunnyDev } from "@/games/pisteando-el-sunny/dev";
 import { ParisDev } from "@/games/busca-los-paris/dev";
 import { ColgadoDev } from "@/games/colgado-del-121/dev";
+import { TorreDev } from "@/games/la-torre/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -25,11 +26,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { id } = await params;
-  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos } = await searchParams;
+  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -47,6 +48,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "la-torre" ? (
+        <TorreDev seed={seed} colliders={cajas === "1"} rest={reposo === "1"} slow={lento === "1"} free={libre === "1"} />
       ) : game.id === "colgado-del-121" ? (
         <ColgadoDev seed={seed} from={Math.max(0, Math.min(119, Number(desde) || 0))} debug={datos === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "busca-los-paris" ? (

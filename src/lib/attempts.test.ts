@@ -21,6 +21,8 @@ import { greedyTrace as rastasTrace } from "@/games/rastitas-rastotas/rules";
 import { autoTrace as sunnyTrace } from "@/games/pisteando-el-sunny/rules";
 import { honestTrace as parisTrace } from "@/games/busca-los-paris/rules";
 import { autoTrace as colgadoTrace } from "@/games/colgado-del-121/rules";
+import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwayX } from "@/games/la-torre/rules";
+import { loadRapier, type Rapier } from "@/games/la-torre/physics";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -54,6 +56,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
   let group: GroupRow;
 
   beforeAll(async () => {
+    torreR = await loadRapier();
     const k = await keys();
     admin = createClient<Database>(URL, k.service, { auth: { persistSession: false } });
     const a = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
@@ -268,6 +271,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 });
 
 // Un resultado que pasa validate() del juego de la ronda.
+let torreR: Rapier | null = null;
 function validResult(gameId: string, seed: string, n: number) {
   if (gameId === "piba-del-ipa") return { score: n, events: legitTrace(seed, n) };
   if (gameId === "quedo-re-tarado") {
@@ -279,6 +283,15 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "la-torre") {
+    // suelta el primer objeto apenas el vaivén lo pone sobre la tabla y el cronómetro corta a los 2,5 s (tick 150)
+    const plan = torrePlan(seed);
+    let t = 1;
+    while (Math.abs(torreSwayX(plan, 0, t)) > 18) t++;
+    const inputs = [{ tick: t, action: "drop" as const }];
+    const r = torreSimulate(torreR!, seed, inputs, 150);
+    return { score: r.score, events: [...inputs, { tick: 150, fin: true }] };
   }
   if (gameId === "colgado-del-121") {
     // el jugador automático aguanta 1,5 s y el cronómetro corta ahí (el intento de prueba dura minDurationMs + 500 ms = 2,5 s)

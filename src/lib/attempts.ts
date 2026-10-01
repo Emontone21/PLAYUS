@@ -178,7 +178,7 @@ export async function finishAttempt(
   if (result.score < limits.minScore || result.score > limits.maxScore) {
     throw await reject("implausible_score", "no pudimos validar este puntaje. el intento cuenta igual.");
   }
-  if (game.validate && !game.validate(result, attemptSeed(round.seed, attempt.attempt_number, readPepper()), { elapsedMs })) {
+  if (game.validate && !(await game.validate(result, attemptSeed(round.seed, attempt.attempt_number, readPepper()), { elapsedMs }))) {
     throw await reject("invalid_events", "no pudimos validar esta partida. el intento cuenta igual.");
   }
 

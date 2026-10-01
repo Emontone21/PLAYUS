@@ -42,9 +42,10 @@ export interface GameModule {
    * validador propio sobre los eventos. Devuelve false para rechazar.
    * El servidor lo llama después de las cotas, con la semilla del intento y
    * la duración real del intento medida en el servidor (desde /start, con la
-   * cuenta regresiva incluida). Opcional.
+   * cuenta regresiva incluida). Puede devolver una promesa (un juego que
+   * necesita cargar un motor, como la torre con Rapier). Opcional.
    */
-  validate?: (result: GameResult, seed: string, meta?: { elapsedMs: number }) => boolean;
+  validate?: (result: GameResult, seed: string, meta?: { elapsedMs: number }) => boolean | Promise<boolean>;
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El
