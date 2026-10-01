@@ -3,19 +3,23 @@ import { createClient } from "@/lib/supabase/server";
 import { getMyGroups, pickCurrentGroup } from "@/lib/groups";
 import { loadChampion, loadMembers } from "@/lib/today";
 import { loadGroupSummary } from "@/lib/group-summary";
-import { formatShortDate } from "@/lib/time";
+import { seriesSummary } from "@/lib/chart";
+import { daysBetween, formatShortDate } from "@/lib/time";
 import { Avatar } from "@/components/avatar";
 import { Crown } from "@/components/crown";
 import { Frog } from "@/components/frog/Frog";
 import { LilyInline } from "@/components/lily";
 import { InviteButton } from "@/components/invite-button";
 import { Ranking, type RankingRow } from "@/components/ranking";
+import { SeasonChart } from "@/components/season-chart";
 import { GroupSwitcher } from "./group-switcher";
 import { ReminderTime } from "./reminder-time";
+import { SeasonPicker } from "./season-picker";
 
 export const dynamic = "force-dynamic";
 
-export default async function GroupPage() {
+export default async function GroupPage({ searchParams }: { searchParams: Promise<{ temporada?: string }> }) {
+  const { temporada } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,13 +28,15 @@ export default async function GroupPage() {
   const group = await pickCurrentGroup(groups);
   if (!group || !user) return null; // el layout ya redirige
 
-  const [members, championId, summary, { data: memberships }] = await Promise.all([
-    loadMembers(group.id),
+  const members = await loadMembers(group.id);
+  const [championId, summary, { data: memberships }] = await Promise.all([
     loadChampion(group.id),
-    loadGroupSummary(user.id, group),
+    loadGroupSummary(user.id, group, members, temporada ? Number(temporada) : undefined),
     supabase.from("group_members").select("profile_id, role, joined_at").eq("group_id", group.id).order("joined_at"),
   ]);
 
+  const closed = !!summary.season.closed_at;
+  const colorOf = new Map(summary.series.series.map((s) => [s.profileId, s.color]));
   const tableRows: RankingRow[] = summary.standings.map((s) => {
     const m = members.get(s.profileId);
     return {
@@ -39,14 +45,19 @@ export default async function GroupPage() {
       avatar: m!.avatar,
       rank: s.rank,
       value: s.points,
-      unit: "pts",
-      detail: s.wins > 0 ? `${s.wins} ${s.wins === 1 ? "victoria" : "victorias"}` : undefined,
+      unit: "colillas",
+      colillas: true,
+      detail: `${s.wins} ${s.wins === 1 ? "día ganado" : "días ganados"}`,
+      color: colorOf.get(s.profileId),
+      trend: closed ? null : summary.series.trend[s.profileId] ?? null,
       isMe: s.profileId === user.id,
-      champion: s.profileId === championId,
+      champion: closed ? summary.champions.includes(s.profileId) : s.profileId === championId,
     };
   });
 
   const rows = (memberships ?? []).map((m) => ({ ...m, member: members.get(m.profile_id) }));
+  const endsOn = summary.season.ends_on;
+  const daysLeft = endsOn ? Math.max(0, daysBetween(summary.today, endsOn) + 1) : null;
 
   return (
     <main className="flex flex-col gap-8 px-5 py-6">
@@ -59,26 +70,39 @@ export default async function GroupPage() {
         </h1>
       </header>
 
-      <section className="flex flex-col gap-3" data-testid="season-table">
-        <div className="flex items-baseline justify-between">
-          <h2 className="display text-xl text-tinta">temporada {summary.season.number}</h2>
-          <span className="text-xs text-tinta-suave">
-            del {formatShortDate(summary.season.starts_on)} al {summary.season.ends_on ? formatShortDate(summary.season.ends_on) : "…"}
-          </span>
+      <section className="flex flex-col gap-3" data-testid="season-table" data-season={summary.season.number} data-closed={closed ? "1" : ""}>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="display text-xl text-tinta">temporada {summary.season.number}</h2>
+            {summary.seasons.length > 1 ? <SeasonPicker seasons={summary.seasons} current={summary.current.number} selected={summary.season.number} /> : null}
+          </div>
+          <p className="text-xs text-tinta-suave" data-testid="season-dates">
+            {closed ? "terminó" : daysLeft === null ? "en curso" : `${daysLeft === 1 ? "queda 1 día" : `quedan ${daysLeft} días`}`} · del {formatShortDate(summary.season.starts_on)} al{" "}
+            {endsOn ? formatShortDate(endsOn) : "…"}
+          </p>
         </div>
+        <SeasonChart
+          days={summary.series.days}
+          lastClosed={summary.series.lastClosed}
+          todayIndex={summary.series.todayIndex}
+          series={summary.series.series}
+          myId={user.id}
+          label={seriesSummary(summary.series.series, summary.standings)}
+        />
         <Ranking
           rows={tableRows}
           testId="standings"
           emptyText="la tabla se despierta a medianoche, cuando cierre el primer día jugado. lo de hoy ya suma."
           empty={
-            <div className="note flex items-center gap-4">
-              <Frog pose="dormida" size={96} tilt={-8} />
-              <p className="text-sm text-tinta-suave">la tabla se despierta a medianoche, cuando cierre el primer día jugado. lo de hoy ya suma.</p>
-            </div>
+            closed ? (
+              <p className="note text-sm text-tinta-suave">en esta temporada no jugó nadie.</p>
+            ) : (
+              <p className="note text-sm text-tinta-suave">la tabla se despierta a medianoche, cuando cierre el primer día jugado. lo de hoy ya suma.</p>
+            )
           }
         />
         {tableRows.length > 0 ? (
-          <p className="text-xs text-tinta-suave">puntos de los días ya cerrados. lo de hoy suma a medianoche.</p>
+          <p className="text-xs text-tinta-suave">{closed ? "la tabla final de la temporada." : "colillas de los días ya cerrados. lo de hoy suma a medianoche."}</p>
         ) : null}
       </section>
 

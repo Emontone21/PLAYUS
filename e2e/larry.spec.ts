@@ -114,7 +114,7 @@ test("en la ronda real: la partida se valida en el servidor y llega al ranking e
   await expect(a.page.getByTestId("ranking-row")).toHaveCount(2);
   const first = a.page.getByTestId("ranking-row").first();
   await expect(first).toContainText("Larry");
-  await expect(first).toContainText("+10");
+  await expect(first).toContainText("+25");
   await expect(a.page.getByTestId("ranking-value").first()).toHaveText(new RegExp(`^\\s*${body.score}\\s*$`));
 
   // y B, sin tocar nada, ve aparecer a A arriba

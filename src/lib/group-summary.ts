@@ -5,12 +5,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { GroupRow, RoundRow, SeasonRow } from "@/lib/supabase/types";
 import { getGame } from "@/games";
 import { readFakeToday } from "./api";
+import type { SeasonSeries } from "./chart";
 import { ensureSeason, groupToday, rankedRound, seasonStandings } from "./rounds";
-import type { StandingRow } from "./scoring";
+import { champions, type StandingRow } from "./scoring";
+import { loadSeasonSeries } from "./season-series";
+import type { Member } from "./today";
 import { addDays, type DateString } from "./time";
 
-// Lo que necesita la pestaña Grupo además de los integrantes: tabla de la
-// temporada (con las rondas ya cerradas: hasta ayer) e historial de días.
+// Lo que necesita la pestaña Grupo además de los integrantes: la temporada
+// elegida (la actual, o una cerrada) con su gráfica y su tabla (en la actual,
+// con las rondas ya cerradas: hasta ayer), la lista de temporadas para el
+// selector, y el historial de días.
 
 export interface HistoryItem {
   round: RoundRow;
@@ -26,21 +31,33 @@ export interface HistoryItem {
 
 export interface GroupSummary {
   today: DateString;
+  /** la temporada que se muestra */
   season: SeasonRow;
+  /** la temporada en curso */
+  current: SeasonRow;
+  seasons: { number: number; closed: boolean }[];
   standings: StandingRow[];
+  series: SeasonSeries;
+  /** en una temporada cerrada: quiénes la ganaron (título compartido si empatan) */
+  champions: string[];
   history: HistoryItem[];
 }
 
-export async function loadGroupSummary(userId: string, group: GroupRow): Promise<GroupSummary> {
+export async function loadGroupSummary(userId: string, group: GroupRow, members: Map<string, Member>, seasonNumber?: number): Promise<GroupSummary> {
   const admin = createAdminClient();
   const today = groupToday(group, await readFakeToday());
-  const season = await ensureSeason(admin, group, today);
+  const current = await ensureSeason(admin, group, today);
   const yesterday = addDays(today, -1);
 
-  // la tabla cuenta hasta ayer: los puntos de hoy se ven en Hoy y cierran a medianoche
-  const standings = await seasonStandings(admin, season, yesterday);
-
   const supabase = await createClient();
+  const { data: seasonRows } = await supabase.from("seasons").select("*").eq("group_id", group.id).order("number", { ascending: false });
+  const seasons = (seasonRows ?? []).map((s) => ({ number: s.number, closed: !!s.closed_at }));
+  const chosen = (seasonRows ?? []).find((s) => s.number === seasonNumber && s.closed_at) ?? current;
+  const closed = !!chosen.closed_at;
+
+  // la tabla cuenta hasta ayer: las colillas de hoy se ven en Hoy y cierran a medianoche
+  const [standings, series] = await Promise.all([seasonStandings(admin, chosen, closed ? undefined : yesterday), loadSeasonSeries(supabase, group, chosen, members, today)]);
+
   const { data: rounds } = await supabase
     .from("rounds")
     .select("*")
@@ -68,5 +85,5 @@ export async function loadGroupSummary(userId: string, group: GroupRow): Promise
     });
   }
 
-  return { today, season, standings, history };
+  return { today, season: chosen, current, seasons, standings, series, champions: closed ? champions(standings) : [], history };
 }

@@ -46,6 +46,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
         unit,
         valueText: t.game.formatScore ? t.game.formatScore(r.bestScore) : undefined,
         detail: `+${r.points}`,
+        detailColillas: true,
         isMe: r.profileId === user.id,
         champion: r.profileId === t.championId,
       };
@@ -190,7 +191,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 
           <RankingReveal rows={rows} myId={user.id} reveal={reveal === "1"} />
           <p className="text-xs text-tinta-suave">
-            se actualiza solo cuando alguien termina una partida. los cuatro primeros suman 10, 7, 5 y 3; el resto, 1.
+            se actualiza solo cuando alguien termina una partida. jugar suma 5 colillas. el 1.º suma 20 más, el 2.º 15, el 3.º 11, el 4.º 8, el 5.º 6, el 6.º 4 y del 7.º en adelante, 2.
           </p>
           <LiveRefresh roundId={t.round.id} />
           {/* el permiso de notificaciones se ofrece después de la primera partida, nunca al entrar */}

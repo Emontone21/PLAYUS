@@ -125,7 +125,7 @@ test("en la ronda real: la partida se valida en el servidor y llega al ranking e
   if (body.score > scoreB) {
     const first = a.page.getByTestId("ranking-row").first();
     await expect(first).toContainText("Remera");
-    await expect(first).toContainText("+10");
+    await expect(first).toContainText("+25");
     await expect(a.page.getByTestId("ranking-value").first()).toHaveText(new RegExp(`^\\s*${body.score}\\s*m\\s*$`));
   }
   await expect(a.page.getByTestId("attempts-left")).toContainText(`tu mejor: ${body.score} m`);

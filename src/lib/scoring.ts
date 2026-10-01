@@ -1,13 +1,42 @@
 import type { ScoringDirection } from "@/games/types";
 
-// Puntos por ronda: se ordena a los jugadores por su mejor puntaje
-// (respetando la dirección del juego) y se reparte 10 / 7 / 5 / 3, y 1 punto
-// para el resto de los que jugaron. Cero para el que no jugó (no aparece).
-// Empate: mismo puesto y mismos puntos, y se saltea el puesto siguiente
-// (1, 1, 3, ...). Función pura: no toca la base.
+// Colillas (los puntos de la temporada; en el código siguen siendo `points`,
+// decisión 214) por ronda: se ordena a los jugadores por su mejor puntaje
+// (respetando la dirección del juego) y cada uno que jugó se lleva lo de
+// participar más lo de su puesto, según la tabla POINTS_RULES. Cero para el
+// que no jugó (no aparece). Empate: mismo puesto y mismas colillas, y se
+// saltea el puesto siguiente (1, 1, 3, ...). Funciones puras: no tocan la base.
 
-export const POINTS_BY_RANK: Readonly<Record<number, number>> = { 1: 10, 2: 7, 3: 5, 4: 3 };
-export const POINTS_FOR_PLAYING = 1;
+export interface PointsRules {
+  /** por jugar (al menos un intento completado) */
+  forPlaying: number;
+  /** por el puesto; los puestos que no figuran llevan `otherRank` */
+  byRank: Readonly<Record<number, number>>;
+  otherRank: number;
+}
+
+/** el reparto vigente: 5 por jugar; 20 / 15 / 11 / 8 / 6 / 4 por el puesto, 2 del 7.º en adelante */
+export const POINTS_RULES: PointsRules = {
+  forPlaying: 5,
+  byRank: { 1: 20, 2: 15, 3: 11, 4: 8, 5: 6, 6: 4 },
+  otherRank: 2,
+};
+
+/** el reparto anterior (10 / 7 / 5 / 3 y 1 para el resto), que conservan las temporadas cerradas antes del cambio */
+export const POINTS_RULES_V1: PointsRules = {
+  forPlaying: 0,
+  byRank: { 1: 10, 2: 7, 3: 5, 4: 3 },
+  otherRank: 1,
+};
+
+/** desde este día rige POINTS_RULES; una temporada cerrada antes se sigue leyendo con el reparto viejo */
+export const POINTS_RULES_SINCE = "2026-10-01";
+
+/** el reparto con que se lee una temporada: la en curso (y toda cerrada desde el cambio) con el vigente */
+export function rulesForSeason(season: { closed_at: string | null }): PointsRules {
+  if (season.closed_at && season.closed_at.slice(0, 10) < POINTS_RULES_SINCE) return POINTS_RULES_V1;
+  return POINTS_RULES;
+}
 
 export interface RoundEntry {
   profileId: string;
@@ -19,11 +48,11 @@ export interface RankedEntry extends RoundEntry {
   points: number;
 }
 
-export function pointsForRank(rank: number): number {
-  return POINTS_BY_RANK[rank] ?? POINTS_FOR_PLAYING;
+export function pointsForRank(rank: number, rules: PointsRules = POINTS_RULES): number {
+  return rules.forPlaying + (rules.byRank[rank] ?? rules.otherRank);
 }
 
-export function rankRound(entries: readonly RoundEntry[], scoring: ScoringDirection): RankedEntry[] {
+export function rankRound(entries: readonly RoundEntry[], scoring: ScoringDirection, rules: PointsRules = POINTS_RULES): RankedEntry[] {
   const sorted = [...entries].sort((a, b) =>
     scoring === "high" ? b.bestScore - a.bestScore : a.bestScore - b.bestScore,
   );
@@ -32,7 +61,7 @@ export function rankRound(entries: readonly RoundEntry[], scoring: ScoringDirect
     const entry = sorted[i] as RoundEntry;
     const previous = out[i - 1];
     const rank = previous && previous.bestScore === entry.bestScore ? previous.rank : i + 1;
-    out.push({ ...entry, rank, points: pointsForRank(rank) });
+    out.push({ ...entry, rank, points: pointsForRank(rank, rules) });
   }
   return out;
 }
@@ -56,12 +85,13 @@ export function bestScores(
 export interface StandingRow {
   profileId: string;
   points: number;
+  /** días ganados: veces que terminó 1.º (los empates en el 1.º cuentan) */
   wins: number;
   played: number;
   rank: number;
 }
 
-/** Tabla de posiciones acumulando los puntos de varias rondas ya rankeadas. */
+/** Tabla de posiciones acumulando las colillas de varias rondas ya rankeadas. Desempate: días ganados. */
 export function standings(rounds: readonly RankedEntry[][]): StandingRow[] {
   const acc = new Map<string, { points: number; wins: number; played: number }>();
   for (const round of rounds) {
@@ -91,7 +121,16 @@ export function standings(rounds: readonly RankedEntry[][]): StandingRow[] {
   }
 }
 
-/** Campeón de una temporada: más puntos, después más victorias. Null si nadie jugó. */
+/**
+ * Campeones de una temporada: más colillas, después más días ganados; si
+ * siguen empatados, comparten el título (todos los del puesto 1). Vacío si
+ * nadie jugó.
+ */
+export function champions(rows: readonly StandingRow[]): string[] {
+  return rows.filter((r) => r.rank === 1).map((r) => r.profileId);
+}
+
+/** El campeón que se guarda en la temporada (una sola columna): el primero de la tabla. Null si nadie jugó. */
 export function champion(rows: readonly StandingRow[]): string | null {
   return rows[0]?.profileId ?? null;
 }

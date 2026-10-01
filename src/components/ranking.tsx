@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/avatar";
 import { Crown } from "@/components/crown";
+import { Colilla } from "@/components/colilla";
 import { Frog } from "@/components/frog/Frog";
 import type { Avatar as AvatarData } from "@/avatar/schema";
 
@@ -13,8 +14,16 @@ export interface RankingRow {
   unit?: string;
   /** si el juego formatea el puntaje (ej. "34,7 s"), el texto entero en lugar de value + unit */
   valueText?: string;
-  /** texto chico a la derecha del valor (ej. "+10") */
+  /** el valor son colillas: lleva el ícono al lado */
+  colillas?: boolean;
+  /** texto chico a la derecha del valor (ej. "+25") */
   detail?: string;
+  /** el detalle son colillas ganadas: lleva el ícono */
+  detailColillas?: boolean;
+  /** el color de la línea de la gráfica: un punto al lado del nombre */
+  color?: string;
+  /** subió o bajó de puesto respecto del día anterior */
+  trend?: "up" | "down" | null;
   isMe: boolean;
   champion?: boolean;
   /** todavía no jugó: sin puesto ni puntaje, con la rana dormida */
@@ -22,8 +31,8 @@ export interface RankingRow {
 }
 
 // Pila de filas con divisor de 2px, no tarjetas. Tu fila lleva el borde
-// izquierdo grueso en agua. El primer puesto va en luciérnaga; los puntos
-// ganados, en un chip.
+// izquierdo grueso en agua. El primer puesto va en luciérnaga; las colillas
+// ganadas, en un chip.
 export function Ranking({
   rows,
   emptyText,
@@ -47,6 +56,7 @@ export function Ranking({
           data-testid={r.pending ? "ranking-pending" : "ranking-row"}
           data-profile={r.profileId}
           data-rank={r.pending ? undefined : r.rank}
+          data-trend={r.trend ?? undefined}
           className={`flex items-center gap-2 py-3 min-[420px]:gap-3 ${r.pending ? "opacity-80" : ""} ${
             r.isMe ? "-ml-5 bg-mi-fila pl-[14px] pr-2" : ""
           }`}
@@ -55,12 +65,18 @@ export function Ranking({
             ...(r.isMe ? { borderLeft: "6px solid var(--agua)", borderRadius: "0 14px 14px 0" } : {}),
           }}
         >
-          <span className={`w-7 text-right display text-xl ${r.rank === 1 && !r.pending ? "text-luciernaga" : r.pending ? "text-tinta-suave" : "text-tinta"}`}>
+          <span className={`flex w-8 shrink-0 items-center justify-end gap-0.5 display text-xl ${r.rank === 1 && !r.pending ? "text-luciernaga" : r.pending ? "text-tinta-suave" : "text-tinta"}`}>
+            {r.trend ? (
+              <span className={`text-[10px] ${r.trend === "up" ? "text-rana" : "text-lengua"}`} role="img" aria-label={r.trend === "up" ? "subió" : "bajó"} data-testid="ranking-trend">
+                {r.trend === "up" ? "▲" : "▼"}
+              </span>
+            ) : null}
             {r.pending ? "" : r.rank}
           </span>
           <Avatar avatar={r.avatar} name={r.name} size={36} />
           <span className="flex min-w-0 flex-1 items-center gap-1">
             <span className={`truncate display-bold text-base min-[420px]:text-lg ${r.rank === 1 && !r.pending ? "display" : ""}`}>{r.name}</span>
+            {r.color ? <span className="ml-0.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: r.color }} aria-hidden="true" data-testid="ranking-color" /> : null}
             {r.champion ? <Crown /> : null}
             {r.isMe ? <span className="ml-1 text-xs text-agua">vos</span> : null}
           </span>
@@ -76,8 +92,14 @@ export function Ranking({
               <span className={`display text-3xl min-[420px]:text-4xl ${r.rank === 1 ? "text-luciernaga" : ""}`} data-testid="ranking-value">
                 {r.valueText ?? r.value}
                 {!r.valueText && r.unit ? <span className="ml-0.5 text-xs text-tinta-suave min-[420px]:ml-1 min-[420px]:text-sm">{r.unit}</span> : null}
+                {r.colillas ? <Colilla size={14} className="ml-1" /> : null}
               </span>
-              {r.detail ? <span className="chip-points">{r.detail}</span> : null}
+              {r.detail ? (
+                <span className="chip-points inline-flex items-center gap-1">
+                  {r.detail}
+                  {r.detailColillas ? <Colilla size={11} /> : null}
+                </span>
+              ) : null}
             </span>
           )}
         </li>

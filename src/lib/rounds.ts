@@ -2,7 +2,7 @@ import type { AdminClient } from "@/lib/supabase/admin";
 import type { GroupRow, RoundRow, SeasonRow } from "@/lib/supabase/types";
 import { GAME_IDS } from "@/games";
 import { gameForDay, roundSeed } from "./deck";
-import { bestScores, champion, rankRound, standings } from "./scoring";
+import { bestScores, champion, POINTS_RULES, rankRound, rulesForSeason, standings, type PointsRules } from "./scoring";
 import { addDays, daysBetween, todayInTz, type DateString } from "./time";
 import { getGame } from "@/games";
 
@@ -77,18 +77,27 @@ export async function ensureSeason(admin: AdminClient, group: GroupRow, today: D
   return season;
 }
 
-/** Tabla de la temporada con los puntos de todas sus rondas hasta `upTo` (incluida). */
+/**
+ * Tabla de la temporada con las colillas de todas sus rondas hasta `upTo`
+ * (incluida), con el reparto que corresponde a la temporada (decisión 215).
+ */
 export async function seasonStandings(admin: AdminClient, season: SeasonRow, upTo?: DateString) {
+  const ranked = await seasonRounds(admin, season, upTo);
+  return standings(ranked.map((r) => r.ranked));
+}
+
+/** Las rondas de la temporada hasta `upTo`, ya rankeadas con el reparto de la temporada. */
+export async function seasonRounds(admin: AdminClient, season: SeasonRow, upTo?: DateString) {
   let query = admin.from("rounds").select("*").eq("season_id", season.id).order("play_date");
   if (upTo) query = query.lte("play_date", upTo);
   const { data: rounds, error } = await query;
   if (error) throw new Error(`rounds: ${error.message}`);
-  const ranked = await Promise.all((rounds ?? []).map((r) => rankedRound(admin, r)));
-  return standings(ranked.map((r) => r.ranked));
+  const rules = rulesForSeason(season);
+  return Promise.all((rounds ?? []).map((r) => rankedRound(admin, r, rules)));
 }
 
-/** Ranking de una ronda a partir de sus intentos completados. */
-export async function rankedRound(admin: AdminClient, round: RoundRow) {
+/** Ranking de una ronda a partir de sus intentos completados (con el reparto vigente, salvo que se pida otro). */
+export async function rankedRound(admin: AdminClient, round: RoundRow, rules: PointsRules = POINTS_RULES) {
   const game = getGame(round.game_id);
   const scoring = game?.scoring ?? "high";
   const { data: attempts, error } = await admin
@@ -101,7 +110,7 @@ export async function rankedRound(admin: AdminClient, round: RoundRow) {
     (attempts ?? []).map((a) => ({ profileId: a.profile_id, score: a.score, status: a.status })),
     scoring,
   );
-  return { round, ranked: rankRound(entries, scoring) };
+  return { round, ranked: rankRound(entries, scoring, rules) };
 }
 
 // ---------------------------------------------------------------------------

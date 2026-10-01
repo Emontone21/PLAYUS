@@ -48,7 +48,7 @@ export function LinkEmail({
           </p>
         ) : (
           <p className="eyebrow">
-            te mandamos un link y listo. sin contraseña. es solo para no perder tus puntos si cambiás de teléfono.
+            te mandamos un link y listo. sin contraseña. es solo para no perder tus colillas si cambiás de teléfono.
           </p>
         )}
         {pendingEmail && pendingEmail !== currentEmail ? (

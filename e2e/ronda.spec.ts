@@ -161,10 +161,10 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await expect(a.page.getByTestId("ranking-row")).toHaveCount(2, { timeout: 30_000 });
   await expect(a.page.getByTestId("today-ranking")).toContainText("Nico");
 
-  // el ranking respeta la dirección del juego: el 1º lleva +10
+  // el ranking respeta la dirección del juego: el 1º lleva +25
   const first = a.page.getByTestId("ranking-row").first();
   await expect(first).toHaveAttribute("data-rank", "1");
-  await expect(first).toContainText("+10");
+  await expect(first).toContainText("+25");
 
   // el perfil ya tiene números
   await a.page.goto("/perfil");

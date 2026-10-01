@@ -232,7 +232,7 @@ body {
     font-weight: 600;
     border: 3px solid var(--contorno);
   }
-  /* puntos ganados en el ranking (+10) */
+  /* colillas ganadas en el ranking (+25) */
   .chip-points {
     @apply rounded-full bg-superficie-2 px-2 py-0.5 text-xs text-rana;
     font-family: var(--font-display);

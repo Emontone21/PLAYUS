@@ -23,6 +23,8 @@ import { honestTrace as parisTrace } from "@/games/busca-los-paris/rules";
 import { autoTrace as colgadoTrace } from "@/games/colgado-del-121/rules";
 import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwayX } from "@/games/apila-las-boludeces/rules";
 import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
+import { loadSeasonSeries } from "@/lib/season-series";
+import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
 // Consumo de intentos contra la base local (Supabase real o el emulador
@@ -70,6 +72,31 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     group = g;
     const { error: jErr } = await b.rpc("join_group", { p_code: group.invite_code });
     if (jErr) throw jErr;
+  });
+
+  it("la gráfica de la temporada: un integrante la lee; alguien de otro grupo no ve nada (RLS)", async () => {
+    const today = todayInTz(group.timezone);
+    const season = await ensureSeason(admin, group, today);
+    const members = new Map([
+      [userA, { profileId: userA, name: "A", avatar: parseAvatar(null) }],
+      [userB, { profileId: userB, name: "B", avatar: parseAvatar(null) }],
+    ]);
+    const k = await keys();
+    // un integrante nuevo, con su propia sesión
+    const asA = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const { data: sa } = await asA.auth.signInAnonymously();
+    const { error: jErr } = await asA.rpc("join_group", { p_code: group.invite_code });
+    if (jErr) throw jErr;
+    members.set(sa.user!.id, { profileId: sa.user!.id, name: "C", avatar: parseAvatar(null) });
+    const mine = await loadSeasonSeries(asA, group, season, members, today);
+    expect(mine.days.length).toBe(30);
+    expect(mine.series.some((x) => x.profileId === sa.user!.id)).toBe(true);
+    // un cliente que no es del grupo: ni rondas ni integrantes (RLS); la gráfica queda vacía
+    const stranger = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    await stranger.auth.signInAnonymously();
+    const theirs = await loadSeasonSeries(stranger, group, season, members, today);
+    expect(theirs.series).toEqual([]);
+    expect(theirs.standings).toEqual([]);
   });
 
   it("crea la ronda de hoy una sola vez, con juego del registry y semilla", async () => {

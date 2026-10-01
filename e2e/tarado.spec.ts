@@ -77,7 +77,7 @@ test("en la ronda real: quien termina queda por delante de quien no, y el rankin
   const first = a.page.getByTestId("ranking-row").first();
   await expect(first).toHaveAttribute("data-rank", "1");
   await expect(first).toContainText("Fumadora");
-  await expect(first).toContainText("+10");
+  await expect(first).toContainText("+25");
   const values = await a.page.getByTestId("ranking-value").allInnerTexts();
   const nums = values.map((v) => Number(v.replace(/\D/g, "")));
   expect(nums[0]).toBeLessThan(40_000);
