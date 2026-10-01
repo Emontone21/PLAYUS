@@ -29,7 +29,7 @@ En `reports/colillas/`: `grafica.png` (la gráfica con datos y la tabla), `ficha
 
 ## Publicación
 
-Publicado en https://playus-lake.vercel.app. Comprobado en producción que Grupo carga con la gráfica y la tabla en colillas.
+Publicado en https://playus-lake.vercel.app (commit `0b854e2`). Comprobado en producción con un grupo de prueba nuevo: Grupo muestra la gráfica (estado vacío con el rango de la temporada y "quedan N días") sin ningún "puntos", y después de jugar el ranking de Hoy lleva el chip "+25" con el ícono y el texto del reparto en colillas.
 
 ## Cómo verificarlo
 
