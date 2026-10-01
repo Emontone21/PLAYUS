@@ -46,6 +46,10 @@ La partida típica de 6 a 14 objetos corresponde a quien suelta con 2 o 3 px de 
 
 En `reports/apila-las-boludeces/`: `previa.png` (la pantalla previa con los cuatro objetos), `torre-8.png` (una torre de ocho objetos, con el cigarro y la botella acostados), `bamboleo.png` (la torre bamboleándose después de una suelta a un costado) y `caida.png` (la caída con el cartel).
 
+## Publicación
+
+Publicado en https://playus-lake.vercel.app (commit `176df08`). Comprobado en producción: `/dev/juego/apila-las-boludeces` da 404, la home carga, y el E2E de la ronda real contra producción (un grupo de prueba con el juego puesto como juego de hoy por `supabase db query`) apila, tira el cuarto, el servidor valida la traza con Rapier y el ranking muestra los cm.
+
 ## Cómo verificarlo
 
 1. En producción: https://playus-lake.vercel.app, un grupo con "apila las boludeces" como juego de hoy. Tocar suelta, "girar" da vuelta; la altura queda en el ranking como "N cm".
