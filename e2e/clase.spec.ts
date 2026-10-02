@@ -1,9 +1,9 @@
 import { test, expect, type Browser } from "@playwright/test";
-import { area2, botTrace, check, generateObjects, solveCut } from "../src/games/cortalo-parejo/rules";
-import { SHAPES } from "../src/games/cortalo-parejo/shapes";
+import { area2, botTrace, check, generateObjects, solveCut } from "../src/games/clase-con-el-bro/rules";
+import { SHAPES } from "../src/games/clase-con-el-bro/shapes";
 import { createGroupWithGame } from "./helpers/group";
 import { startAndGetSeed } from "./helpers/piba";
-import { cutWith, linesFor, playCortalo, snapOf } from "./helpers/cortalo";
+import { cutWith, linesFor, playClase, snapOf } from "./helpers/clase";
 
 // Juego nuevo. La geometría exacta tiene que dar lo mismo en el navegador y
 // en Node (áreas, objetos, rectas del resolvedor, partidas); una partida con
@@ -27,9 +27,9 @@ function summary(seed: string) {
 }
 
 test("la geometría exacta da lo mismo en el navegador y en Node: áreas, objetos, resolvedor y partidas", async ({ page }) => {
-  await page.goto("/dev/juego/cortalo-parejo?seed=abc");
-  await expect(page.getByTestId("cortalo-card")).toBeVisible();
-  await page.waitForFunction(() => "__cortalo" in window);
+  await page.goto("/dev/juego/clase-con-el-bro?seed=abc");
+  await expect(page.getByTestId("clase-card")).toBeVisible();
+  await page.waitForFunction(() => "__clase" in window);
   for (const seed of SEEDS) {
     const inBrowser = await page.evaluate(
       ([s, offsets]) => {
@@ -42,7 +42,7 @@ test("la geometría exacta da lo mismo en el navegador y en Node: áreas, objeto
           splitAreas: (v: unknown, l: unknown) => { total: bigint };
           shapes: { verts: unknown }[];
         };
-        const R = (window as unknown as { __cortalo: R }).__cortalo;
+        const R = (window as unknown as { __clase: R }).__clase;
         const shapes = R.shapes;
         const objs = R.generateObjects(s);
         const sols = objs.map((o) => R.solveCut(o.verts));
@@ -64,20 +64,20 @@ test("la geometría exacta da lo mismo en el navegador y en Node: áreas, objeto
 
 test("la pantalla previa, la herramienta (caras, formas), el área, la línea punteada al arrastrar y un corte que no toca no gasta", async ({ browser }) => {
   const a = await freshPage(browser);
-  await a.page.goto("/dev/juego/cortalo-parejo?seed=abc&areas=1");
-  const card = a.page.getByTestId("cortalo-card");
+  await a.page.goto("/dev/juego/clase-con-el-bro?seed=abc&areas=1");
+  const card = a.page.getByTestId("clase-card");
   await expect(card).toContainText("deslizá recto");
   await expect(card.getByRole("img", { name: /Big Bro/ })).toBeVisible();
   await expect(a.page.getByTestId("dev-faces").getByRole("img")).toHaveCount(3);
   await expect(a.page.getByTestId("dev-shapes").getByRole("img")).toHaveCount(6);
   await expect(a.page.getByTestId("dev-objects")).toContainText("recta 50/50");
   await a.page.getByTestId("game-play").click();
-  const area = a.page.getByTestId("cortalo-area");
+  const area = a.page.getByTestId("clase-area");
   await expect(area).toBeVisible({ timeout: 15_000 });
-  const table = a.page.getByTestId("cortalo-table");
+  const table = a.page.getByTestId("clase-table");
   expect(await table.evaluate((el) => getComputedStyle(el).touchAction)).toBe("none");
   expect(await table.evaluate((el) => getComputedStyle(el).userSelect)).toBe("none");
-  await expect(a.page.getByTestId("cortalo-cut")).toContainText("corte 1 de 3");
+  await expect(a.page.getByTestId("clase-cut")).toContainText("corte 1 de 3");
   // una recta que no toca el objeto (por el borde de la mesa): no cuenta
   await cutWith(a.page, { x1: 50, y1: 0, x2: 50, y2: 10000 });
   await a.page.waitForTimeout(300);
@@ -89,22 +89,22 @@ test("la pantalla previa, la herramienta (caras, formas), el área, la línea pu
   await expect(a.page.getByTestId("dev-areas")).toContainText("izquierda");
   await a.page.mouse.up();
   await expect(area).toHaveAttribute("data-phase", "pause", { timeout: 3_000 });
-  await expect(a.page.getByTestId("cortalo-say")).toBeVisible();
-  await expect(a.page.getByTestId("cortalo-pct")).toHaveCount(2);
+  await expect(a.page.getByTestId("clase-say")).toBeVisible();
+  await expect(a.page.getByTestId("clase-pct")).toHaveCount(2);
   await a.context.close();
 });
 
 test("en la ronda real: tres cortes con las rectas del resolvedor corridas, calculadas en el test, llegan al ranking con el total", async ({ browser }) => {
   const b = await freshPage(browser);
-  await createGroupWithGame(b.page, "Cuchilla", "cortalo parejo");
+  await createGroupWithGame(b.page, "Cuchilla", "clase con el bro");
   await b.page.goto("/hoy/jugar");
   const seed = await startAndGetSeed(b.page);
-  const played = await playCortalo(b.page, seed);
+  const played = await playClase(b.page, seed);
   expect(played.total).toBeGreaterThan(1500);
   expect(played.sentScore).toBe(played.total);
   await expect(b.page.getByTestId("game-result")).toBeVisible({ timeout: 15_000 });
   await expect(b.page.getByTestId("game-score")).toHaveText(String(played.total));
-  await expect(b.page.getByTestId("cortalo-summary-cut")).toHaveCount(3);
+  await expect(b.page.getByTestId("clase-summary-cut")).toHaveCount(3);
   const v = check(seed, played.events);
   expect(v.ok, JSON.stringify(v, (_, x) => (typeof x === "bigint" ? x.toString() : x))).toBe(true);
   if (v.ok) {

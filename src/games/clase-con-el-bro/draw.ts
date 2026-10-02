@@ -1,4 +1,4 @@
-// Dibujo de "cortalo parejo" en un <canvas> chico (120 × 150) escalado con
+// Dibujo de "clase con el bro" en un <canvas> chico (120 × 150) escalado con
 // vecino más cercano, como en colgado del 121: la cocina vista desde arriba,
 // Big Bro asomado detrás de la mesa, la comida como polígono con su textura,
 // la línea de corte punteada mientras se arrastra, y después del corte las
@@ -200,7 +200,7 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SceneArgs): void {
   ctx.fillStyle = "#34465A";
   for (let x = 0; x < FIELD_W; x += 12) ctx.fillRect(x, 0, 1, TABLE_TOP);
   for (let y = 6; y < TABLE_TOP; y += 8) ctx.fillRect(0, y, FIELD_W, 1);
-  const bro = spriteCanvas(`cortalo:bro:${s.mood}`, broSprite(s.mood), 1);
+  const bro = spriteCanvas(`clase:bro:${s.mood}`, broSprite(s.mood), 1);
   ctx.drawImage(bro, Math.round((FIELD_W - BRO_W) / 2), 0);
   // la mesa de madera y la tabla de picar
   ctx.fillStyle = WOOD;
@@ -215,7 +215,7 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SceneArgs): void {
   ctx.fillStyle = BOARD_DARK;
   ctx.fillRect(TABLE.x + 2, TABLE.y + TABLE.w - 4, 3, 1);
   ctx.fillRect(TABLE.x + 8, TABLE.y + 5, 1, 3);
-  const cleaver = spriteCanvas("cortalo:cuchilla", cleaverSprite(), 1);
+  const cleaver = spriteCanvas("clase:cuchilla", cleaverSprite(), 1);
   ctx.drawImage(cleaver, FIELD_W - 18, FIELD_H - 10);
 
   const obj = s.objects[s.index];

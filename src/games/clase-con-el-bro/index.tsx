@@ -1,4 +1,4 @@
-// "cortalo parejo": Big Bro pone una comida de forma irregular sobre la mesa y
+// "clase con el bro": Big Bro pone una comida de forma irregular sobre la mesa y
 // hay que cortarla en dos partes iguales con un solo deslizamiento recto.
 // Tres cortes, cada uno con un objeto más difícil; el puntaje es la suma.
 //
@@ -24,7 +24,7 @@ const SEP_MS = 300;
 export const GOOD_COLOR = "#8EDC66";
 export const BAD_COLOR = "#FF6F91";
 
-export interface CortaloDevOptions {
+export interface ClaseDevOptions {
   vertices?: boolean;
   solver?: boolean;
   areas?: boolean;
@@ -39,7 +39,7 @@ export function pctText(tenths: number): string {
   return `${Math.floor(tenths / 10)},${tenths % 10}%`;
 }
 
-export function CortaloGame({ seed, onReady, onFinish, onProgress, dev }: GameProps & { dev?: CortaloDevOptions }) {
+export function ClaseGame({ seed, onReady, onFinish, onProgress, dev }: GameProps & { dev?: ClaseDevOptions }) {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const areaRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -237,17 +237,17 @@ export function CortaloGame({ seed, onReady, onFinish, onProgress, dev }: GamePr
   }
 
   return (
-    <div ref={rootRef} className="flex h-full w-full select-none flex-col gap-2" data-testid="cortalo-area" data-end={hud.end ? "1" : ""}>
+    <div ref={rootRef} className="flex h-full w-full select-none flex-col gap-2" data-testid="clase-area" data-end={hud.end ? "1" : ""}>
       <div className="flex items-end justify-between px-1">
         <div className="flex flex-col">
-          <span className="text-xs text-tinta-suave" data-testid="cortalo-cut">
+          <span className="text-xs text-tinta-suave" data-testid="clase-cut">
             corte {hud.cut + 1} de {CUTS}
           </span>
-          <span className="display text-4xl text-tinta" style={{ fontVariantNumeric: "tabular-nums" }} data-testid="cortalo-total" aria-live="off">
+          <span className="display text-4xl text-tinta" style={{ fontVariantNumeric: "tabular-nums" }} data-testid="clase-total" aria-live="off">
             {hud.total}
           </span>
         </div>
-        <span className="flex items-center gap-1" data-testid="cortalo-dots" aria-label={`${hud.results.length} de ${CUTS} cortes`}>
+        <span className="flex items-center gap-1" data-testid="clase-dots" aria-label={`${hud.results.length} de ${CUTS} cortes`}>
           {Array.from({ length: CUTS }, (_, i) => (
             <span key={i} className="inline-block h-3 w-3 rounded-full" style={{ background: i < hud.results.length ? (hud.results[i] ? GOOD_COLOR : BAD_COLOR) : "var(--superficie-2)", border: "2px solid var(--contorno)" }} />
           ))}
@@ -263,21 +263,21 @@ export function CortaloGame({ seed, onReady, onFinish, onProgress, dev }: GamePr
         onPointerCancel={cancel}
         onLostPointerCapture={cancel}
         onContextMenu={(e) => e.preventDefault()}
-        data-testid="cortalo-table"
+        data-testid="clase-table"
       >
         <div className="relative">
-          <canvas ref={canvasRef} className="pointer-events-none block [image-rendering:pixelated]" style={{ borderRadius: 8 }} aria-label="la mesa de la cocina, Big Bro y la comida para cortar" role="img" data-testid="cortalo-canvas" />
+          <canvas ref={canvasRef} className="pointer-events-none block [image-rendering:pixelated]" style={{ borderRadius: 8 }} aria-label="la mesa de la cocina, Big Bro y la comida para cortar" role="img" data-testid="clase-canvas" />
           {hud.labels.map((l, i) => (
-            <span key={`${hud.cut}-${i}`} className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded px-1 text-sm font-semibold text-white" style={{ left: l.x, top: l.y, background: "rgba(20,20,20,0.7)", fontVariantNumeric: "tabular-nums" }} data-testid="cortalo-pct">
+            <span key={`${hud.cut}-${i}`} className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded px-1 text-sm font-semibold text-white" style={{ left: l.x, top: l.y, background: "rgba(20,20,20,0.7)", fontVariantNumeric: "tabular-nums" }} data-testid="clase-pct">
               {l.text}
             </span>
           ))}
           {hud.say ? (
             <div className="pointer-events-none absolute inset-x-0 top-[17%] flex flex-col items-center gap-1" key={hud.results.length}>
-              <span className={`display text-2xl ${hud.say.good ? "speech" : "note-alert"}`} role="status" data-testid="cortalo-say" data-good={hud.say.good ? "1" : "0"}>
+              <span className={`display text-2xl ${hud.say.good ? "speech" : "note-alert"}`} role="status" data-testid="clase-say" data-good={hud.say.good ? "1" : "0"}>
                 {hud.say.text}
               </span>
-              <span className="display text-xl text-tinta" style={{ textShadow: "0 1px 0 #141414, 0 0 4px #141414" }} data-testid="cortalo-cut-score">
+              <span className="display text-xl text-tinta" style={{ textShadow: "0 1px 0 #141414, 0 0 4px #141414" }} data-testid="clase-cut-score">
                 +{hud.say.score}
               </span>
             </div>
@@ -302,7 +302,7 @@ function Intro() {
   const pizza = SHAPES[0]!;
   const pts = pizza.verts.map(([x, y]) => `${x / 10},${y / 10}`).join(" ");
   return (
-    <div className="card card-c flex items-center gap-4" data-testid="cortalo-card">
+    <div className="card card-c flex items-center gap-4" data-testid="clase-card">
       <div className="flex items-end gap-1">
         <SpriteSvg sprite={broSprite("espera")} height={96} label="Big Bro, el chef, con los brazos cruzados" />
         <svg viewBox="0 0 100 100" width={84} height={84} shapeRendering="crispEdges" role="img" aria-label="una pizza sobre la tabla con una línea de corte punteada">
@@ -329,12 +329,12 @@ function Result({ result, seed }: { result: GameResult; seed: string; cutByTimer
   const cuts = v.ok ? state.cuts : [];
   const size = 60;
   return (
-    <div className="flex flex-col items-center gap-3" data-testid="cortalo-result" data-reason={v.ok ? "ok" : v.reason}>
+    <div className="flex flex-col items-center gap-3" data-testid="clase-result" data-reason={v.ok ? "ok" : v.reason}>
       <SpriteSvg sprite={broSprite(cuts.length && cuts.every((c) => c.outcome.good) ? "contento" : cuts.some((c) => !c.outcome.good) ? "enojado" : "espera")} height={100} label="Big Bro" />
       <p className="display-lg text-tinta" style={{ fontSize: 80 }} data-testid="game-score">
         {result.score}
       </p>
-      <ul className="flex items-start justify-center gap-3" data-testid="cortalo-summary">
+      <ul className="flex items-start justify-center gap-3" data-testid="clase-summary">
         {state.objects.map((o, i) => {
           const c = cuts[i];
           const shape = shapeById(o.shape);
@@ -355,7 +355,7 @@ function Result({ result, seed }: { result: GameResult; seed: string; cutByTimer
             parts = <polygon points={svgPoints(o.verts, size)} fill={shape.fill} stroke="#141414" strokeWidth="1.5" opacity={0.5} />;
           }
           return (
-            <li key={i} className="flex flex-col items-center gap-0.5" data-testid="cortalo-summary-cut">
+            <li key={i} className="flex flex-col items-center gap-0.5" data-testid="clase-summary-cut">
               <svg viewBox={`-4 -4 ${size + 8} ${size + 8}`} width={size + 8} height={size + 8} shapeRendering="crispEdges" role="img" aria-label={`${shape.name}, corte ${i + 1}`}>
                 <rect x="-4" y="-4" width={size + 8} height={size + 8} fill="#C49A6C" rx="4" />
                 {parts}
@@ -375,9 +375,9 @@ function Result({ result, seed }: { result: GameResult; seed: string; cutByTimer
   );
 }
 
-export const cortaloParejo: GameModule = {
-  id: "cortalo-parejo",
-  name: "cortalo parejo",
+export const claseConElBro: GameModule = {
+  id: "clase-con-el-bro",
+  name: "clase con el bro",
   tagline: "mitad y mitad, bro.",
   howTo: ["deslizá el dedo en línea recta para cortar el objeto en dos", "tienen que quedar dos partes iguales: cuanto más parejas, más puntos", "son 3 cortes, y Big Bro te dice qué le pareció"],
   durationMs: DURATION_MS,
@@ -387,7 +387,7 @@ export const cortaloParejo: GameModule = {
   minPlausibleScore: 0,
   maxPlausibleScore: MAX_SCORE,
   validate,
-  Component: CortaloGame,
+  Component: ClaseGame,
   Intro,
   Result,
 };

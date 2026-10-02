@@ -3,14 +3,14 @@
 // Solo desarrollo: los vértices de cada objeto, la recta 50/50 del
 // resolvedor, las áreas de cada lado mientras se arrastra, saltos a cualquiera
 // de los 3 cortes, las tres caras de Big Bro y las seis comidas. Deja las
-// reglas en window.__cortalo para el E2E.
-// /dev/juego/cortalo-parejo?seed=…&vertices=1&resolver=1&areas=1&desde=2
+// reglas en window.__clase para el E2E.
+// /dev/juego/clase-con-el-bro?seed=…&vertices=1&resolver=1&areas=1&desde=2
 
 import * as React from "react";
 import { GameContainer } from "../container";
 import type { GameModule, GameProps } from "../types";
 import { SpriteSvg } from "../lib/sprite-svg";
-import { CortaloGame, cortaloParejo, type CortaloDevOptions } from "./index";
+import { ClaseGame, claseConElBro, type ClaseDevOptions } from "./index";
 import { svgPoints } from "./draw";
 import { botTrace, check, CUTS, evaluateCut, generateObjects, initialState, applyCut, shiftLine, solveCut, splitAreas, validate } from "./rules";
 import { placeShape, SHAPES } from "./shapes";
@@ -22,28 +22,28 @@ const MOODS: [Mood, string][] = [
   ["enojado", "Sos un sopa bro"],
 ];
 
-export function CortaloDev({ seed, from = 0, vertices = false, solver = false, areas = false }: { seed: string; from?: number; vertices?: boolean; solver?: boolean; areas?: boolean }) {
+export function ClaseDev({ seed, from = 0, vertices = false, solver = false, areas = false }: { seed: string; from?: number; vertices?: boolean; solver?: boolean; areas?: boolean }) {
   const [opts, setOpts] = React.useState({ vertices, solver, areas });
   const [start, setStart] = React.useState(from);
   const [run, setRun] = React.useState(0);
-  const optsRef = React.useRef<CortaloDevOptions>({});
+  const optsRef = React.useRef<ClaseDevOptions>({});
   optsRef.current = { ...opts, startCut: start };
   const objects = React.useMemo(() => generateObjects(seed), [seed]);
   const solutions = React.useMemo(() => objects.map((o) => solveCut(o.verts)), [objects]);
 
   const game = React.useMemo<GameModule>(() => {
-    function DevCortalo(p: GameProps) {
-      return <CortaloGame {...p} dev={optsRef.current} />;
+    function DevClase(p: GameProps) {
+      return <ClaseGame {...p} dev={optsRef.current} />;
     }
-    return { ...cortaloParejo, Component: DevCortalo };
+    return { ...claseConElBro, Component: DevClase };
   }, []);
 
   React.useEffect(() => {
-    (window as unknown as { __cortalo: unknown }).__cortalo = { generateObjects, solveCut, evaluateCut, splitAreas, botTrace, check, validate, initialState, applyCut, shiftLine, placeShape, shapes: SHAPES };
+    (window as unknown as { __clase: unknown }).__clase = { generateObjects, solveCut, evaluateCut, splitAreas, botTrace, check, validate, initialState, applyCut, shiftLine, placeShape, shapes: SHAPES };
   }, []);
 
   return (
-    <div className="flex flex-col gap-3" data-testid="cortalo-dev">
+    <div className="flex flex-col gap-3" data-testid="clase-dev">
       <div className="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="herramientas">
         <label className="chip flex items-center gap-1">
           <input type="checkbox" checked={opts.vertices} onChange={(e) => setOpts((o) => ({ ...o, vertices: e.target.checked }))} data-testid="dev-vertices" />

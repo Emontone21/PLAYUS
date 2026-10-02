@@ -1,4 +1,4 @@
-// Pixel art de "cortalo parejo": Big Bro, un chef grandote (gorro alto,
+// Pixel art de "clase con el bro": Big Bro, un chef grandote (gorro alto,
 // chaqueta, delantal y una cuchilla), con tres caras: esperando con los
 // brazos cruzados, contento con el pulgar arriba y enojado con la cara roja y
 // los brazos en alto. Mapas de letras (games/lib/sprites), sin DOM.

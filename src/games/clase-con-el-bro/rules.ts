@@ -1,4 +1,4 @@
-// Reglas de "cortalo parejo": geometría exacta (enteros y BigInt, sin
+// Reglas de "clase con el bro": geometría exacta (enteros y BigInt, sin
 // flotantes en nada que decida un puntaje), los 3 objetos de la partida desde
 // la semilla, el puntaje de cada corte, el resolvedor que encuentra una recta
 // 50/50 (justicia), la traza y `validate`. Sin DOM.
@@ -54,7 +54,7 @@ export interface FoodObject {
 // ---------------------------------------------------------------------------
 
 export function generateObjects(seed: string): FoodObject[] {
-  const rng = rngFromSeed(`cortalo:${seed}`);
+  const rng = rngFromSeed(`clase:${seed}`);
   return LEVELS.map((level) => {
     const shape: Shape = rng.pick(SHAPES.filter((s) => s.level === level));
     const rotation = rng.int(0, ROTATION_MAX);

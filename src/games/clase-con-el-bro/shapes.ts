@@ -1,4 +1,4 @@
-// Las seis comidas de "cortalo parejo": polígonos simples (pueden ser
+// Las seis comidas de "clase con el bro": polígonos simples (pueden ser
 // cóncavos) con vértices enteros en un espacio de diseño de 0 a 1.000
 // centrado en (500, 500), y la tabla de senos entera para rotarlos sin
 // flotantes. Los vértices y la tabla son literales (generados una vez y

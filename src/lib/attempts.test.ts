@@ -28,7 +28,7 @@ import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
 import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
-import { botTrace as cortaloTrace } from "@/games/cortalo-parejo/rules";
+import { botTrace as claseTrace } from "@/games/clase-con-el-bro/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -316,9 +316,9 @@ function validResult(gameId: string, seed: string, n: number) {
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
   }
-  if (gameId === "cortalo-parejo") {
+  if (gameId === "clase-con-el-bro") {
     // tres cortes del resolvedor con las pausas: la partida dura unos 6 s
-    const { events, state } = cortaloTrace(seed, { gapMs: 300 });
+    const { events, state } = claseTrace(seed, { gapMs: 300 });
     return { score: state.total, events };
   }
   if (gameId === "fumate-algo-chino") {

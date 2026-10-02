@@ -1,9 +1,9 @@
 import { expect, type Page } from "@playwright/test";
-import { generateObjects, GRID, shiftLine, solveCut, type Line } from "../../src/games/cortalo-parejo/rules";
-import { TABLE } from "../../src/games/cortalo-parejo/draw";
-import { FIELD_W } from "../../src/games/cortalo-parejo/sprites";
+import { generateObjects, GRID, shiftLine, solveCut, type Line } from "../../src/games/clase-con-el-bro/rules";
+import { TABLE } from "../../src/games/clase-con-el-bro/draw";
+import { FIELD_W } from "../../src/games/clase-con-el-bro/sprites";
 
-// Juega "cortalo parejo" desde el navegador: calcula en el test las tres
+// Juega "clase con el bro" desde el navegador: calcula en el test las tres
 // rectas (la del resolvedor, ligeramente corrida) y hace cada corte con un
 // arrastre del mouse de un extremo al otro, esperando a que el juego acepte
 // cortes. Devuelve lo que mandó a /finish.
@@ -17,7 +17,7 @@ export interface Snap {
 
 export function snapOf(page: Page): Promise<Snap | null> {
   return page.evaluate(() => {
-    const el = document.querySelector('[data-testid="cortalo-area"]') as HTMLElement | null;
+    const el = document.querySelector('[data-testid="clase-area"]') as HTMLElement | null;
     if (!el) return null;
     const d = el.dataset;
     return { cut: Number(d.cut ?? 0), phase: d.phase ?? "", total: Number(d.total ?? 0), end: d.end === "1" };
@@ -37,7 +37,7 @@ export function toScreen(box: { x: number; y: number; width: number }, ux: numbe
 }
 
 export async function cutWith(page: Page, line: Line, opts: { release?: boolean } = {}): Promise<void> {
-  const box = (await page.getByTestId("cortalo-canvas").boundingBox())!;
+  const box = (await page.getByTestId("clase-canvas").boundingBox())!;
   const a = toScreen(box, line.x1, line.y1);
   const b = toScreen(box, line.x2, line.y2);
   await page.mouse.move(a.x, a.y);
@@ -48,8 +48,8 @@ export async function cutWith(page: Page, line: Line, opts: { release?: boolean 
   if (opts.release !== false) await page.mouse.up();
 }
 
-export async function playCortalo(page: Page, seed: string): Promise<{ total: number; events: unknown[]; sentScore: number }> {
-  const area = page.getByTestId("cortalo-area");
+export async function playClase(page: Page, seed: string): Promise<{ total: number; events: unknown[]; sentScore: number }> {
+  const area = page.getByTestId("clase-area");
   await expect(area).toBeVisible({ timeout: 15_000 });
   const finished = page.waitForRequest((r) => r.url().includes("/api/attempts/") && r.url().endsWith("/finish"), { timeout: 120_000 });
   const lines = linesFor(seed);
