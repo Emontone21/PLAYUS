@@ -26,6 +26,7 @@ import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
 import { loadSeasonSeries } from "@/lib/season-series";
 import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
 import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
+import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -312,6 +313,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "servila-justa") {
+    // el jugador perfecto sirve dos vasos y el cronómetro corta a los 10 s (tick 600): el intento de prueba dura minDurationMs + 500 ms
+    const taps = servilaTrace(seed, { maxGlasses: 2 }).events.filter((e) => !("fin" in e)) as { tick: number; action: "down" | "up" }[];
+    return { score: servilaSimulate(seed, taps, 600).score, events: [...taps, { tick: 600, fin: true }] };
   }
   if (gameId === "nach-y-la-roca") {
     // sin moverse, el cronómetro corta a los 2,5 s (tick 150): unos 20 m
