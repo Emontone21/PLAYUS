@@ -6,7 +6,7 @@ import { playServila, snapOf } from "./helpers/servila";
 
 // Juego nuevo. La simulación del navegador y la de Node tienen que dar
 // exactamente lo mismo; una partida que sirve los 8 vasos cerca de la raya
-// (con los momentos de soltar calculados desde la predicción del juego)
+// (con los momentos de soltar calculados en el test desde la simulación)
 // llega al ranking con el total correcto.
 
 test.setTimeout(400_000);
@@ -87,7 +87,7 @@ test("en la ronda real: sirve los 8 vasos cerca de la raya y llega al ranking co
   await createGroupWithGame(b.page, "Barman", "servila justa");
   await b.page.goto("/hoy/jugar");
   const seed = await startAndGetSeed(b.page);
-  const played = await playServila(b.page, 1);
+  const played = await playServila(b.page, seed, 1);
   expect(played.score).toBeGreaterThan(500);
   expect(played.sentScore).toBe(played.score);
   await expect(b.page.getByTestId("game-result")).toBeVisible({ timeout: 15_000 });

@@ -61,7 +61,7 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   const nach = page.getByTestId("nach-area");
   await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach)).toBeVisible({ timeout: 15_000 });
   if (await servila.isVisible()) {
-    const r = await playServila(page, 1);
+    const r = await playServila(page, seed, 1);
     return r.score;
   }
   if (await nach.isVisible()) {

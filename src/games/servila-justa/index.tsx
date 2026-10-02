@@ -16,7 +16,7 @@ import { sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { composeSprite } from "../lib/sprites";
 import { drawScene, scaleFor } from "./draw";
-import { applyAction, botTrace, check, DURATION_MS, END_TICK, endTickOf, GLASSES, initialState, levels, lineLevel, MAX_SCORE, predictTop, step, SUB, TICKS_PER_S, validate, type Action, type GlassResult, type Outcome, type PourEvent, type SimState, type TraceEvent } from "./rules";
+import { applyAction, botTrace, check, DURATION_MS, END_TICK, endTickOf, GLASSES, initialState, levels, lineLevel, MAX_SCORE, step, SUB, TICKS_PER_S, validate, type Action, type GlassResult, type Outcome, type PourEvent, type SimState, type TraceEvent } from "./rules";
 import { glassDef, SHAPE_NAMES } from "./glasses";
 import { bottleSprite, FIELD_H, FIELD_W, filledGlassSprite } from "./sprites";
 
@@ -130,8 +130,6 @@ export function ServilaGame({ seed, onReady, onFinish, onProgress, dev }: GamePr
         d.liquid = String(lv.liquid);
         d.top = String(lv.top);
         d.line = String(lineLevel(s));
-        const p = predictTop(s);
-        d.predict = p === null ? "" : String(p);
         d.score = String(s.score);
       }
       if (s.tick !== reportedTick || changed) {

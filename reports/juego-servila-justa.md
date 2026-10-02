@@ -19,7 +19,7 @@ Fecha: 2026-10-02
 ## Tests
 
 - `src/games/servila-justa/rules.test.ts` (17): determinismo (sin `Math.random`; misma semilla y traza, mismo resultado; replay igual); los perfiles (el volumen coincide con el mapa; el nivel sube más rápido en la parte angosta; el caudal arranca suave y sube); la espuma (sigue subiendo al soltar y se asienta en un segundo; sube más con más caudal; los vasos angostos hacen más; la predicción acierta exacto); el puntaje (100 en la raya, corto y pasado iguales, 95 a 1 fila, 50 a 10; rebalsar 0 y corta; 6 s sin servir 0 y pasa); la secuencia (sin repetir forma, whisky y raya en rango); servir una sola vez y nada en la pausa; `validate` (acepta partidas reales con su duración; rechaza total inflado, dos servidos, eventos en la pausa, sin alternar, fuera de orden, otra semilla, fin fuera de rango o incoherente; acepta un corte por tiempo con los vasos que faltan en 0); la calibración; el arte (la botella dice nix cola).
-- `e2e/servila.spec.ts`: la simulación da exactamente lo mismo en el navegador y en Node (6 semillas: los vasos, la traza del jugador modelo, el total y el resultado de cada vaso); la previa, el área, los seis perfiles en la herramienta, el mouse sostenido que sirve y suelta, y que el vaso ya servido no se sirve de nuevo; en una ronda real, servir los 8 vasos soltando cuando la predicción llega a la raya llega al ranking con el total exacto, y la traza se rearma en Node.
+- `e2e/servila.spec.ts`: la simulación da exactamente lo mismo en el navegador y en Node (6 semillas: los vasos, la traza del jugador modelo, el total y el resultado de cada vaso); la previa, el área, los seis perfiles en la herramienta, el mouse sostenido que sirve y suelta, y que el vaso ya servido no se sirve de nuevo; en una ronda real, servir los 8 vasos soltando en el tick que calcula el test desde la simulación llega al ranking con el total exacto, y la traza se rearma en Node.
 - `npm test`: 316 de 316 (27 archivos). `typecheck`, `lint` y `npm run build`: limpios.
 
 ## Capturas
@@ -37,5 +37,5 @@ Publicado en https://playus-lake.vercel.app (commit `74f004d`). Comprobado en pr
 
 ## Problemas y deuda
 
-- La predicción exacta de la espuma está en la herramienta y en el dataset del área del juego (`data-predict`, para el E2E); un jugador que inspeccione la página puede leerla. Como la traza se valida igual y el puntaje máximo es 800, el daño es que alguien haga 800 sin aprender; para un juego entre amigos alcanza, y sacarlo del dataset es una línea si molesta.
+- La predicción exacta de la espuma existe solo en la simulación (`predictTop`) y en la herramienta de desarrollo (que da 404 en producción); la página del juego no la expone: el E2E la calcula en el test desde la semilla (decisión 228).
 - Los cubitos son decorativos y no cambian el volumen, como pide el documento.
