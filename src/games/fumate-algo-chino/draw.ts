@@ -23,7 +23,9 @@ export interface DrawOptions {
   solver?: Vector | null;
 }
 
-export const GROUND_Y = 78;
+export const GROUND_Y = 100;
+/** tope de la cámara (unidades por dm): en los tiros cortos no se acerca más que esto */
+const CAM_MAX = 2.4;
 const SKY = "#1B2A4A";
 const SKY_LOW = "#2C3E6B";
 const GROUND = "#6B6F62";
@@ -45,9 +47,11 @@ export interface Camera {
 }
 
 export function cameraFor(shot: ShotSetup): Camera {
-  const left = -12;
-  const right = shot.dist + 14;
-  return { s: FIELD_W / (right - left), left, dy: 0 };
+  // encuadra desde un poco antes de la mano hasta un poco después de El chino;
+  // con el campo ancho, el tiro más largo (26 m) queda a casi 1 unidad por dm
+  const left = -8;
+  const right = shot.dist + 10;
+  return { s: Math.min(CAM_MAX, FIELD_W / (right - left)), left, dy: 0 };
 }
 
 /** mundo (dm) → vista (unidades) */
@@ -88,7 +92,7 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SimState, cam: Came
   ctx.fillRect(0, Math.round(GROUND_Y - 30 + cam.dy), FIELD_W, 30);
   // el fondo: edificios bajos y un árbol con hojas que se mueven con el viento
   const windDir = Math.sign(shot.wind);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 12; i++) {
     const bx = 6 + i * 24;
     const bh = 14 + ((i * 7) % 9);
     ctx.fillStyle = i % 2 ? "#243352" : "#2A3A5E";
@@ -98,7 +102,7 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SimState, cam: Came
     ctx.fillRect(bx + 11, Math.round(GROUND_Y - bh + 8 + cam.dy), 2, 2);
   }
   {
-    const tx = 118;
+    const tx = 200;
     ctx.fillStyle = "#4A3524";
     ctx.fillRect(tx, Math.round(GROUND_Y - 14 + cam.dy), 2, 14);
     const sway = opts.reduced ? 0 : windDir * ((Math.floor(s.tick / 10) % 2) + Math.abs(shot.wind) / 8);
@@ -161,20 +165,20 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SimState, cam: Came
   // la mano con la gomera
   {
     const [hx, hy] = toView(cam, LAUNCH_X, LAUNCH_Y);
-    drawSpriteAt(ctx, "chino:mano", handSprite(), hx - HAND_W / 2, hy - 3, 1);
-    void HAND_H;
+    const hs = Math.max(1, (6 * cam.s) / HAND_H);
+    drawSpriteAt(ctx, "chino:mano", handSprite(), hx - (HAND_W * hs) / 2, hy - 3 * hs, hs);
     // la banda estirada
     if (opts.aim) {
       const len = Math.sqrt(opts.aim.vx * opts.aim.vx + opts.aim.vy * opts.aim.vy);
       const ux = -opts.aim.vx / (len || 1);
       const uy = opts.aim.vy / (len || 1);
-      const stretch = 4 + (len / 13000) * 18;
+      const stretch = (4 + (len / 13000) * 18) * hs;
       ctx.strokeStyle = "#D9534F";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(hx - 5, hy - 3);
+      ctx.moveTo(hx - 5 * hs, hy - 3 * hs);
       ctx.lineTo(hx + ux * stretch, hy + uy * stretch);
-      ctx.lineTo(hx + 5, hy - 3);
+      ctx.lineTo(hx + 5 * hs, hy - 3 * hs);
       ctx.stroke();
       // el cigarro en la banda
       drawSpriteAt(ctx, "chino:cig", cigaretteSprite(), hx + ux * stretch - 3, hy + uy * stretch - 1, 1);

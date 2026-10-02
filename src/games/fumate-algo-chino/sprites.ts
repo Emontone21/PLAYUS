@@ -9,9 +9,9 @@ import { buildSprite as build, flipSprite, OUTLINE, type Sprite } from "../lib/s
 export type { Sprite };
 const K = OUTLINE;
 
-/** la vista: 160 × 90 unidades */
-export const FIELD_W = 160;
-export const FIELD_H = 90;
+/** la vista: 270 × 120 unidades (se juega en horizontal) */
+export const FIELD_W = 270;
+export const FIELD_H = 120;
 
 export type Face = "espera" | "adentro" | "casi" | "quehaces";
 

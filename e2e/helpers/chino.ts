@@ -34,11 +34,32 @@ export function vectorsFor(seed: string): Vector[] {
   });
 }
 
-/** el arrastre en px (opuesto al vector; en pantalla y crece hacia abajo) */
+/** el arrastre en px en el sistema que ve el jugador (opuesto al vector; y crece hacia abajo) */
 export function dragFor(v: Vector): { dx: number; dy: number } {
   const len = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
   const pxLen = (len / V_MAX) * MAX_DRAG_PX;
   return { dx: (-v.vx / len) * pxLen, dy: (v.vy / len) * pxLen };
+}
+
+/** el área está rotada 90° (viewport vertical: el contenedor gira el juego) */
+export async function isRotated(page: Page): Promise<boolean> {
+  return (await page.getByTestId("game-playing").getAttribute("data-rotated")) === "1";
+}
+
+/** un desplazamiento del jugador → el de la pantalla física (toPhysical de games/lib/orientation, en diferencias) */
+export function physicalDelta(d: { dx: number; dy: number }, rotated: boolean): { dx: number; dy: number } {
+  return rotated ? { dx: -d.dy, dy: d.dx } : d;
+}
+
+/** arrastra con el mouse desde (cx, cy) físico un desplazamiento que el jugador ve como (dx, dy), y suelta (o no) */
+export async function dragLogical(page: Page, cx: number, cy: number, d: { dx: number; dy: number }, opts: { release?: boolean } = {}): Promise<void> {
+  const { dx, dy } = physicalDelta(d, await isRotated(page));
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + dx / 2, cy + dy / 2, { steps: 3 });
+  await page.mouse.move(cx + dx, cy + dy, { steps: 3 });
+  await page.waitForTimeout(80);
+  if (opts.release !== false) await page.mouse.up();
 }
 
 export async function playChino(page: Page, seed: string): Promise<{ best: number; events: unknown[]; sentScore: number }> {
@@ -52,13 +73,7 @@ export async function playChino(page: Page, seed: string): Promise<{ best: numbe
   for (let i = 0; i < vectors.length; i++) {
     await expect.poll(async () => (await snapOf(page))?.shot, { timeout: 20_000 }).toBe(i);
     await expect.poll(async () => (await snapOf(page))?.phase, { timeout: 20_000 }).toBe("aim");
-    const { dx, dy } = dragFor(vectors[i]!);
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx + dx / 2, cy + dy / 2, { steps: 3 });
-    await page.mouse.move(cx + dx, cy + dy, { steps: 3 });
-    await page.waitForTimeout(80);
-    await page.mouse.up();
+    await dragLogical(page, cx, cy, dragFor(vectors[i]!));
     await expect.poll(async () => (await snapOf(page))?.phase, { timeout: 5_000 }).not.toBe("aim");
   }
   await expect(area).toHaveAttribute("data-end", "1", { timeout: 30_000 });

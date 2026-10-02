@@ -1,10 +1,12 @@
 import type * as React from "react";
+import type { Orientation } from "./lib/orientation";
 
 // Contrato de juegos. Un juego nuevo es un archivo en src/games/ que exporta
 // un GameModule, más una línea en src/games/index.ts. Nada más del sistema se
 // toca. Leé src/games/README.md antes de escribir uno.
 
 export type ScoringDirection = "high" | "low";
+export type { Orientation };
 
 export interface GameModule {
   /** slug estable, nunca cambia: queda guardado en la base (rounds.game_id) */
@@ -46,6 +48,15 @@ export interface GameModule {
    * necesita cargar un motor, como la torre con Rapier). Opcional.
    */
   validate?: (result: GameResult, seed: string, meta?: { elapsedMs: number }) => boolean | Promise<boolean>;
+  /**
+   * 'landscape' si el juego se juega con el teléfono de costado. El
+   * contenedor rota 90° el área de juego (con su cronómetro) cuando la
+   * pantalla está en vertical, avisa "girá el teléfono" en la cuenta
+   * regresiva, y el juego pasa sus punteros por `useLogicalPointer`
+   * (games/lib/orientation-context). La previa y el resultado siguen en
+   * vertical. Default 'portrait'.
+   */
+  orientation?: Orientation;
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El

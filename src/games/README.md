@@ -42,11 +42,22 @@ Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `qu
 | `minPlausibleScore?` | cota inferior (ej. 100 ms de reacción). Default 0. |
 | `unit?` | unidad del puntaje para el ranking, el historial y los avisos (ej. `"m"`). Si falta, los de `'low'` muestran `ms` y los de `'high'` nada. |
 | `validate?(result, seed, meta?)` | chequeo propio sobre `events`. Devolvé `false` para rechazar (puede devolver una promesa: el servidor la espera). El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente) y `meta.elapsedMs`, la duración real del intento medida en el servidor (desde `/start`, con la cuenta regresiva). |
+| `orientation?` | `'landscape'` si se juega con el teléfono de costado (fumate algo chino). Default `'portrait'`. Ver "Juegos en horizontal". |
 | `Component` | el juego. Recibe `GameProps`. |
 | `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba muestra la ficha "así es ella"; el tarado, la cara del intento). Recibe `seed`. |
 | `Result?` | opcional: la pantalla de resultado propia, en lugar del puntaje grande (el tarado muestra "18,4 s" o "te faltaron N toques" con la cara final). Recibe `result`, `seed` y `cutByTimer`. |
 
 `GameProps`: `seed` (la del intento), `onReady()`, `onFinish(result)`, `onProgress(result)`. `GameResult`: `{ score, events }`. `events` es tu traza para validar: un arreglo con lo mínimo para que `validate` pueda comprobar que el puntaje es coherente.
+
+### Juegos en horizontal
+
+Un juego con `orientation: 'landscape'` se juega con el teléfono de costado, sin depender del sistema (nada de `screen.orientation.lock` ni del `orientation` del manifest: en iPhone no anda y la app sigue siendo vertical para todo lo demás). El contenedor se encarga de todo:
+
+- si la ventana es más alta que ancha, rota 90° toda el área de juego (su cronómetro, el juego y los carteles) con CSS, ocupando la ventana entera; la parte de arriba del teléfono queda a la izquierda. Si la ventana ya es horizontal (escritorio, o teléfono sin bloqueo de rotación), no rota nada;
+- durante la cuenta regresiva, si va a rotar, muestra un teléfono en pixel art que gira con "girá el teléfono" (con `prefers-reduced-motion`, ya girado). La pantalla previa y la de resultado siguen en vertical;
+- publica la rotación por contexto. El juego **tiene** que pasar sus punteros por `useLogicalPointer()` (`games/lib/orientation-context`): devuelve una función `(e) => { x, y }` con las coordenadas en el sistema que ve el jugador (identidad si no hay rotación), así un arrastre va en la dirección que el jugador ve y no en la de la pantalla física. Para medir el área usá `clientWidth`/`clientHeight` (sin la rotación), no `getBoundingClientRect` (da la caja girada). La traza y `validate` no cambian: siguen en unidades lógicas.
+
+Las funciones puras están en `games/lib/orientation.ts` (`shouldRotate`, `toLogical`, `toPhysical`, `rotatedStyle`) y tienen sus tests; el área rotada lleva `data-rotated="1"` en `[data-testid="game-playing"]`, que el E2E usa para convertir sus arrastres.
 
 ## El ejemplo de referencia: `piba-del-ipa`
 

@@ -2,11 +2,13 @@ import { test, expect, type Browser } from "@playwright/test";
 import { botTrace, check, generateShots, simulate, solveShot, type ThrowEvent } from "../src/games/fumate-algo-chino/rules";
 import { createGroupWithGame } from "./helpers/group";
 import { startAndGetSeed } from "./helpers/piba";
-import { playChino, snapOf } from "./helpers/chino";
+import { dragLogical, isRotated, playChino, snapOf } from "./helpers/chino";
 
 // Juego nuevo. La simulación del navegador y la de Node tienen que dar
 // exactamente lo mismo; una partida con tres tiros (vectores calculados en el
-// test, uno adentro) llega al ranking con el mejor puntaje correcto.
+// test, uno adentro) llega al ranking con el mejor puntaje correcto. Se juega
+// en horizontal: en el viewport vertical del teléfono el contenedor rota el
+// área 90° y los arrastres del test se convierten a la pantalla física.
 
 test.setTimeout(400_000);
 
@@ -62,28 +64,55 @@ test("la pantalla previa, el área, las caras en la herramienta, y un arrastre c
   await expect(a.page.getByTestId("dev-faces").getByRole("img")).toHaveCount(4);
   await expect(a.page.getByTestId("dev-shots")).toContainText("el resolvedor emboca");
   await a.page.getByTestId("game-play").click();
+  // en el viewport vertical del teléfono: el aviso de girar en la cuenta regresiva, y el área rotada
+  await expect(a.page.getByTestId("game-rotate-hint")).toContainText("girá el teléfono");
   const area = a.page.getByTestId("chino-area");
   await expect(area).toBeVisible({ timeout: 15_000 });
+  await expect(a.page.getByTestId("game-playing")).toHaveAttribute("data-rotated", "1");
+  expect(await a.page.getByTestId("game-playing").evaluate((el) => getComputedStyle(el).transform)).not.toBe("none");
+  // el cronómetro va adentro del área rotada
+  await expect(a.page.getByTestId("game-playing").getByTestId("game-timer")).toBeVisible();
   expect(await area.evaluate((el) => getComputedStyle(el).touchAction)).toBe("none");
   expect(await area.evaluate((el) => getComputedStyle(el).userSelect)).toBe("none");
   await expect(a.page.getByTestId("chino-shot")).toContainText("tiro 1 de 3");
   // un arrastre de 10 px: no tira
   const box = (await area.boundingBox())!;
-  await a.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await a.page.mouse.down();
-  await a.page.mouse.move(box.x + box.width / 2 - 10, box.y + box.height / 2 + 4, { steps: 2 });
-  await a.page.mouse.up();
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await dragLogical(a.page, cx, cy, { dx: -10, dy: 4 });
   await a.page.waitForTimeout(300);
   await expect(area).toHaveAttribute("data-phase", "aim");
   await expect(area).toHaveAttribute("data-shot", "0");
-  // uno largo: tira
-  await a.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await a.page.mouse.down();
-  await a.page.mouse.move(box.x + box.width / 2 - 90, box.y + box.height / 2 + 60, { steps: 4 });
-  await a.page.mouse.up();
+  // uno largo hacia atrás (para el jugador: abajo a la izquierda) tira hacia adelante y arriba
+  await dragLogical(a.page, cx, cy, { dx: -90, dy: 60 });
   await expect(area).toHaveAttribute("data-phase", "flight", { timeout: 3_000 });
   await expect(a.page.getByTestId("chino-banner")).toBeVisible({ timeout: 15_000 });
   await a.context.close();
+});
+
+test("en una ventana horizontal no rota nada, y la previa y el resultado siguen sin rotar en el teléfono", async ({ browser }) => {
+  const wide = await browser.newContext({ viewport: { width: 844, height: 390 } });
+  const page = await wide.newPage();
+  await page.goto("/dev/juego/fumate-algo-chino?seed=abc");
+  await page.getByTestId("game-play").click();
+  await expect(page.getByTestId("game-countdown")).toBeVisible();
+  await expect(page.getByTestId("game-rotate-hint")).toHaveCount(0);
+  await expect(page.getByTestId("chino-area")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("game-playing")).toHaveAttribute("data-rotated", "0");
+  expect(await page.getByTestId("game-playing").evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+  // un arrastre sin convertir tira igual que siempre
+  const box = (await page.getByTestId("chino-area").boundingBox())!;
+  await dragLogical(page, box.x + box.width / 2, box.y + box.height / 2, { dx: -90, dy: 60 });
+  await expect(page.getByTestId("chino-area")).toHaveAttribute("data-phase", "flight", { timeout: 3_000 });
+  await wide.close();
+  // en el teléfono (vertical), la previa no está rotada
+  const phone = await browser.newContext();
+  const p = await phone.newPage();
+  await p.goto("/dev/juego/fumate-algo-chino?seed=abc");
+  const card = p.getByTestId("chino-card");
+  await expect(card).toBeVisible();
+  expect((await p.getByTestId("game-play").boundingBox())!.width).toBeGreaterThan(300);
+  await phone.close();
 });
 
 test("en la ronda real: tres tiros con los vectores calculados en el test, uno adentro, llegan al ranking con el mejor puntaje", async ({ browser }) => {
@@ -91,6 +120,8 @@ test("en la ronda real: tres tiros con los vectores calculados en el test, uno a
   await createGroupWithGame(b.page, "Gomera", "fumate algo chino");
   await b.page.goto("/hoy/jugar");
   const seed = await startAndGetSeed(b.page);
+  // viewport vertical de teléfono: se juega con la gomera rotada
+  expect(await isRotated(b.page)).toBe(true);
   const played = await playChino(b.page, seed);
   expect(played.best).toBeGreaterThanOrEqual(900);
   expect(played.sentScore).toBe(played.best);

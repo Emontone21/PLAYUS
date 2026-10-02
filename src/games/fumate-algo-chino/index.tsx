@@ -14,6 +14,7 @@ import { createTickClock } from "../lib/tick-clock";
 import { sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { composeSprite } from "../lib/sprites";
+import { useLogicalPointer } from "../lib/orientation-context";
 import { cameraFor, drawScene, followDy, scaleFor, type Camera } from "./draw";
 import { applyThrow, botTrace, check, clampVector, DURATION_MS, END_TICK, endTickOf, initialState, MAX_SCORE, SHOTS, solveShot, step, SUB, TICKS_PER_S, validate, V_MAX, V_MIN, type Outcome, type ShotResult, type SimState, type ThrowEvent, type TraceEvent, type Vector } from "./rules";
 import { chinoSprite, FIELD_H, FIELD_W, handSprite, sockSprite } from "./sprites";
@@ -67,6 +68,8 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   const [k, setK] = React.useState(1);
   const [hud, setHud] = React.useState<Hud>({ shot: 0, best: 0, results: [], last: null, end: false });
   const startShot = dev?.startShot ?? 0;
+  // los punteros llegan en el sistema que ve el jugador (el área puede estar rotada 90°)
+  const toLogical = useLogicalPointer();
 
   React.useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -80,8 +83,8 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
     const area = areaRef.current;
     if (!area) return;
     const measure = () => {
-      const r = area.getBoundingClientRect();
-      setK(scaleFor(r.width, r.height, window.devicePixelRatio || 1));
+      // clientWidth/Height: el tamaño sin la rotación del contenedor (getBoundingClientRect daría la caja girada)
+      setK(scaleFor(area.clientWidth, area.clientHeight, window.devicePixelRatio || 1));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -187,21 +190,24 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
     e.preventDefault();
     if (e.pointerType === "mouse" && e.button !== 0) return;
     if (pointerRef.current !== null) return;
-    pointerRef.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    const l = toLogical(e);
+    pointerRef.current = { id: e.pointerId, x: l.x, y: l.y };
     e.currentTarget.setPointerCapture?.(e.pointerId);
     aimRef.current = null;
   }
   function move(e: React.PointerEvent<HTMLDivElement>) {
     const p = pointerRef.current;
     if (!p || e.pointerId !== p.id) return;
-    aimRef.current = vectorFromDrag(e.clientX - p.x, e.clientY - p.y);
+    const l = toLogical(e);
+    aimRef.current = vectorFromDrag(l.x - p.x, l.y - p.y);
   }
   function up(e: React.PointerEvent<HTMLDivElement>) {
     const p = pointerRef.current;
     if (!p || e.pointerId !== p.id) return;
     pointerRef.current = null;
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-    const v = vectorFromDrag(e.clientX - p.x, e.clientY - p.y);
+    const l = toLogical(e);
+    const v = vectorFromDrag(l.x - p.x, l.y - p.y);
     aimRef.current = null;
     if (v) pendingRef.current.push(v);
   }
@@ -215,7 +221,7 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
   return (
     <div
       ref={rootRef}
-      className="flex h-full w-full select-none flex-col gap-2"
+      className="flex h-full w-full select-none flex-row gap-3"
       style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
       onPointerDown={down}
       onPointerMove={move}
@@ -226,7 +232,7 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
       data-testid="chino-area"
       data-end={hud.end ? "1" : ""}
     >
-      <div className="flex items-end justify-between px-1">
+      <div className="flex w-20 shrink-0 flex-col justify-between py-1">
         <div className="flex flex-col">
           <span className="text-xs text-tinta-suave" data-testid="chino-shot">
             tiro {hud.shot + 1} de {SHOTS}
@@ -241,7 +247,7 @@ export function ChinoGame({ seed, onReady, onFinish, onProgress, dev }: GameProp
           ))}
         </span>
       </div>
-      <div ref={areaRef} className="flex min-h-0 flex-1 items-start justify-center" data-testid="chino-field">
+      <div ref={areaRef} className="flex min-h-0 min-w-0 flex-1 items-center justify-center" data-testid="chino-field">
         <div className="relative">
           <canvas ref={canvasRef} className="pointer-events-none block [image-rendering:pixelated]" style={{ border: "3px solid var(--contorno)", borderRadius: 8 }} aria-label="la placita, la mano con la gomera, El chino y la manga de viento" role="img" />
           {hud.last ? (
@@ -319,6 +325,8 @@ export const fumateAlgoChino: GameModule = {
   tagline: "apuntale a la boca.",
   howTo: ["arrastrá hacia atrás para apuntar y elegir la fuerza, y soltá para tirar", "fijate el viento: cambia en cada tiro, igual que la distancia", "son 3 tiros y cuenta el mejor: cuanto más cerca de la boca, más puntos"],
   durationMs: DURATION_MS,
+  // se juega con el teléfono de costado: el contenedor rota el área si hace falta
+  orientation: "landscape",
   // tres tiros al toque, con sus vuelos y pausas, llevan unos 6 s; con la cuenta regresiva, más
   minDurationMs: 5_000,
   scoring: "high",

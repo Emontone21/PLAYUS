@@ -1,13 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { scoreUnit, type GameModule, type GameResult } from "./types";
+import { frameFor, rotatedStyle } from "./lib/orientation";
+import { rotationContext } from "./lib/orientation-context";
+import { RotateHint } from "./rotate-hint";
 
 // El contenedor de partida. Máquina de estados:
 //   intro → countdown → loading → playing → submitting → result | error
 // Es dueño del cronómetro: arranca con onReady y corta cuando se acaba
 // durationMs, usando el último parcial que informó el juego. El juego puede
 // terminar antes con onFinish. El juego no sabe nada más.
+//
+// Los juegos 'landscape' se juegan con el teléfono de costado: si la ventana
+// está en vertical, el área de juego (cronómetro incluido) se rota 90° con
+// CSS (games/lib/orientation) y los punteros se pasan al sistema rotado por
+// contexto. Sin screen.orientation.lock ni manifest: en iPhone no anda y la
+// app sigue siendo vertical para todo lo demás.
 
 export type SubmitOutcome = { ok: true } | { ok: false; message: string };
 
@@ -48,6 +57,14 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   const lastProgress = useRef<GameResult>({ score: 0, events: [] });
   const finished = useRef(false);
   const ticker = useRef<number | null>(null);
+  const [viewport, setViewport] = useState({ vw: 0, vh: 0 });
+  useEffect(() => {
+    const measure = () => setViewport({ vw: window.innerWidth, vh: window.innerHeight });
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+  const frame = useMemo(() => frameFor(game.orientation, viewport.vw, viewport.vh), [game.orientation, viewport.vw, viewport.vh]);
 
   const stopTicker = () => {
     if (ticker.current !== null) cancelAnimationFrame(ticker.current);
@@ -188,25 +205,36 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
       <section className="flex min-h-[70dvh] flex-col items-center justify-center gap-2" data-testid="game-countdown">
         <span className="display-lg text-[9rem] text-rana">{state.n}</span>
         <span className="text-tinta-suave">preparate</span>
+        {frame.rotated ? <RotateHint /> : null}
       </section>
     );
   }
 
   if (state.step === "loading" || state.step === "playing") {
+    // rotado: el área ocupa la ventana entera, girada 90°, por encima de todo lo demás
+    const rotated = frame.rotated;
+    const RotationContext = rotationContext();
     return (
-      <section className="flex min-h-[80dvh] flex-col gap-3" data-testid="game-playing">
-        <header className="flex items-baseline justify-between">
-          <span className="display text-lg">{game.name}</span>
-          <span className="display text-4xl" data-testid="game-timer" aria-live="off">
-            {formatSeconds(timeLeftMs)}
-          </span>
-        </header>
-        {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
-        <div className="flex min-h-[60dvh] flex-1 flex-col overflow-hidden rounded-lg [&>*]:min-h-0 [&>*]:flex-1">
-          <Game seed={activeSeed ?? ""} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
-        </div>
-        {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}
-      </section>
+      <RotationContext.Provider value={frame}>
+        <section
+          className={rotated ? "fixed left-0 top-0 z-40 flex flex-col gap-2 overflow-hidden bg-fondo p-3" : "flex min-h-[80dvh] flex-col gap-3"}
+          style={rotated ? rotatedStyle(frame) : undefined}
+          data-testid="game-playing"
+          data-rotated={rotated ? "1" : "0"}
+        >
+          <header className="flex items-baseline justify-between">
+            <span className="display text-lg">{game.name}</span>
+            <span className="display text-4xl" data-testid="game-timer" aria-live="off">
+              {formatSeconds(timeLeftMs)}
+            </span>
+          </header>
+          {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
+          <div className={`flex flex-1 flex-col overflow-hidden rounded-lg [&>*]:min-h-0 [&>*]:flex-1 ${rotated ? "min-h-0" : "min-h-[60dvh]"}`}>
+            <Game seed={activeSeed ?? ""} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
+          </div>
+          {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}
+        </section>
+      </RotationContext.Provider>
     );
   }
 

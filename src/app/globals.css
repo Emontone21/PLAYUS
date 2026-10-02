@@ -279,11 +279,35 @@ body {
   animation: frog-hop 1.4s steps(1, end) infinite;
 }
 
+/* el teléfono del aviso "girá el teléfono": gira hacia la izquierda, se queda
+   un rato de costado y vuelve */
+@keyframes phone-turn {
+  0%,
+  15% {
+    transform: rotate(0deg);
+  }
+  45%,
+  75% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+.phone-turn {
+  animation: phone-turn 2.4s ease-in-out infinite;
+}
+
 /* con reducir movimiento: nada se mueve salvo el feedback de los botones (que
-   es instantáneo) y el FLIP del ranking se resuelve al instante */
+   es instantáneo) y el FLIP del ranking se resuelve al instante; el teléfono
+   del aviso aparece ya girado */
 @media (prefers-reduced-motion: reduce) {
   .frog-hop {
     animation: none;
+  }
+  .phone-turn {
+    animation: none;
+    transform: rotate(-90deg);
   }
   * {
     transition-duration: 0.01ms !important;
