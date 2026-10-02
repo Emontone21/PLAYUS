@@ -25,3 +25,6 @@ public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
 .vercel
+
+# config local del navegador de la app de escritorio
+.claude/launch.json

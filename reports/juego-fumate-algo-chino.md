@@ -19,7 +19,7 @@ Tres tiros con una gomera: arrastrar hacia atrás apunta y elige la fuerza, solt
 
 - `vitest`: 13 tests del juego (determinismo, rangos, simetría sin viento y deriva con viento, tope de fuerza, control de 20 px, subpasos, puntajes, ritmo y pausa, justicia en 1.000 semillas, validate, calibración, arte), más el intento de prueba en `attempts.test.ts`. Suite completa en verde; `eslint`, `tsc` y `next build` limpios.
 - E2E local (`e2e/chino.spec.ts`): simulación y resolvedor idénticos en navegador y Node en 6 semillas; previa, área (`touch-action`, `user-select`), caras, arrastre corto que no gasta el tiro y uno largo que tira; ronda real con los tres vectores calculados en el test (uno con el resolvedor): llega al ranking con el mejor puntaje, el resumen marca un solo mejor, y `check` en Node reproduce la traza.
-- E2E en producción (`ronda.spec.ts -g "ronda real"`): ver abajo.
+- E2E en producción (`E2E_BASE_URL=https://playus-lake.vercel.app npx playwright test e2e/chino.spec.ts -g "ronda real"`): en verde (34 s): grupo nuevo con el juego del día puesto en la base, tres tiros con los vectores calculados en el test, uno adentro, mejor puntaje en el ranking y traza reproducida en Node. Deploy `playus-nwdj6rcsg`. (La prueba de dos personas de `ronda.spec.ts` llega hasta su paso de fecha simulada, que usa una ruta solo de desarrollo y en producción es 404: esperado.)
 - `/dev/juego/fumate-algo-chino` responde 404 en producción.
 
 ## Capturas
