@@ -20,7 +20,7 @@ Big Bro, un chef grandote, pone una comida de forma irregular sobre la mesa y ha
 
 - `vitest`: 12 tests del juego (determinismo y sin trigonometría en tiempo de ejecución, formas simples con área conocida, cuadrado 50/50 y 60/40, forma cóncava en tres pedazos, recta que no toca o roza, tabla de puntajes, reacción, objetos por nivel sin repetir con rotación y escala en rango y polígonos simples en 1.000 semillas, justicia en 1.000 semillas, partida y pausa, calibración, `validate` con todos los rechazos), más el intento de prueba en `attempts.test.ts`. Suite completa en verde; `eslint`, `tsc` y `next build` limpios.
 - E2E local (`e2e/clase.spec.ts`): geometría idéntica en navegador y Node en 6 semillas (áreas de las formas, objetos, rectas del resolvedor, partidas con sus fracciones); previa, caras, formas, área (`touch-action`, `user-select`), un corte que no toca no gasta, la línea y las áreas al arrastrar, la reacción y los porcentajes; ronda real con las tres rectas del resolvedor corridas (calculadas en el test): llega al ranking con el total, el resumen muestra los 3 cortes y `check` en Node reproduce la traza.
-- E2E en producción: pendiente del deploy.
+- E2E en producción (`E2E_BASE_URL=https://playus-lake.vercel.app npx playwright test e2e/clase.spec.ts -g "ronda real"`): en verde (39 s): grupo nuevo con el juego del día puesto en la base, tres cortes con las rectas del resolvedor corridas, total en el ranking y traza reproducida en Node. Deploy `playus-le6xpbneq`.
 
 ## Capturas
 
