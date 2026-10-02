@@ -28,6 +28,7 @@ const GAME_IDS: Record<string, string> = {
   "colgado del 121": "colgado-del-121",
   "apila las boludeces": "apila-las-boludeces",
   "la mayo": "la-mayo",
+  "Nach y la roca": "nach-y-la-roca",
 };
 
 export async function createGroupWithGame(page: Page, name: string, gameName: string): Promise<string> {

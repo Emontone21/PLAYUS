@@ -21,11 +21,10 @@ import { BOOST_TICKS, check, DURATION_MS, FIELD_H, FIELD_W, greedyPolicy, initia
 import { canSprite, cigSprite, headSprite, liceSprite } from "./sprites";
 import { pariVisible, rastaIntroSprite } from "./rasta";
 import { composeSprite } from "../lib/sprites";
+import { swipeHandlers } from "../lib/swipe";
 
 /** el final se ve un segundo antes de pasar al resultado */
 const END_HOLD_MS = 1_000;
-/** un deslizamiento cuenta desde estos px */
-const SWIPE_PX = 24;
 
 export interface RastasDevOptions {
   coords?: boolean;
@@ -45,7 +44,6 @@ export function RastasGame({ seed, onReady, onFinish, onProgress, dev }: GamePro
   const areaRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const pending = React.useRef<Dir[]>([]);
-  const pointer = React.useRef<{ id: number; x: number; y: number } | null>(null);
   const kRef = React.useRef(1);
   const reducedRef = React.useRef(false);
   const devRef = React.useRef(dev);
@@ -158,30 +156,8 @@ export function RastasGame({ seed, onReady, onFinish, onProgress, dev }: GamePro
     };
   }, [seed, startTick, forceRedbull, onReady, onProgress, onFinish]);
 
-  // deslizar: manda el primer puntero; cada 24 px en el eje dominante es un giro, y se encadena sin soltar
-  function down(e: React.PointerEvent<HTMLDivElement>) {
-    e.preventDefault();
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    if (pointer.current !== null) return;
-    pointer.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  }
-  function move(e: React.PointerEvent<HTMLDivElement>) {
-    const p = pointer.current;
-    if (!p || e.pointerId !== p.id) return;
-    const dx = e.clientX - p.x;
-    const dy = e.clientY - p.y;
-    if (Math.abs(dx) < SWIPE_PX && Math.abs(dy) < SWIPE_PX) return;
-    const dir: Dir = Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
-    pending.current.push(dir);
-    p.x = e.clientX;
-    p.y = e.clientY;
-  }
-  function up(e: React.PointerEvent<HTMLDivElement>) {
-    if (!pointer.current || e.pointerId !== pointer.current.id) return;
-    pointer.current = null;
-    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
-  }
+  // deslizar: el detector compartido (games/lib/swipe): manda el primer puntero; cada 24 px en el eje dominante es un giro, y se encadena sin soltar
+  const swipe = React.useRef(swipeHandlers<HTMLDivElement>((dir) => pending.current.push(dir))).current;
 
   const banner = hud.end === "borde" ? "¡pum!" : hud.end === "rastas" ? "te enredaste" : hud.end === "piojos" ? "¡piojos!" : null;
 
@@ -190,11 +166,7 @@ export function RastasGame({ seed, onReady, onFinish, onProgress, dev }: GamePro
       ref={rootRef}
       className="flex h-full w-full select-none flex-col gap-2"
       style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
-      onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={up}
-      onLostPointerCapture={up}
+      {...swipe}
       onContextMenu={(e) => e.preventDefault()}
       data-testid="rastas-area"
       data-score={hud.score}

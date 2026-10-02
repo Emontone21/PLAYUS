@@ -25,6 +25,7 @@ import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwa
 import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
 import { loadSeasonSeries } from "@/lib/season-series";
 import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
+import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -311,6 +312,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "nach-y-la-roca") {
+    // sin moverse, el cronómetro corta a los 2,5 s (tick 150): unos 20 m
+    const r = nachSimulate(seed, [], 150);
+    return { score: r.score, events: [{ tick: 150, fin: true }] };
   }
   if (gameId === "la-mayo") {
     // emboca dos y el cronómetro corta a los 2,5 s (tick 150)
