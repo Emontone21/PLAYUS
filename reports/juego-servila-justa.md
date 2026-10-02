@@ -28,7 +28,7 @@ En `reports/servila-justa/`: `previa.png` (la previa con la herramienta), `perfi
 
 ## Publicación
 
-Publicado en https://playus-lake.vercel.app (commit COMMIT). Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con el juego puesto como juego de hoy): los 8 vasos llegan al ranking con el total, y `/dev/juego/servila-justa` da 404.
+Publicado en https://playus-lake.vercel.app (commit `74f004d`). Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con el juego puesto como juego de hoy): los 8 vasos llegan al ranking con el total, y `/dev/juego/servila-justa` da 404.
 
 ## Cómo verificarlo
 
