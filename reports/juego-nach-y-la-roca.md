@@ -27,7 +27,7 @@ En `reports/nach-y-la-roca/`: `previa.png` (la pantalla previa con la herramient
 
 ## Publicación
 
-Publicado en https://playus-lake.vercel.app (commit COMMIT). Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con el juego puesto como juego de hoy): la partida llega al ranking con los metros, y `/dev/juego/nach-y-la-roca` da 404.
+Publicado en https://playus-lake.vercel.app (commit `7f91cf8`). Comprobado en producción con el E2E de la ronda real contra producción (un grupo de prueba con el juego puesto como juego de hoy): la partida llega al ranking con los metros, y `/dev/juego/nach-y-la-roca` da 404.
 
 ## Cómo verificarlo
 
