@@ -28,6 +28,7 @@ import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
 import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
+import { botTrace as cortaloTrace } from "@/games/cortalo-parejo/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -314,6 +315,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "cortalo-parejo") {
+    // tres cortes del resolvedor con las pausas: la partida dura unos 6 s
+    const { events, state } = cortaloTrace(seed, { gapMs: 300 });
+    return { score: state.total, events };
   }
   if (gameId === "fumate-algo-chino") {
     // el jugador automático tira los tres al toque (unos 7 s); el intento de prueba dura minDurationMs + 500 ms

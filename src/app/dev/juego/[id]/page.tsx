@@ -18,6 +18,7 @@ import { MayoDev } from "@/games/la-mayo/dev";
 import { NachDev } from "@/games/nach-y-la-roca/dev";
 import { ServilaDev } from "@/games/servila-justa/dev";
 import { ChinoDev } from "@/games/fumate-algo-chino/dev";
+import { CortaloDev } from "@/games/cortalo-parejo/dev";
 
 // Solo en desarrollo: prueba un juego sin servidor ni ronda.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
@@ -30,11 +31,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string; prediccion?: string; todo?: string; resolver?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string; prediccion?: string; todo?: string; resolver?: string; vertices?: string; areas?: string }>;
 }) {
   if (process.env.NODE_ENV === "production") notFound();
   const { id } = await params;
-  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre, prediccion, todo, resolver } = await searchParams;
+  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre, prediccion, todo, resolver, vertices, areas } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -52,6 +53,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "cortalo-parejo" ? (
+        <CortaloDev seed={seed} from={Math.max(0, Math.min(2, Number(desde) || 0))} vertices={vertices === "1"} solver={resolver === "1"} areas={areas === "1"} />
       ) : game.id === "fumate-algo-chino" ? (
         <ChinoDev seed={seed} from={Math.max(0, Math.min(2, Number(desde) || 0))} fullPath={todo === "1"} debug={datos === "1"} solver={resolver === "1"} />
       ) : game.id === "servila-justa" ? (
