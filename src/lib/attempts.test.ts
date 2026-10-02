@@ -27,6 +27,7 @@ import { loadSeasonSeries } from "@/lib/season-series";
 import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
 import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
+import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -313,6 +314,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
     return { score: result.score, events };
+  }
+  if (gameId === "fumate-algo-chino") {
+    // el jugador automático tira los tres al toque (unos 7 s); el intento de prueba dura minDurationMs + 500 ms
+    const { events, result } = chinoTrace(seed, { aimTicks: 20 });
+    return { score: result.best, events };
   }
   if (gameId === "servila-justa") {
     // el jugador perfecto sirve dos vasos y el cronómetro corta a los 10 s (tick 600): el intento de prueba dura minDurationMs + 500 ms
