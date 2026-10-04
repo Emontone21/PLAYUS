@@ -43,6 +43,7 @@ Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `qu
 | `unit?` | unidad del puntaje para el ranking, el historial y los avisos (ej. `"m"`). Si falta, los de `'low'` muestran `ms` y los de `'high'` nada. |
 | `validate?(result, seed, meta?)` | chequeo propio sobre `events`. Devolvé `false` para rechazar (puede devolver una promesa: el servidor la espera). El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente) y `meta.elapsedMs`, la duración real del intento medida en el servidor (desde `/start`, con la cuenta regresiva). |
 | `orientation?` | `'landscape'` si se juega con el teléfono de costado (fumate algo chino). Default `'portrait'`. Ver "Juegos en horizontal". |
+| `recomputeScore?(result, seed)` | opcional: el puntaje recalculado desde `events` con la semilla, o `null`. Solo lo muestra el panel de admin al probar un juego; no decide nada. |
 | `Component` | el juego. Recibe `GameProps`. |
 | `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba muestra la ficha "así es ella"; el tarado, la cara del intento). Recibe `seed`. |
 | `Result?` | opcional: la pantalla de resultado propia, en lugar del puntaje grande (el tarado muestra "18,4 s" o "te faltaron N toques" con la cara final). Recibe `result`, `seed` y `cutByTimer`. |

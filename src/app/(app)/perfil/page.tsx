@@ -10,6 +10,7 @@ import { Nicknames } from "./nicknames";
 import { LinkEmail } from "./link-email";
 import { PushCard } from "@/components/push-card";
 import { InstallCard } from "@/components/install-card";
+import { currentAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser();
   if (!user) return null; // el layout redirige
 
+  const admin = await currentAdmin();
   const [{ data: profile }, groups, { data: memberships }, stats] = await Promise.all([
     supabase.from("profiles").select("display_name, avatar").eq("id", user.id).maybeSingle(),
     getMyGroups(),
@@ -68,6 +70,13 @@ export default async function ProfilePage() {
         <InstallCard dismissable={false} />
         <LinkEmail currentEmail={user.email ?? null} pendingEmail={user.new_email ?? null} />
       </section>
+      {admin ? (
+        <p className="text-right">
+          <Link href="/admin" className="text-xs text-tinta-suave underline" data-testid="admin-link">
+            panel de admin
+          </Link>
+        </p>
+      ) : null}
     </main>
   );
 }

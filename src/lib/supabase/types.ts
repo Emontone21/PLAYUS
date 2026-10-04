@@ -73,6 +73,18 @@ export type RoundRow = {
   created_at: string;
 }
 
+export type AdminActionRow = {
+  id: string;
+  admin_email: string;
+  action: "set_game" | "reset_to_deck";
+  group_id: string;
+  play_date: string;
+  from_game_id: string | null;
+  to_game_id: string;
+  deleted_attempts: number;
+  created_at: string;
+}
+
 export type AttemptRow = {
   id: string;
   round_id: string;
@@ -120,6 +132,13 @@ export type Database = {
         Update: Partial<RoundRow>;
         Relationships: [];
       };
+      // solo el servidor con service_role (RLS sin políticas)
+      admin_actions: {
+        Row: AdminActionRow;
+        Insert: Partial<AdminActionRow> & Pick<AdminActionRow, "admin_email" | "action" | "group_id" | "play_date" | "to_game_id">;
+        Update: Partial<AdminActionRow>;
+        Relationships: [];
+      };
       attempts: {
         Row: AttemptRow;
         Insert: Partial<AttemptRow> & Pick<AttemptRow, "round_id" | "profile_id" | "attempt_number">;
@@ -141,6 +160,10 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      admin_set_today_game: {
+        Args: { p_group_id: string; p_season_id: string; p_play_date: string; p_game_id: string; p_seed: string; p_admin_email: string; p_action: string };
+        Returns: { o_round_id: string; o_from_game_id: string | null; o_deleted: number }[];
+      };
       create_group: {
         Args: { p_name: string; p_timezone?: string };
         Returns: GroupRow;

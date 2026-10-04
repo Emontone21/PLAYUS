@@ -387,6 +387,10 @@ export const claseConElBro: GameModule = {
   minPlausibleScore: 0,
   maxPlausibleScore: MAX_SCORE,
   validate,
+  recomputeScore: (result, seed) => {
+    const v = check(seed, result.events);
+    return v.ok ? v.state.total : null;
+  },
   Component: ClaseGame,
   Intro,
   Result,

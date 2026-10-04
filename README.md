@@ -86,6 +86,24 @@ npm run e2e                 # tests Playwright (con la app y Supabase levantados
 
 Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=abc` (con `&map=N`, la vista previa del mapa N con la opción de resaltar; la hoja de sprites está en `/dev/piba/sprites`). Para el tarado, `/dev/juego/quedo-re-tarado?seed=abc&estado=50` muestra la cara con un control de estados. Para Larry, `/dev/juego/los-deseos-de-larry?seed=abc` trae cajas de colisión, cámara lenta y saltos a los 30, 60 y 80 s (también `&desde=60&cajas=1&lento=1`). Para remar, `/dev/juego/remar-vuelve-a-casa?seed=abc` trae cajas y camino seguro, cámara lenta, ×2 forzado y saltos a los 200, 500 y 1.000 m (también `&desde=500&cajas=1&lento=1&x2=1`). Para la parrilla, `/dev/juego/la-parrilla-del-bro?seed=abc` trae la barra del cronograma, cámara lenta, saltos a los 10, 45 y 80 s y cada estado del canario (también `&desde=45&lento=1`). Para el jota, `/dev/juego/pegandole-al-jota?seed=abc` trae la serie con sus respuestas, saltos a la ronda 1, 7 y 13, las caras y la grilla (también `&desde=7`). Para caminando por 18, `/dev/juego/caminando-por-18?seed=abc` trae cajas de toque, cámara lenta, saltos a los 20, 45 y 90 s, forzar a don pasta y cada pastoso (también `&desde=45&cajas=1&lento=1&donpasta=1`). Para las rastas, `/dev/juego/rastitas-rastotas?seed=abc` trae coordenadas, cámara lenta, saltos a los 30, 60 y 120 s y la Red Bull forzada (también `&desde=60&coords=1&lento=1&redbull=1`). Para el sunny, `/dev/juego/pisteando-el-sunny?seed=abc` trae el eje, el límite de caída y los vectores sobre la losa, las cajas de choque de los obstáculos, cámara lenta, saltos a los 500, 1.500 y 3.000 m, el conductor automático y el visor 3D del auto con cámara libre (también `&desde=1500&eje=1&cajas=1&lento=1&auto=1`). Para los Paris, `/dev/juego/busca-los-paris?seed=abc` trae los dibujos en grande y en tamaño de carta, cualquier tablero descubierto y saltos al tablero 1 a 4 (también `&desde=3`). Para colgado del 121, `/dev/juego/colgado-del-121?seed=abc` trae el gráfico de la inclinación y de la base, x, velocidad y empuje, cámara lenta, saltos a los 20, 45 y 80 s y el jugador automático con demora configurable (también `&desde=45&datos=1&lento=1&auto=1`). Para agregar uno: `src/games/README.md`. Para simular el día siguiente: `http://localhost:3000/dev/hoy` (o `DEV_FAKE_TODAY=AAAA-MM-DD` en `.env.local`).
 
+## Panel de admin
+
+Un panel privado para el dueño del proyecto en `/admin` (decisiones 236 a 238): cambiar el juego de hoy de cualquier grupo (con aviso y doble confirmación si ya hay intentos, que se borran y vuelven a estar disponibles) y probar cualquier juego con cualquier semilla en `/admin/jugar`, sin gastar intentos ni tocar rankings, viendo si el servidor valida la partida. Cada cambio queda en `admin_actions`. En producción, las herramientas de desarrollo `/dev/juego/{id}` también son solo para el admin.
+
+Para activarlo:
+
+1. En la app, Perfil → "¿cambiás de teléfono? vinculá un email": poné tu email y abrí el link que llega. Es admin solo una sesión con email vinculado y confirmado; las anónimas nunca.
+2. Poné ese email en `ADMIN_EMAILS` (uno o más, separados por coma) en Vercel, en Production y Preview:
+
+   ```bash
+   npx vercel env add ADMIN_EMAILS production
+   ```
+
+   (y lo mismo con `preview`). En local, en `.env.local`.
+3. Volvé a publicar (`npx vercel deploy --prod --yes`): las variables se leen al desplegar.
+
+Sin permiso, `/admin` responde 404 y `/api/admin/*` 403, siempre comprobado en el servidor. La entrada es el link "panel de admin" al final de Perfil, que solo ve el admin.
+
 ## PWA y notificaciones
 
 El service worker se genera solo en el build (`npm run build` → `public/sw.js`); en `npm run dev` no hay SW, así que instalación y push se prueban con `npm run build && npm run start` o en un deploy con HTTPS. Los datos nunca se sirven desde caché: `/api/*`, Supabase y las páginas van siempre a la red; sin conexión aparece `/~offline`.

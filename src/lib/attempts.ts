@@ -151,7 +151,8 @@ export async function finishAttempt(
 
   const { data: attempt, error } = await admin.from("attempts").select("*").eq("id", attemptId).maybeSingle();
   if (error) throw new Error(`attempts: ${error.message}`);
-  if (!attempt) throw new AttemptError(404, "attempt_not_found", "ese intento no existe.");
+  // un intento que no está es uno que el admin borró al cambiar el juego de hoy (el id lo dio /start)
+  if (!attempt) throw new AttemptError(410, "attempt_deleted", "el juego de hoy cambió mientras jugabas. tenés tus 3 intentos de nuevo.");
   if (attempt.profile_id !== userId) throw new AttemptError(403, "not_yours", "ese intento no es tuyo.");
   if (attempt.status !== "in_progress") {
     throw new AttemptError(409, "already_finished", "ese intento ya terminó.");

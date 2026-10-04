@@ -8,6 +8,7 @@ import { RankingReveal } from "@/components/ranking-reveal";
 import { Avatar } from "@/components/avatar";
 import { Frog } from "@/components/frog/Frog";
 import { LiveRefresh } from "./live-refresh";
+import { RoundWatcher } from "./round-watcher";
 import { PushCard } from "@/components/push-card";
 import { InstallCard } from "@/components/install-card";
 import { scoreText, scoreUnit } from "@/games/types";
@@ -71,6 +72,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Promis
 
   return (
     <main className="flex flex-col gap-8 px-5 py-6">
+      <RoundWatcher roundId={t.round.id} gameId={t.game.id} />
       <header className="flex flex-col gap-1">
         <p className="eyebrow">
           {group.name}, {formatShortDate(t.today)}

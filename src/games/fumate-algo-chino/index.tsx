@@ -333,6 +333,10 @@ export const fumateAlgoChino: GameModule = {
   minPlausibleScore: 0,
   maxPlausibleScore: MAX_SCORE,
   validate,
+  recomputeScore: (result, seed) => {
+    const v = check(seed, result.events);
+    return v.ok ? v.best : null;
+  },
   Component: ChinoGame,
   Intro,
   Result,

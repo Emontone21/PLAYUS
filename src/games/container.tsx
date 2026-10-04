@@ -36,6 +36,8 @@ export interface GameContainerProps {
   warning?: string;
   /** la pantalla previa arranca directo en cuenta regresiva */
   autoStart?: boolean;
+  /** texto de la pantalla de resultado en lugar de "quedó guardado." (el panel de admin: validada sin guardar) */
+  resultNote?: string;
 }
 
 type State =
@@ -49,7 +51,7 @@ type State =
 
 const COUNTDOWN_FROM = 3;
 
-export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, warning, autoStart }: GameContainerProps) {
+export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, warning, autoStart, resultNote }: GameContainerProps) {
   const [state, setState] = useState<State>({ step: "intro" });
   const [activeSeed, setActiveSeed] = useState<string | undefined>(seed);
   const [timeLeftMs, setTimeLeftMs] = useState(game.durationMs);
@@ -273,7 +275,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
             {!game.formatScore && unit ? <span className="ml-2 text-3xl text-tinta-suave">{unit}</span> : null}
           </p>
         )}
-        <p className="text-tinta-suave">{state.saved ? "quedó guardado." : "partida de prueba: no se guardó."}</p>
+        <p className="text-tinta-suave">{state.saved ? (resultNote ?? "quedó guardado.") : "partida de prueba: no se guardó."}</p>
       </div>
       {onDone ? (
         <button

@@ -49,6 +49,12 @@ export interface GameModule {
    */
   validate?: (result: GameResult, seed: string, meta?: { elapsedMs: number }) => boolean | Promise<boolean>;
   /**
+   * el puntaje recalculado desde la traza con la semilla, o null si no se
+   * puede. Solo lo usa el panel de admin para mostrar qué recalcula el
+   * servidor al probar un juego. Opcional.
+   */
+  recomputeScore?: (result: GameResult, seed: string) => number | null;
+  /**
    * 'landscape' si el juego se juega con el teléfono de costado. El
    * contenedor rota 90° el área de juego (con su cronómetro) cuando la
    * pantalla está en vertical, avisa "girá el teléfono" en la cuenta

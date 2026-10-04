@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GAME_IDS, GAMES } from "@/games";
+import { devToolsAllowed } from "@/lib/admin";
 
-export default function DevGamesIndex() {
-  if (process.env.NODE_ENV === "production") notFound();
+export const dynamic = "force-dynamic";
+
+export default async function DevGamesIndex() {
+  if (!(await devToolsAllowed())) notFound();
   return (
     <main className="flex flex-col gap-4 px-5 py-8">
       <h1 className="display text-3xl">juegos (desarrollo)</h1>

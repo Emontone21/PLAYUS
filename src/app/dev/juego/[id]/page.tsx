@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getGame } from "@/games";
+import { devToolsAllowed } from "@/lib/admin";
 import { DevGame } from "./dev-game";
 import { MapPreview } from "@/games/piba-del-ipa/preview";
 import { FacePreview } from "@/games/quedo-re-tarado/preview";
@@ -20,7 +21,8 @@ import { ServilaDev } from "@/games/servila-justa/dev";
 import { ChinoDev } from "@/games/fumate-algo-chino/dev";
 import { ClaseDev } from "@/games/clase-con-el-bro/dev";
 
-// Solo en desarrollo: prueba un juego sin servidor ni ronda.
+// Prueba un juego sin servidor ni ronda. Libre en desarrollo; en producción,
+// solo para el admin (decisión 238): para cualquier otra persona es 404.
 // /dev/juego/piba-del-ipa?seed=lo-que-quieras (&map=N: vista previa del mapa N)
 //
 // Este archivo es también la prueba de la decisión 8: un Server Component
@@ -33,7 +35,7 @@ export default async function DevGamePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string; prediccion?: string; todo?: string; resolver?: string; vertices?: string; areas?: string }>;
 }) {
-  if (process.env.NODE_ENV === "production") notFound();
+  if (!(await devToolsAllowed())) notFound();
   const { id } = await params;
   const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre, prediccion, todo, resolver, vertices, areas } = await searchParams;
   const game = getGame(id);
