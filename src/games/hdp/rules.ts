@@ -41,10 +41,10 @@ export const DIRS: readonly Dir[] = ["up", "down", "left", "right"];
  * (decisión 240).
  */
 export const DIFFICULTY: readonly { at: number; cookMin: number; cookMax: number; window: number }[] = [
-  { at: 0, cookMin: 240, cookMax: 360, window: 90 },
-  { at: 1200, cookMin: 168, cookMax: 270, window: 78 },
-  { at: 2400, cookMin: 120, cookMax: 204, window: 69 },
-  { at: 3600, cookMin: 90, cookMax: 150, window: 60 },
+  { at: 0, cookMin: 150, cookMax: 240, window: 90 },
+  { at: 1200, cookMin: 108, cookMax: 180, window: 78 },
+  { at: 2400, cookMin: 72, cookMax: 132, window: 69 },
+  { at: 3600, cookMin: 54, cookMax: 96, window: 60 },
 ];
 
 function lerp(a: number, b: number, t0: number, t1: number, t: number): number {

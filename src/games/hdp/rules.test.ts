@@ -173,10 +173,10 @@ describe("dificultad y justicia", () => {
     }
     expect(minGap).toBeGreaterThanOrEqual(ARROW_GAP_TICKS);
     expect(minWindow).toBeGreaterThanOrEqual(MIN_WINDOW_TICKS);
-    expect(difficultyAt(0)).toEqual({ cookMin: 240, cookMax: 360, window: 90 });
-    expect(difficultyAt(1200)).toEqual({ cookMin: 168, cookMax: 270, window: 78 });
-    expect(difficultyAt(2400)).toEqual({ cookMin: 120, cookMax: 204, window: 69 });
-    expect(difficultyAt(3600)).toEqual({ cookMin: 90, cookMax: 150, window: 60 });
+    expect(difficultyAt(0)).toEqual({ cookMin: 150, cookMax: 240, window: 90 });
+    expect(difficultyAt(1200)).toEqual({ cookMin: 108, cookMax: 180, window: 78 });
+    expect(difficultyAt(2400)).toEqual({ cookMin: 72, cookMax: 132, window: 69 });
+    expect(difficultyAt(3600)).toEqual({ cookMin: 54, cookMax: 96, window: 60 });
     expect(difficultyAt(600).window).toBe(84);
     expect(DIFFICULTY[0]!.window).toBe(90);
     // la cocción sin tocar nada sale de la tabla: cada tramo de cocinándose dura entre el mínimo y el máximo (más el desfase inicial o la separación de flechas)
@@ -212,10 +212,10 @@ describe("dificultad y justicia", () => {
     let max = 0;
     for (const seed of SEEDS.slice(0, 100)) max = Math.max(max, botTrace(seed).result.score);
     expect(max).toBeLessThanOrEqual(MAX_SCORE);
-    expect(max).toBeGreaterThan(50);
+    expect(max).toBeGreaterThan(80);
   });
 
-  it("calibración: el jugador modelo da vuelta entre 25 y 45 (con el lento abajo y el rápido arriba) y se le quema alguna en los primeros 20 s", () => {
+  it("calibración (la tabla original, decisión 240): el jugador modelo da vuelta entre 40 y 60 (con el lento abajo y el rápido arriba) y se le quema alguna en los primeros 20 s", () => {
     const q = (xs: number[], f: number) => [...xs].sort((a, b) => a - b)[Math.min(xs.length - 1, Math.floor(xs.length * f))]!;
     const seeds = SEEDS.slice(0, 60);
     const model = seeds.map((s) => botTrace(s, MODEL).result);
@@ -227,10 +227,10 @@ describe("dificultad y justicia", () => {
     }).length;
     const med = q(model.map((r) => r.score), 0.5);
     process.stdout.write(`hdp: modelo p25/med/p75 ${q(model.map((r) => r.score), 0.25)}/${med}/${q(model.map((r) => r.score), 0.75)}, quemadas med ${q(model.map((r) => r.burns), 0.5)}, quema antes de 20 s en ${early}/${seeds.length}; rápido ${q(fast, 0.5)}; lento ${q(slow, 0.5)}\n`);
-    expect(med).toBeGreaterThanOrEqual(25);
-    expect(med).toBeLessThanOrEqual(45);
-    expect(q(model.map((r) => r.score), 0.25)).toBeGreaterThanOrEqual(25);
-    expect(q(model.map((r) => r.score), 0.75)).toBeLessThanOrEqual(45);
+    expect(med).toBeGreaterThanOrEqual(40);
+    expect(med).toBeLessThanOrEqual(60);
+    expect(q(model.map((r) => r.score), 0.25)).toBeGreaterThanOrEqual(40);
+    expect(q(model.map((r) => r.score), 0.75)).toBeLessThanOrEqual(60);
     expect(q(slow, 0.5)).toBeLessThan(med);
     expect(q(fast, 0.5)).toBeGreaterThan(med);
     expect(early / seeds.length).toBeGreaterThan(0.8);
