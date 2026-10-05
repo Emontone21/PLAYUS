@@ -149,6 +149,9 @@ const BODY: Record<Mood, string[]> = {
   ],
 };
 
+/** las piezas de Big Bro, para que otros juegos (hdp) armen poses propias */
+export const BRO_PARTS = { HAT, FACE, BODY, PALETTE } as const;
+
 const broCache = new Map<Mood, Sprite>();
 export function broSprite(mood: Mood): Sprite {
   let s = broCache.get(mood);

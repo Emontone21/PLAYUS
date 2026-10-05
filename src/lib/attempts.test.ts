@@ -29,6 +29,7 @@ import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
 import { botTrace as claseTrace } from "@/games/clase-con-el-bro/rules";
+import { botTrace as hdpTrace } from "@/games/hdp/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -314,6 +315,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // los tests terminan el intento a minDurationMs + 500 ms (5,5 s): una
     // partida cortada a los 5 s es coherente con esa duración
     const { events, result } = greedyTrace(seed, 300);
+    return { score: result.score, events };
+  }
+  if (gameId === "hdp") {
+    // el jugador modelo juega los 60 s enteros
+    const { events, result } = hdpTrace(seed, { reactionTicks: 36, jitterTicks: 24, errorPerMille: 200, swipeGapTicks: 36 });
     return { score: result.score, events };
   }
   if (gameId === "clase-con-el-bro") {

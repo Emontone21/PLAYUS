@@ -16,6 +16,7 @@ import { playServila } from "./helpers/servila";
 import { playNach } from "./helpers/nach";
 import { playChino } from "./helpers/chino";
 import { playClase } from "./helpers/clase";
+import { playHdp } from "./helpers/hdp";
 
 // El "listo cuando" del brief, de punta a punta: dos personas entran por un
 // link, arman su avatar, juegan el juego del día, ven el ranking actualizarse,
@@ -63,7 +64,12 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   const nach = page.getByTestId("nach-area");
   const chino = page.getByTestId("chino-area");
   const clase = page.getByTestId("clase-area");
-  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach).or(chino).or(clase)).toBeVisible({ timeout: 15_000 });
+  const hdpArea = page.getByTestId("hdp-area");
+  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach).or(chino).or(clase).or(hdpArea)).toBeVisible({ timeout: 15_000 });
+  if (await hdpArea.isVisible()) {
+    const r = await playHdp(page);
+    return r.score;
+  }
   if (await clase.isVisible()) {
     const r = await playClase(page, seed);
     return r.total;
@@ -153,7 +159,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "Nach y la roca", "servila justa", "fumate algo chino", "clase con el bro"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "Nach y la roca", "servila justa", "fumate algo chino", "clase con el bro", "hij@ de p**"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 
