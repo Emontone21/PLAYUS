@@ -1,6 +1,6 @@
 # Juego nuevo: Nach salta
 
-Publicado en producción (https://playus-lake.vercel.app) el 2026-10-06, deploy `playus-50njbe67m`. Id estable `nach-salta`. Está en el registro activo (entra al mazo), pero no se puso como juego del día de ningún grupo: eso va aparte.
+Publicado en producción (https://playus-lake.vercel.app) el 2026-10-06, deploy `playus-50njbe67m`. Id estable `nach-salta`. Está en el registro activo (entra al mazo) y, a pedido del dueño, es el juego de hoy (2026-10-06) en todos los grupos de producción.
 
 ## Qué es
 
@@ -85,6 +85,15 @@ La versión de costado de "Nach y la roca". The Nach corre solo hacia la derecha
   - `/dev/juego/nach-salta` da **404** sin sesión de admin;
   - la ronda real pasa (37 s).
   - **Para correrla:** npx actualizó solo la CLI de Supabase a la 2.120.0, y Windows bloquea su binario nuevo (Control de aplicaciones). El helper del E2E ahora acepta `SUPABASE_CLI`, y la verificación se corrió con `SUPABASE_CLI=supabase@2.119.0` (de la caché de npm, sin descargar nada).
+
+## Juego de hoy en producción
+
+Se puso "Nach salta" como juego de hoy (2026-10-06, hora de Montevideo) en los 10 grupos de producción, con el mismo procedimiento que el panel de admin (decisión 237): `admin_set_today_game` por grupo, con la temporada vigente, la fecha de hoy del grupo y la semilla `hash(round:<grupo>:<fecha>:nach-salta)` calculada con `roundSeed`. Antes se comprobó la fórmula contra tres rondas existentes: dio igual. Cada llamada, en su transacción, borró los intentos de hoy de ese grupo (4 en total, todos de pruebas), creó la ronda donde no existía (2 grupos) y dejó registro en `admin_actions`. Comprobado después: los 10 grupos tienen `nach-salta` hoy, con 0 intentos, y hay 10 registros nuevos.
+
+## Deuda
+
+- `src/lib/attempts.test.ts` falla de forma intermitente según qué juego le asigna el mazo al grupo del test: las trazas de prueba de "fumate algo chino" (dura más que el intento simulado) y, a veces, "buscá los Paris" o "pisteando el sunny" (puntaje 0). No es de "Nach salta"; quedó como tarea aparte.
+- `src/lib/admin.test.ts` falla en la base local con "URI too long": la lista de grupos del panel de admin arma una consulta con todos los ids, y la base local tiene unos 450 grupos de tests. Es un límite real del panel con muchos grupos; quedó como tarea aparte.
 
 ## Capturas
 
