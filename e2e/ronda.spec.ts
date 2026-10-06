@@ -18,6 +18,8 @@ import { playChino } from "./helpers/chino";
 import { playClase } from "./helpers/clase";
 import { playHdp } from "./helpers/hdp";
 import { playLarryHdp } from "./helpers/larry-hdp";
+import { playAfila } from "./helpers/afila";
+import { check as afilaCheck } from "../src/games/big-bro-afila/rules";
 import { check as larryHdpCheck } from "../src/games/larry-en-la-hdp/rules";
 
 // El "listo cuando" del brief, de punta a punta: dos personas entran por un
@@ -68,7 +70,14 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   const clase = page.getByTestId("clase-area");
   const hdpArea = page.getByTestId("hdp-area");
   const larryHdp = page.getByTestId("larryhdp-area");
-  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach).or(chino).or(clase).or(hdpArea).or(larryHdp)).toBeVisible({ timeout: 15_000 });
+  const afila = page.getByTestId("afila-area");
+  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach).or(chino).or(clase).or(hdpArea).or(larryHdp).or(afila)).toBeVisible({ timeout: 15_000 });
+  if (await afila.isVisible()) {
+    // completa la primera horma y choca
+    const r = await playAfila(page);
+    const v = afilaCheck(seed, r.events);
+    return v.ok ? v.score : -1;
+  }
   if (await larryHdp.isVisible()) {
     // arma una bien y erra tres
     const r = await playLarryHdp(page, seed, 1, 3);
@@ -168,7 +177,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "Nach y la roca", "servila justa", "fumate algo chino", "clase con el bro", "hij@ de p**", "Larry en la hdp"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "Nach y la roca", "servila justa", "fumate algo chino", "clase con el bro", "hij@ de p**", "Larry en la hdp", "Big Bro afila"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 

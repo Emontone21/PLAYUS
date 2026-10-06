@@ -22,6 +22,7 @@ import { ChinoDev } from "@/games/fumate-algo-chino/dev";
 import { ClaseDev } from "@/games/clase-con-el-bro/dev";
 import { HdpDev } from "@/games/hdp/dev";
 import { LarryHdpDev } from "@/games/larry-en-la-hdp/dev";
+import { AfilaDev } from "@/games/big-bro-afila/dev";
 
 // Prueba un juego sin servidor ni ronda. Libre en desarrollo; en producción,
 // solo para el admin (decisión 238): para cualquier otra persona es 404.
@@ -57,6 +58,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "big-bro-afila" ? (
+        <AfilaDev seed={seed} from={Math.max(1, Math.min(8, Number(desde) || 1))} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "larry-en-la-hdp" ? (
         <LarryHdpDev seed={seed} from={Math.max(1, Math.min(30, Number(desde) || 1))} />
       ) : game.id === "hdp" ? (

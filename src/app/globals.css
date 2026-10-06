@@ -327,6 +327,10 @@ body {
 .larry-pop {
   animation: larry-pop 700ms ease-out both;
 }
+/* "Big Bro afila": el +10 o +25 de la horma partida (el mismo salto) */
+.afila-pop {
+  animation: larry-pop 700ms ease-out both;
+}
 
 /* con reducir movimiento: nada se mueve salvo el feedback de los botones (que
    es instantáneo) y el FLIP del ranking se resuelve al instante; el teléfono
@@ -343,7 +347,8 @@ body {
   .larry-flip {
     animation: none;
   }
-  .larry-pop {
+  .larry-pop,
+  .afila-pop {
     animation: none;
     transform: translate(-50%, 0);
   }

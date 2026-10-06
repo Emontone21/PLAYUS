@@ -1,7 +1,7 @@
 // Big Bro, el chef grandote de la hdp (gorro alto, chaqueta, delantal y
 // bigote), compartido por los juegos donde aparece: "clase con el bro",
-// "hij@ de p**" y "Larry en la hdp". Un sprite de 44 × 36 armado con tres
-// piezas (gorro, cara y cuerpo) y cinco poses. Mapas de letras, sin DOM.
+// "hij@ de p**", "Larry en la hdp" y "Big Bro afila". Un sprite de 44 × 36
+// armado con tres piezas (gorro, cara y cuerpo) y seis poses. Mapas de letras, sin DOM.
 
 import { buildSprite as build, OUTLINE, type Sprite } from "./sprites";
 
@@ -10,10 +10,11 @@ const K = OUTLINE;
 /**
  * Las poses: espera (brazos cruzados), contento (pulgar arriba), cuchilla
  * (cara roja y los brazos en alto con la cuchilla, la de clase con el bro),
- * enojado (cara roja y brazos cruzados) y grita (cara roja, señalando con el
- * brazo estirado a la izquierda).
+ * enojado (cara roja y brazos cruzados), grita (cara roja, señalando con el
+ * brazo estirado a la izquierda) y tira (la cara de siempre y los brazos en
+ * alto con la cuchilla, la de "Big Bro afila").
  */
-export type BigBroPose = "espera" | "contento" | "cuchilla" | "enojado" | "grita";
+export type BigBroPose = "espera" | "contento" | "cuchilla" | "enojado" | "grita" | "tira";
 
 export const BIG_BRO_PALETTE: Record<string, string> = {
   K,
@@ -164,8 +165,8 @@ const cache = new Map<BigBroPose, Sprite>();
 export function bigBroSprite(pose: BigBroPose): Sprite {
   let s = cache.get(pose);
   if (!s) {
-    const face = pose === "espera" || pose === "contento" ? FACE[pose] : FACE.enojado;
-    const body = pose === "grita" ? pointingBody() : pose === "cuchilla" ? BODY.enojado : pose === "enojado" ? BODY.espera : BODY[pose];
+    const face = pose === "espera" || pose === "contento" ? FACE[pose] : pose === "tira" ? FACE.espera : FACE.enojado;
+    const body = pose === "grita" ? pointingBody() : pose === "cuchilla" || pose === "tira" ? BODY.enojado : pose === "enojado" ? BODY.espera : BODY[pose];
     s = build([...HAT, ...face, ...body], BIG_BRO_PALETTE);
     cache.set(pose, s);
   }
