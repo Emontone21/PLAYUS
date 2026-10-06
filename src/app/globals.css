@@ -332,6 +332,27 @@ body {
   animation: larry-pop 700ms ease-out both;
 }
 
+/* "Nach salta": los carteles grandes entran con un rebote */
+@keyframes nach-bounce {
+  0% {
+    transform: translate(-50%, -40px) scale(0.6);
+    opacity: 0;
+  }
+  55% {
+    transform: translate(-50%, 6px) scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(-50%, -3px) scale(0.98);
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+.nach-bounce {
+  animation: nach-bounce 520ms ease-out both;
+}
+
 /* con reducir movimiento: nada se mueve salvo el feedback de los botones (que
    es instantáneo) y el FLIP del ranking se resuelve al instante; el teléfono
    del aviso aparece ya girado */
@@ -348,7 +369,8 @@ body {
     animation: none;
   }
   .larry-pop,
-  .afila-pop {
+  .afila-pop,
+  .nach-bounce {
     animation: none;
     transform: translate(-50%, 0);
   }

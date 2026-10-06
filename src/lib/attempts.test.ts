@@ -29,9 +29,10 @@ import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
 import { botTrace as claseTrace } from "@/games/clase-con-el-bro/rules";
-import { botTrace as hdpTrace } from "@/games/hdp/rules";
-import { botTrace as larryHdpTrace, MODEL as larryHdpModel } from "@/games/larry-en-la-hdp/rules";
+import { botTrace as hdpTrace, simulate as hdpSimulate } from "@/games/hdp/rules";
+import { botTrace as larryHdpTrace } from "@/games/larry-en-la-hdp/rules";
 import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
+import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -320,9 +321,14 @@ function validResult(gameId: string, seed: string, n: number) {
     return { score: result.score, events };
   }
   if (gameId === "hdp") {
-    // el jugador modelo juega los 60 s enteros
-    const { events, result } = hdpTrace(seed, { reactionTicks: 36, jitterTicks: 24, errorPerMille: 200, swipeGapTicks: 36 });
-    return { score: result.score, events };
+    // el jugador modelo, cortado a los 58 s: el intento de prueba dura minDurationMs + 500 ms (58,5 s), y una partida de 60 s sería más larga que el intento
+    const swipes = hdpTrace(seed, { reactionTicks: 36, jitterTicks: 24, errorPerMille: 200, swipeGapTicks: 36 }).events.filter((e): e is { tick: number; slot: 0 | 1 | 2 | 3; dir: "up" | "down" | "left" | "right" } => !("fin" in e) && e.tick < 3480);
+    return { score: hdpSimulate(seed, swipes, 3480).score, events: [...swipes, { tick: 3480, fin: true }] };
+  }
+  if (gameId === "nach-salta") {
+    // el jugador justo corre 3 s y el cierre queda ahí: el intento de prueba dura minDurationMs + 500 ms
+    const { events, state } = nachSaltaTrace(seed, { reaction: 15, untilTick: 180 });
+    return { score: Math.floor(state.dist / 1000), events };
   }
   if (gameId === "big-bro-afila") {
     // el jugador justo tira hasta 1 s y el cierre queda ahí: el intento de prueba dura minDurationMs + 500 ms
@@ -330,8 +336,8 @@ function validResult(gameId: string, seed: string, n: number) {
     return { score: state.score, events };
   }
   if (gameId === "larry-en-la-hdp") {
-    // el jugador modelo hasta los 10 s: el intento de prueba dura minDurationMs + 500 ms
-    const { events, run } = larryHdpTrace(seed, { ...larryHdpModel, until: 10_000 });
+    // un jugador sin errores hasta los 10 s (arma el primer pedido, así suma): el intento de prueba dura minDurationMs + 500 ms
+    const { events, run } = larryHdpTrace(seed, { firstTap: [500, 500], tapGap: [300, 300], until: 10_000 });
     return { score: run.score, events };
   }
   if (gameId === "clase-con-el-bro") {

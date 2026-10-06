@@ -6,6 +6,7 @@
 
 import { integerScale, px } from "../lib/canvas-scale";
 import { spriteCanvas } from "../lib/sprites";
+import { STREET } from "../lib/nach";
 import { textSprite } from "../lib/font";
 import { CHANGE_TICKS, DIST, hitLane, INVULN_TICKS, LANES, rockLaneAt, ROLL_TICKS, type Course, type Lane, type Row, type SimState } from "./rules";
 import { FIELD_H, FIELD_W, nachDownSprite, nachSprite, noteSprite, ROCK_PIECE, rockSprite, type NachPose, type RockSize } from "./sprites";
@@ -29,14 +30,15 @@ export const ROAD_HALF_NEAR = 52;
 export const ROAD_HALF_FAR = 5;
 export const LANE_W_NEAR = (ROAD_HALF_NEAR * 2) / LANES;
 
-const SKY = "#0B1020";
-const ROAD = "#2A2D3A";
-const ROAD_FAR = "#1C1F2A";
-const LINE = "#6B6F80";
-const CURB = "#3C4050";
-const BUILDING = "#151826";
-const BUILDING_2 = "#1C2033";
-const NEONS = ["#FF6F91", "#6FD3E0", "#FFD34E", "#8EDC66", "#C58CFF"];
+// la paleta de la calle es la compartida con "Nach salta" (games/lib/nach)
+const SKY = STREET.sky;
+const ROAD = STREET.road;
+const ROAD_FAR = STREET.roadFar;
+const LINE = STREET.line;
+const CURB = STREET.curb;
+const BUILDING = STREET.building;
+const BUILDING_2 = STREET.building2;
+const NEONS = STREET.neons;
 
 /** la escala de algo a profundidad z (mm por delante de The Nach): 1 en z = 0, 0 en el horizonte */
 export function scaleAt(z: number): number {
@@ -142,7 +144,7 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SimState, course: C
     const x = Math.round(FIELD_W / 2 + half + 4 * sc + 2);
     const y = Math.round(yAt(z));
     const h = Math.max(2, Math.round(26 * sc));
-    ctx.fillStyle = "#3A3D47";
+    ctx.fillStyle = STREET.lamp;
     ctx.fillRect(x, y - h, 1, h);
     ctx.fillStyle = "#FFD34E";
     ctx.fillRect(x - 1, y - h - 1, 3, Math.max(1, Math.round(2 * sc)));
@@ -262,7 +264,7 @@ function paintBuildings(ctx: CanvasRenderingContext2D, d: number): void {
       ctx.fillStyle = (Math.floor((d + zz) / 6000) & 1) === 0 ? BUILDING : BUILDING_2;
       ctx.fillRect(x0, Math.round(y - h), w, h);
       // ventanas
-      ctx.fillStyle = "#3A3F55";
+      ctx.fillStyle = STREET.window;
       for (let wy = y - h + 3 * sc; wy < y - 3; wy += 6 * sc) {
         for (let wx = x0 + 2 * sc; wx < x0 + w - 2; wx += 5 * sc) ctx.fillRect(Math.round(wx), Math.round(wy), Math.max(1, Math.round(2 * sc)), Math.max(1, Math.round(2 * sc)));
       }
