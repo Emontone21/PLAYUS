@@ -112,7 +112,9 @@ function sqlProd<T>(sql: string): T[] {
   tmp ??= mkdtempSync(join(tmpdir(), "e2e-hoy-"));
   const file = join(tmp, `q${n++}.sql`);
   writeFileSync(file, sql);
-  const raw = execFileSync("npx", ["supabase", "db", "query", "--linked", "-o", "json", "-f", file], { encoding: "utf8", shell: true, stdio: ["ignore", "pipe", "inherit"] });
+  // SUPABASE_CLI elige el paquete de la CLI (por ejemplo "supabase@2.119.0" si la última no corre en esta máquina)
+  const cli = process.env.SUPABASE_CLI ?? "supabase";
+  const raw = execFileSync("npx", ["--prefer-offline", "-y", cli, "db", "query", "--linked", "-o", "json", "-f", file], { encoding: "utf8", shell: true, stdio: ["ignore", "pipe", "inherit"] });
   const i = raw.indexOf("{");
   if (i < 0) return [];
   return (JSON.parse(raw.slice(i)).rows ?? []) as T[];
