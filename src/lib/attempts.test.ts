@@ -30,6 +30,7 @@ import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/s
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
 import { botTrace as claseTrace } from "@/games/clase-con-el-bro/rules";
 import { botTrace as hdpTrace } from "@/games/hdp/rules";
+import { botTrace as larryHdpTrace, MODEL as larryHdpModel } from "@/games/larry-en-la-hdp/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -321,6 +322,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // el jugador modelo juega los 60 s enteros
     const { events, result } = hdpTrace(seed, { reactionTicks: 36, jitterTicks: 24, errorPerMille: 200, swipeGapTicks: 36 });
     return { score: result.score, events };
+  }
+  if (gameId === "larry-en-la-hdp") {
+    // el jugador modelo hasta los 10 s: el intento de prueba dura minDurationMs + 500 ms
+    const { events, run } = larryHdpTrace(seed, { ...larryHdpModel, until: 10_000 });
+    return { score: run.score, events };
   }
   if (gameId === "clase-con-el-bro") {
     // tres cortes del resolvedor con las pausas: la partida dura unos 6 s

@@ -6,22 +6,14 @@
 // entre ticks con `alpha`.
 
 import { px } from "../lib/canvas-scale";
-import { spriteCanvas } from "../lib/sprites";
+import { blit as at, KITCHEN, paintGriddle, paintHood, paintNeonSign, paintTiles } from "../lib/hdp-kitchen";
 import { textSprite } from "../lib/font";
 import { BLOCK_TICKS, BURNT_TICKS, remaining, SERVE_TICKS, type Dir, type Mood, type SimState, type Slot } from "./rules";
-import { ARROW, arrowSprite, broSprite, BRO_W, FIELD_H, FIELD_W, GRIDDLE, LENGUA, neonSprite, LUCIERNAGA, PATTY_H, PATTY_W, pattySprite, puffSprite, SLOT_CENTERS, spatulaSprite, spatulaSpriteVertical, SPLIT_X, SPLIT_Y, ZOOM, type PattyLook } from "./sprites";
+import { ARROW, arrowSprite, broSprite, BRO_W, FIELD_H, FIELD_W, GRIDDLE, LENGUA, LUCIERNAGA, PATTY_H, PATTY_W, pattySprite, puffSprite, SLOT_CENTERS, spatulaSprite, spatulaSpriteVertical, SPLIT_X, SPLIT_Y, ZOOM, type PattyLook } from "./sprites";
 
 export const OUTLINE = "#141414";
-const TILE = "#CFE3DD";
-const TILE_LINE = "#9DBFB6";
-const HOOD = "#4A4F57";
-const HOOD_DARK = "#33373D";
-const METAL = "#8C9096";
-const METAL_DARK = "#6E7279";
-const METAL_LIGHT = "#A4A8AE";
+const METAL_DARK = KITCHEN.metalDark;
 const SPOT = "#5C6067";
-const NEON = "#FF6F91";
-const NEON_SOFT = "#FFB3C6";
 /** el giro de la hamburguesa dura esto (ticks); con reducir movimiento, un cuadro */
 export const FLIP_TICKS = 12;
 /** el "+1" sube durante esto */
@@ -46,11 +38,6 @@ function offscreen(): HTMLCanvasElement {
   return off;
 }
 
-function at(ctx: CanvasRenderingContext2D, key: string, sprite: ReturnType<typeof pattySprite>, x: number, y: number, w = sprite.w, h = sprite.h): void {
-  const c = spriteCanvas(key, sprite, 1);
-  ctx.drawImage(c, 0, 0, sprite.w, sprite.h, Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
-}
-
 /** cómo se ve la carne según la fase y cuánto lleva cocinándose */
 export function pattyLook(slot: Slot, tick: number): PattyLook {
   if (slot.phase === "burnt") return "quemada";
@@ -73,53 +60,14 @@ export function paintScene(ctx: CanvasRenderingContext2D, s: SimState, o: DrawOp
   ctx.imageSmoothingEnabled = false;
   const t = s.tick + o.alpha;
   const Z = ZOOM;
-  // la pared de azulejos
-  ctx.fillStyle = TILE;
-  ctx.fillRect(0, 0, FIELD_W, GRIDDLE.y);
-  ctx.fillStyle = TILE_LINE;
-  for (let y = 8; y < GRIDDLE.y; y += 12) ctx.fillRect(0, y, FIELD_W, 1);
-  for (let row = 0; row * 12 - 4 < GRIDDLE.y; row++) for (let x = row % 2 ? 6 : 0; x < FIELD_W; x += 12) ctx.fillRect(x, Math.max(0, row * 12 - 4), 1, 12);
-  // la campana de extracción, arriba a la derecha (sobre Big Bro)
-  ctx.fillStyle = HOOD;
-  ctx.beginPath();
-  ctx.moveTo(80, 0);
-  ctx.lineTo(140, 0);
-  ctx.lineTo(144, 14);
-  ctx.lineTo(74, 14);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle = HOOD_DARK;
-  ctx.fillRect(74, 13, 70, 2);
-  ctx.fillRect(104, 0, 12, 3);
-  for (let x = 86; x < 136; x += 6) ctx.fillRect(x, 8, 3, 1);
-  // el cartel de neón: "hdp" grande y, debajo, el nombre completo
-  ctx.fillStyle = "#1F2430";
-  ctx.fillRect(4, 5, 62, 35);
-  ctx.fillStyle = OUTLINE;
-  ctx.fillRect(4, 5, 62, 1);
-  ctx.fillRect(4, 39, 62, 1);
-  ctx.fillRect(4, 5, 1, 35);
-  ctx.fillRect(65, 5, 1, 35);
-  const title = neonSprite(NEON);
-  // el brillo del neón: la misma palabra corrida un poco, más clara
-  at(ctx, "hdp:neon:glow", neonSprite(NEON_SOFT), 12, 8, title.w * 4, title.h * 4);
-  at(ctx, "hdp:neon:hdp", title, 13, 9, title.w * 4, title.h * 4);
-  const sub = textSprite("hamburguesas hijas de remil puta", NEON_SOFT);
-  ctx.fillStyle = "#1F2430";
-  ctx.fillRect(4, 42, sub.w + 6, 9);
-  at(ctx, "hdp:neon:sub", sub, 7, 44);
+  // la cocina: azulejos, la campana sobre Big Bro, el cartel de neón y la plancha (games/lib/hdp-kitchen)
+  paintTiles(ctx, FIELD_W, GRIDDLE.y);
+  paintHood(ctx, 74, 144);
+  paintNeonSign(ctx, 4, 5, 4);
   // Big Bro asomado arriba a la derecha (la plancha lo tapa de la cintura para abajo)
   at(ctx, `hdp:bro:${o.mood}`, broSprite(o.mood), FIELD_W - BRO_W - 1, GRIDDLE.y - 33);
-  // la plancha
-  ctx.fillStyle = OUTLINE;
-  ctx.fillRect(GRIDDLE.x - 2, GRIDDLE.y - 2, GRIDDLE.w + 4, GRIDDLE.h + 4);
-  ctx.fillStyle = METAL;
-  ctx.fillRect(GRIDDLE.x, GRIDDLE.y, GRIDDLE.w, GRIDDLE.h);
-  ctx.fillStyle = METAL_LIGHT;
-  ctx.fillRect(GRIDDLE.x, GRIDDLE.y, GRIDDLE.w, 2);
+  paintGriddle(ctx, GRIDDLE);
   ctx.fillStyle = METAL_DARK;
-  for (let y = GRIDDLE.y + 7; y < GRIDDLE.y + GRIDDLE.h - 3; y += 8) ctx.fillRect(GRIDDLE.x + 2, y, GRIDDLE.w - 4, 1);
-  ctx.fillRect(GRIDDLE.x, GRIDDLE.y + GRIDDLE.h - 3, GRIDDLE.w, 3);
   ctx.fillRect(SPLIT_X, GRIDDLE.y + 4, 1, GRIDDLE.h - 8);
   ctx.fillRect(GRIDDLE.x + 4, SPLIT_Y, GRIDDLE.w - 8, 1);
   for (const [cx, cy] of SLOT_CENTERS) {

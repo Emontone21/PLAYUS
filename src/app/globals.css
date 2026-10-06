@@ -298,6 +298,36 @@ body {
   animation: phone-turn 2.4s ease-in-out infinite;
 }
 
+/* "Larry en la hdp": la comanda se da vuelta y el puntaje del pedido salta */
+@keyframes larry-flip {
+  from {
+    transform: perspective(400px) rotateY(90deg);
+  }
+  to {
+    transform: perspective(400px) rotateY(0deg);
+  }
+}
+.larry-flip {
+  animation: larry-flip 260ms ease-out both;
+}
+@keyframes larry-pop {
+  from {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -6px) scale(1.15);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -24px) scale(1);
+    opacity: 0;
+  }
+}
+.larry-pop {
+  animation: larry-pop 700ms ease-out both;
+}
+
 /* con reducir movimiento: nada se mueve salvo el feedback de los botones (que
    es instantáneo) y el FLIP del ranking se resuelve al instante; el teléfono
    del aviso aparece ya girado */
@@ -308,6 +338,14 @@ body {
   .phone-turn {
     animation: none;
     transform: rotate(-90deg);
+  }
+  /* la comanda se tapa de golpe y el puntaje del pedido aparece quieto */
+  .larry-flip {
+    animation: none;
+  }
+  .larry-pop {
+    animation: none;
+    transform: translate(-50%, 0);
   }
   * {
     transition-duration: 0.01ms !important;

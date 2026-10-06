@@ -1,43 +1,20 @@
 // Pixel art de "hij@ de p**": las hamburguesas en cada estado, las flechas,
-// la espátula, el humo y el dedo de la previa. Big Bro es el mismo chef de
-// clase con el bro (se importa su sprite). Mapas de letras, sin DOM.
+// la espátula, el humo y el dedo de la previa. Big Bro y la cocina vienen de
+// games/lib (big-bro, hdp-kitchen). Mapas de letras, sin DOM.
 
 import { buildSprite as build, OUTLINE, type Sprite } from "../lib/sprites";
-import { BRO_PARTS, broSprite as claseBro } from "../clase-con-el-bro/sprites";
+import { BIG_BRO_H, BIG_BRO_W, bigBroSprite } from "../lib/big-bro";
 
 export type { Sprite };
-export { BRO_H, BRO_W } from "../clase-con-el-bro/sprites";
+export const BRO_W = BIG_BRO_W;
+export const BRO_H = BIG_BRO_H;
 
 const K = OUTLINE;
 
-/**
- * Las caras de Big Bro en hdp: espera (brazos cruzados) y contento (pulgar
- * arriba) son las de clase con el bro; enojado es la cara roja con los
- * brazos cruzados (sin la cuchilla), y grita es la cara roja señalando la
- * plancha con el brazo estirado a la izquierda.
- */
+/** las caras de Big Bro en hdp (games/lib/big-bro): espera, contento, enojado (brazos cruzados) y grita (señalando) */
 export type BroMood = "espera" | "contento" | "enojado" | "grita";
-
-function pointingBody(): string[] {
-  const rows = BRO_PARTS.BODY.espera.map((r) => r.split(""));
-  // sin los brazos cruzados
-  for (let y = 4; y <= 6; y++) for (let x = 8; x <= 32; x++) rows[y]![x] = "W";
-  // el brazo estirado hacia la plancha, con el índice
-  const ARM = ["KKKKKK", "SSSSWW", "KSSSWW", ".KKKKK"];
-  ARM.forEach((line, dy) => line.split("").forEach((c, dx) => c !== "." && (rows[2 + dy]![dx] = c)));
-  return rows.map((r) => r.join(""));
-}
-
-const hdpBroCache = new Map<BroMood, Sprite>();
 export function broSprite(mood: BroMood): Sprite {
-  if (mood === "espera" || mood === "contento") return claseBro(mood);
-  let s = hdpBroCache.get(mood);
-  if (!s) {
-    const body = mood === "grita" ? pointingBody() : BRO_PARTS.BODY.espera;
-    s = build([...BRO_PARTS.HAT, ...BRO_PARTS.FACE.enojado, ...body], BRO_PARTS.PALETTE);
-    hdpBroCache.set(mood, s);
-  }
-  return s;
+  return bigBroSprite(mood);
 }
 
 /** la vista: 144 × 184 unidades, en vertical */
@@ -59,28 +36,7 @@ export const SLOT_CENTERS: readonly [number, number][] = [
 /** la hamburguesa, la flecha, la espátula y el humo se dibujan al doble */
 export const ZOOM = 2;
 
-export const PATTY_W = 16;
-export const PATTY_H = 9;
-export type PattyLook = "cruda" | "dorando1" | "dorando2" | "dorando3" | "quemada";
-export const PATTY_LOOKS: readonly PattyLook[] = ["cruda", "dorando1", "dorando2", "dorando3", "quemada"];
-
-const PATTY_ROWS = ["...KKKKKKKKKK...", ".KKxxxxxxxxxxKK.", "KxxxxxxxxxxxxxxK", "KxxyxxxxxxxxyxxK", "KxxxxxxyyxxxxxxK", "KxyxxxxxxxxxxyxK", "KxxxxxxxxxxxxxxK", ".KKxxxxxxxxxxKK.", "...KKKKKKKKKK..."];
-const PATTY_COLORS: Record<PattyLook, { x: string; y: string }> = {
-  cruda: { x: "#E89A9A", y: "#D27F7F" },
-  dorando1: { x: "#D08868", y: "#B57052" },
-  dorando2: { x: "#A95A38", y: "#8E4A2C" },
-  dorando3: { x: "#7E3E22", y: "#653018" },
-  quemada: { x: "#221E1C", y: "#0F0D0C" },
-};
-const pattyCache = new Map<PattyLook, Sprite>();
-export function pattySprite(look: PattyLook): Sprite {
-  let s = pattyCache.get(look);
-  if (!s) {
-    s = build(PATTY_ROWS, { K, ...PATTY_COLORS[look] });
-    pattyCache.set(look, s);
-  }
-  return s;
-}
+export { PATTY_H, PATTY_LOOKS, PATTY_W, pattySprite, type PattyLook } from "../lib/hdp-kitchen";
 
 /** la flecha, 9 × 9, en --luciernaga con contorno oscuro */
 export const ARROW = 9;
@@ -141,16 +97,4 @@ let finger: Sprite | null = null;
 export function fingerSprite(): Sprite {
   finger ??= build(FINGER_ROWS, { K, S: "#E0A67A" });
   return finger;
-}
-
-/** el "hdp" del cartel de neón, en minúscula con la p colgando (11 × 7); la fuente compartida no tiene descendentes */
-const NEON_ROWS = ["K.....K....", "K.....K....", "KKK.KKK.KKK", "K.K.K.K.K.K", "K.K.KKK.KKK", "........K..", "........K.."];
-const neonCache = new Map<string, Sprite>();
-export function neonSprite(color: string): Sprite {
-  let s = neonCache.get(color);
-  if (!s) {
-    s = build(NEON_ROWS, { K: color });
-    neonCache.set(color, s);
-  }
-  return s;
 }
