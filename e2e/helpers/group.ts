@@ -28,7 +28,6 @@ const GAME_IDS: Record<string, string> = {
   "colgado del 121": "colgado-del-121",
   "apila las boludeces": "apila-las-boludeces",
   "la mayo": "la-mayo",
-  "Nach y la roca": "nach-y-la-roca",
   "servila justa": "servila-justa",
   "fumate algo chino": "fumate-algo-chino",
   "clase con el bro": "clase-con-el-bro",

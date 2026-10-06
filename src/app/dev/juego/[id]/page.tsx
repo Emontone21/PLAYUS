@@ -16,7 +16,6 @@ import { ParisDev } from "@/games/busca-los-paris/dev";
 import { ColgadoDev } from "@/games/colgado-del-121/dev";
 import { TorreDev } from "@/games/apila-las-boludeces/dev";
 import { MayoDev } from "@/games/la-mayo/dev";
-import { NachDev } from "@/games/nach-y-la-roca/dev";
 import { ServilaDev } from "@/games/servila-justa/dev";
 import { ChinoDev } from "@/games/fumate-algo-chino/dev";
 import { ClaseDev } from "@/games/clase-con-el-bro/dev";
@@ -73,8 +72,6 @@ export default async function DevGamePage({
         <ChinoDev seed={seed} from={Math.max(0, Math.min(2, Number(desde) || 0))} fullPath={todo === "1"} debug={datos === "1"} solver={resolver === "1"} />
       ) : game.id === "servila-justa" ? (
         <ServilaDev seed={seed} from={Math.max(0, Math.min(7, Number(desde) || 0))} debug={datos === "1"} slow={lento === "1"} predict={prediccion === "1"} />
-      ) : game.id === "nach-y-la-roca" ? (
-        <NachDev seed={seed} from={Math.max(0, Math.min(2000, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "la-mayo" ? (
         <MayoDev seed={seed} from={Math.max(0, Math.min(59, Number(desde) || 0))} debug={datos === "1"} slow={lento === "1"} />
       ) : game.id === "apila-las-boludeces" ? (

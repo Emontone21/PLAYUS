@@ -1,7 +1,7 @@
 // Pixel art de "Nach salta": lo que está en el aire (el cartel de neón
 // colgado, las zapatillas del cable y la paloma con dos cuadros de aleteo).
 // The Nach de costado, las rocas y la paleta de la calle vienen de
-// games/lib/nach (los comparte con "Nach y la roca"). Mapas de letras, sin DOM.
+// games/lib/nach. Mapas de letras, sin DOM.
 
 import { buildSprite as build, OUTLINE, type Sprite } from "../lib/sprites";
 

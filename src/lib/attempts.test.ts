@@ -25,7 +25,6 @@ import { generatePlan as torrePlan, simulate as torreSimulate, swayX as torreSwa
 import { loadRapier, type Rapier } from "@/games/apila-las-boludeces/physics";
 import { loadSeasonSeries } from "@/lib/season-series";
 import { botTrace as mayoTrace } from "@/games/la-mayo/rules";
-import { simulate as nachSimulate } from "@/games/nach-y-la-roca/rules";
 import { botTrace as servilaTrace, simulate as servilaSimulate } from "@/games/servila-justa/rules";
 import { botTrace as chinoTrace } from "@/games/fumate-algo-chino/rules";
 import { botTrace as claseTrace } from "@/games/clase-con-el-bro/rules";
@@ -354,11 +353,6 @@ function validResult(gameId: string, seed: string, n: number) {
     // el jugador perfecto sirve dos vasos y el cronómetro corta a los 10 s (tick 600): el intento de prueba dura minDurationMs + 500 ms
     const taps = servilaTrace(seed, { maxGlasses: 2 }).events.filter((e) => !("fin" in e)) as { tick: number; action: "down" | "up" }[];
     return { score: servilaSimulate(seed, taps, 600).score, events: [...taps, { tick: 600, fin: true }] };
-  }
-  if (gameId === "nach-y-la-roca") {
-    // sin moverse, el cronómetro corta a los 2,5 s (tick 150): unos 20 m
-    const r = nachSimulate(seed, [], 150);
-    return { score: r.score, events: [{ tick: 150, fin: true }] };
   }
   if (gameId === "la-mayo") {
     // emboca dos y el cronómetro corta a los 2,5 s (tick 150)

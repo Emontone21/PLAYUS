@@ -13,7 +13,6 @@ import { playColgado } from "./helpers/colgado";
 import { playTorre } from "./helpers/torre";
 import { playMayo } from "./helpers/mayo";
 import { playServila } from "./helpers/servila";
-import { playNach } from "./helpers/nach";
 import { playChino } from "./helpers/chino";
 import { playClase } from "./helpers/clase";
 import { playHdp } from "./helpers/hdp";
@@ -67,14 +66,13 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   const torre = page.getByTestId("torre-area");
   const mayo = page.getByTestId("mayo-area");
   const servila = page.getByTestId("servila-area");
-  const nach = page.getByTestId("nach-area");
   const chino = page.getByTestId("chino-area");
   const clase = page.getByTestId("clase-area");
   const hdpArea = page.getByTestId("hdp-area");
   const larryHdp = page.getByTestId("larryhdp-area");
   const afila = page.getByTestId("afila-area");
   const nachSalta = page.getByTestId("nachsalta-area");
-  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(nach).or(chino).or(clase).or(hdpArea).or(larryHdp).or(afila).or(nachSalta)).toBeVisible({ timeout: 15_000 });
+  await expect(piba.or(tarado).or(larry).or(remar).or(parrilla).or(jota).or(caminando).or(rastas).or(sunny).or(paris).or(colgado).or(torre).or(mayo).or(servila).or(chino).or(clase).or(hdpArea).or(larryHdp).or(afila).or(nachSalta)).toBeVisible({ timeout: 15_000 });
   if (await nachSalta.isVisible()) {
     // salta las dos primeras rocas y choca
     const r = await playNachSalta(page, seed, 2);
@@ -108,10 +106,6 @@ async function playToday(page: Page, hits = 4): Promise<number> {
   if (await servila.isVisible()) {
     const r = await playServila(page, seed, 1);
     return r.score;
-  }
-  if (await nach.isVisible()) {
-    const r = await playNach(page, seed, 6);
-    return r.meters;
   }
   if (await mayo.isVisible()) {
     const r = await playMayo(page, Math.min(5, hits));
@@ -186,7 +180,7 @@ test("dos personas juegan el juego del día, ven el ranking en vivo y al día si
   await a.page.goto("/hoy");
   await expect(a.page.getByTestId("today-game")).toBeVisible();
   const gameName = (await a.page.getByTestId("today-game-name").textContent())?.trim() ?? "";
-  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "Nach y la roca", "servila justa", "fumate algo chino", "clase con el bro", "hij@ de p**", "Larry en la hdp", "Big Bro afila", "Nach salta"]).toContain(gameName);
+  expect(["encontrá a la piba del IPA", "quedó re tarado", "los deseos de Larry", "remar vuelve a casa", "la parrilla del bro", "pegándole al jota", "caminando por 18", "rastitas rastotas", "pisteando el sunny", "buscá los Paris", "colgado del 121", "apila las boludeces", "la mayo", "servila justa", "fumate algo chino", "clase con el bro", "hij@ de p**", "Larry en la hdp", "Big Bro afila", "Nach salta"]).toContain(gameName);
   await expect(a.page.getByTestId("attempts-left")).toContainText("te quedan 3 intentos");
   await expect(a.page.getByTestId("participants")).toContainText("todavía nadie jugó hoy");
 

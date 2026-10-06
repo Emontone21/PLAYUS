@@ -40,8 +40,7 @@ import {
   type TraceEvent,
 } from "./rules";
 import { signsAt, SIGNS, zoneFor } from "./index";
-import { nachSideSprite, nachSprite as libBack, rockSprite as libRock, STREET } from "../lib/nach";
-import { nachSprite as rocaBack, rockSprite as rocaRock } from "../nach-y-la-roca/sprites";
+import { nachSideSprite, rockSprite, STREET } from "../lib/nach";
 
 const SEED = "intento-1";
 const SEEDS = Array.from({ length: 1000 }, (_, i) => `semilla-${i}`);
@@ -257,14 +256,13 @@ describe("control y carteles", () => {
 
 describe("The Nach compartido", () => {
   it("los sprites y la paleta vienen de games/lib/nach, sin copias; los de costado tienen sus 7 poses", () => {
-    expect(rocaBack).toBe(libBack);
-    expect(rocaRock).toBe(libRock);
     expect(STREET.neons).toHaveLength(5);
-    for (const f of ["../nach-y-la-roca/sprites.ts", "./sprites.ts", "./draw.ts", "../nach-y-la-roca/draw.ts"]) {
+    expect([rockSprite(1).w, rockSprite(3).h]).toEqual([SIZES.small.w / 100, SIZES.big.h / 100]);
+    for (const f of ["./sprites.ts", "./draw.ts", "./index.tsx"]) {
       const src = readFileSync(new URL(f, import.meta.url), "utf8");
-      expect(src, f).not.toContain("..KHhHKSSKHhHK.."); // los auriculares de espaldas
       expect(src, f).not.toContain("KLLRRK"); // las rocas
       expect(src, f).not.toContain('"#FF6F91", "#6FD3E0", "#FFD34E", "#8EDC66"'); // los neones
+      expect(src, f).not.toContain("KMMMKPPpPPPK"); // The Nach de costado
     }
     for (const pose of ["run0", "run1", "run2", "run3", "jump"] as const) expect([nachSideSprite(pose).w, nachSideSprite(pose).h]).toEqual([16, 24]);
     expect(nachSideSprite("duck").h).toBe(12);

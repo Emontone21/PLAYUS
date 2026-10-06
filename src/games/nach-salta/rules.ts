@@ -131,7 +131,7 @@ export interface Obstacle {
   gi: number;
 }
 
-/** las medidas de cada cosa (mm): las rocas salen de los sprites de "Nach y la roca" a 100 mm por unidad */
+/** las medidas de cada cosa (mm): las rocas salen de sus sprites (games/lib/nach) a 100 mm por unidad */
 export const SIZES = {
   small: { w: 1200, h: 800 },
   big: { w: 1600, h: 1400 },
