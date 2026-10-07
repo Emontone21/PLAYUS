@@ -35,6 +35,7 @@ const GAME_IDS: Record<string, string> = {
   "Larry en la hdp": "larry-en-la-hdp",
   "Big Bro afila": "big-bro-afila",
   "Nach salta": "nach-salta",
+  "la bolsita del jota": "la-bolsita-del-jota",
 };
 
 export async function createGroupWithGame(page: Page, name: string, gameName: string): Promise<string> {

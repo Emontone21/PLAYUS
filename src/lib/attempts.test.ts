@@ -32,6 +32,7 @@ import { botTrace as hdpTrace, simulate as hdpSimulate } from "@/games/hdp/rules
 import { botTrace as larryHdpTrace } from "@/games/larry-en-la-hdp/rules";
 import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
 import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
+import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
 
@@ -323,6 +324,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // el jugador modelo, cortado a los 58 s: el intento de prueba dura minDurationMs + 500 ms (58,5 s), y una partida de 60 s sería más larga que el intento
     const swipes = hdpTrace(seed, { reactionTicks: 36, jitterTicks: 24, errorPerMille: 200, swipeGapTicks: 36 }).events.filter((e): e is { tick: number; slot: 0 | 1 | 2 | 3; dir: "up" | "down" | "left" | "right" } => !("fin" in e) && e.tick < 3480);
     return { score: hdpSimulate(seed, swipes, 3480).score, events: [...swipes, { tick: 3480, fin: true }] };
+  }
+  if (gameId === "la-bolsita-del-jota") {
+    // acierta la primera ronda apenas termina la mezcla (unos 3 s) y erra la segunda en cuanto puede: el intento de prueba dura minDurationMs + 500 ms (3,5 s)
+    const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
+    return { score: run.score, events };
   }
   if (gameId === "nach-salta") {
     // el jugador justo corre 3 s y el cierre queda ahí: el intento de prueba dura minDurationMs + 500 ms

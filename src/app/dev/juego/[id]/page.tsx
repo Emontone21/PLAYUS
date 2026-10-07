@@ -23,6 +23,7 @@ import { HdpDev } from "@/games/hdp/dev";
 import { LarryHdpDev } from "@/games/larry-en-la-hdp/dev";
 import { AfilaDev } from "@/games/big-bro-afila/dev";
 import { NachSaltaDev } from "@/games/nach-salta/dev";
+import { BolsitaDev } from "@/games/la-bolsita-del-jota/dev";
 
 // Prueba un juego sin servidor ni ronda. Libre en desarrollo; en producción,
 // solo para el admin (decisión 238): para cualquier otra persona es 404.
@@ -58,6 +59,8 @@ export default async function DevGamePage({
         <FacePreview seed={seed} initial={Number(estado) || 0} />
       ) : game.id === "los-deseos-de-larry" ? (
         <LarryDev seed={seed} from={Math.max(0, Math.min(89, Number(desde) || 0))} hitboxes={cajas === "1"} slow={lento === "1"} />
+      ) : game.id === "la-bolsita-del-jota" ? (
+        <BolsitaDev seed={seed} from={[1, 6, 10, 15].includes(Number(desde)) ? Number(desde) : 1} xray={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "nach-salta" ? (
         <NachSaltaDev seed={seed} from={[0, 150, 400, 800].includes(Number(desde)) ? Number(desde) : 0} hitboxes={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "big-bro-afila" ? (

@@ -332,6 +332,22 @@ body {
   animation: larry-pop 700ms ease-out both;
 }
 
+/* "la bolsita del jota": el número de bolsitas salta al ganar una */
+@keyframes bolsita-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.bolsita-pop {
+  animation: bolsita-pop 380ms ease-out;
+}
+
 /* "Nach salta": los carteles grandes entran con un rebote */
 @keyframes nach-bounce {
   0% {
@@ -366,6 +382,9 @@ body {
   }
   /* la comanda se tapa de golpe y el puntaje del pedido aparece quieto */
   .larry-flip {
+    animation: none;
+  }
+  .bolsita-pop {
     animation: none;
   }
   .larry-pop,
