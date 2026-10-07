@@ -28,3 +28,7 @@ public/swe-worker-*.js
 
 # config local del navegador de la app de escritorio
 .claude/launch.json
+
+# material del video promocional y sus scripts: locales, no van al repo
+video-assets/
+scripts/video-assets/
