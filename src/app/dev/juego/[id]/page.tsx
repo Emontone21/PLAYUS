@@ -20,6 +20,7 @@ import { ServilaDev } from "@/games/servila-justa/dev";
 import { ChinoDev } from "@/games/fumate-algo-chino/dev";
 import { ClaseDev } from "@/games/clase-con-el-bro/dev";
 import { HdpDev } from "@/games/hdp/dev";
+import { CruzaDev } from "@/games/cruza-con-el-chino/dev";
 import { LarryHdpDev } from "@/games/larry-en-la-hdp/dev";
 import { AfilaDev } from "@/games/big-bro-afila/dev";
 import { NachSaltaDev } from "@/games/nach-salta/dev";
@@ -37,11 +38,11 @@ export default async function DevGamePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string; prediccion?: string; todo?: string; resolver?: string; vertices?: string; areas?: string }>;
+  searchParams: Promise<{ seed?: string; map?: string; estado?: string; desde?: string; cajas?: string; lento?: string; x2?: string; donpasta?: string; coords?: string; redbull?: string; eje?: string; auto?: string; datos?: string; reposo?: string; libre?: string; prediccion?: string; todo?: string; resolver?: string; vertices?: string; areas?: string; camino?: string }>;
 }) {
   if (!(await devToolsAllowed())) notFound();
   const { id } = await params;
-  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre, prediccion, todo, resolver, vertices, areas } = await searchParams;
+  const { seed = "dev", map, estado, desde, cajas, lento, x2, donpasta, coords, redbull, eje, auto, datos, reposo, libre, prediccion, todo, resolver, vertices, areas, camino } = await searchParams;
   const game = getGame(id);
   if (!game) notFound();
 
@@ -67,6 +68,8 @@ export default async function DevGamePage({
         <AfilaDev seed={seed} from={Math.max(1, Math.min(8, Number(desde) || 1))} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "larry-en-la-hdp" ? (
         <LarryHdpDev seed={seed} from={Math.max(1, Math.min(30, Number(desde) || 1))} />
+      ) : game.id === "cruza-con-el-chino" ? (
+        <CruzaDev seed={seed} from={[0, 10, 30, 60].includes(Number(desde)) ? Number(desde) : 0} hitboxes={cajas === "1"} path={camino === "1"} slow={lento === "1"} />
       ) : game.id === "hdp" ? (
         <HdpDev seed={seed} from={Math.max(0, Math.min(59, Number(desde) || 0))} quadrants={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "clase-con-el-bro" ? (

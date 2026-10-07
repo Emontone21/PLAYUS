@@ -32,6 +32,7 @@ import { botTrace as hdpTrace, simulate as hdpSimulate } from "@/games/hdp/rules
 import { botTrace as larryHdpTrace } from "@/games/larry-en-la-hdp/rules";
 import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
 import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
+import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -329,6 +330,11 @@ function validResult(gameId: string, seed: string, n: number) {
     // acierta la primera ronda apenas termina la mezcla (unos 3 s) y erra la segunda en cuanto puede: el intento de prueba dura minDurationMs + 500 ms (3,5 s)
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
+  }
+  if (gameId === "cruza-con-el-chino") {
+    // cruza el primer bloque y se queda en la calle siguiente hasta que lo atropellan (unos segundos)
+    const { events, result } = cruzaTrace(seed, { blocks: 1 });
+    return { score: result.rows, events };
   }
   if (gameId === "nach-salta") {
     // el jugador justo corre 3 s y el cierre queda ahí: el intento de prueba dura minDurationMs + 500 ms

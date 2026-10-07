@@ -28,29 +28,42 @@ export interface GroupOverview {
   people: number;
 }
 
+/** trae todas las filas de a páginas de 1.000 (el tope de PostgREST), sin listas largas de ids en la URL */
+async function fetchAll<T>(what: string, page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
+  const out: T[] = [];
+  const size = 1000;
+  for (let from = 0; ; from += size) {
+    const { data, error } = await page(from, from + size - 1);
+    if (error) throw new Error(`${what}: ${error.message}`);
+    out.push(...(data ?? []));
+    if (!data || data.length < size) break;
+  }
+  return out;
+}
+
 /** todos los grupos con su hoy, su juego de hoy y sus intentos */
 export async function loadGroupsOverview(admin: AdminClient, fakeToday?: DateString | null): Promise<GroupOverview[]> {
-  const { data: groups, error } = await admin.from("groups").select("*").order("name");
-  if (error) throw new Error(`groups: ${error.message}`);
-  const list = groups ?? [];
+  const list = await fetchAll<GroupRow>("groups", (from, to) => admin.from("groups").select("*").order("name").range(from, to));
   if (list.length === 0) return [];
-  const ids = list.map((g) => g.id);
-  const [{ data: members, error: mErr }, { data: rounds, error: rErr }] = await Promise.all([
-    admin.from("group_members").select("group_id").in("group_id", ids),
-    admin.from("rounds").select("*").in("group_id", ids).order("play_date", { ascending: false }),
-  ]);
-  if (mErr) throw new Error(`group_members: ${mErr.message}`);
-  if (rErr) throw new Error(`rounds: ${rErr.message}`);
-  const memberCount = new Map<string, number>();
-  for (const m of members ?? []) memberCount.set(m.group_id, (memberCount.get(m.group_id) ?? 0) + 1);
+  // sin filtros por lista de ids (con cientos de grupos la URL se pasa de largo) y de a páginas (PostgREST corta en 1.000 filas)
   const todayOf = new Map(list.map((g) => [g.id, groupToday(g, fakeToday)]));
+  const todays = [...new Set(todayOf.values())];
+  const [members, rounds] = await Promise.all([
+    fetchAll<{ group_id: string }>("group_members", (from, to) => admin.from("group_members").select("group_id").order("group_id").range(from, to)),
+    fetchAll<RoundRow>("rounds", (from, to) => admin.from("rounds").select("*").in("play_date", todays).order("id").range(from, to)),
+  ]);
+  const memberCount = new Map<string, number>();
+  for (const m of members) memberCount.set(m.group_id, (memberCount.get(m.group_id) ?? 0) + 1);
   const todayRound = new Map<string, RoundRow>();
-  for (const r of rounds ?? []) if (r.play_date === todayOf.get(r.group_id) && !todayRound.has(r.group_id)) todayRound.set(r.group_id, r);
+  for (const r of rounds) if (r.play_date === todayOf.get(r.group_id) && !todayRound.has(r.group_id)) todayRound.set(r.group_id, r);
   const roundIds = [...todayRound.values()].map((r) => r.id);
-  const { data: attempts, error: aErr } = roundIds.length ? await admin.from("attempts").select("round_id, profile_id").in("round_id", roundIds) : { data: [], error: null };
-  if (aErr) throw new Error(`attempts: ${aErr.message}`);
+  const attempts: { round_id: string; profile_id: string }[] = [];
+  for (let i = 0; i < roundIds.length; i += 80) {
+    const ids = roundIds.slice(i, i + 80);
+    attempts.push(...(await fetchAll<{ round_id: string; profile_id: string }>("attempts", (from, to) => admin.from("attempts").select("round_id, profile_id").in("round_id", ids).order("id").range(from, to))));
+  }
   const attemptsOf = new Map<string, { n: number; people: Set<string> }>();
-  for (const a of attempts ?? []) {
+  for (const a of attempts) {
     const e = attemptsOf.get(a.round_id) ?? { n: 0, people: new Set<string>() };
     e.n++;
     e.people.add(a.profile_id);
