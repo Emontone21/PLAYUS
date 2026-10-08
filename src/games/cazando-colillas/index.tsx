@@ -1,4 +1,4 @@
-// "la rana caza colillas": la rana de Frog en el centro del estanque; a su
+// "Cazando Colillas": la rana de Frog en el centro del estanque; a su
 // alrededor vuelan colillas y, mezclados, vapeadores. Tocar un punto tira la
 // lengua hacia ahí: si la punta agarra una colilla, suma 1; si agarra un
 // vapeador, se termina. 60 segundos; gana el que come más.
@@ -252,9 +252,9 @@ function Result({ result, seed }: { result: GameResult; seed: string; cutByTimer
   );
 }
 
-export const laRanaCazaColillas: GameModule = {
-  id: "la-rana-caza-colillas",
-  name: "la rana caza colillas",
+export const cazandoColillas: GameModule = {
+  id: "cazando-colillas",
+  name: "Cazando Colillas",
   tagline: "colillas sí, vapos no.",
   howTo: ["tocá una colilla y la rana le tira la lengua", "si la lengua agarra un vapeador, se termina", "gana el que come más colillas en 60 segundos"],
   durationMs: DURATION_MS,

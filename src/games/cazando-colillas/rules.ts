@@ -1,4 +1,4 @@
-// Reglas de "la rana caza colillas": la rana de Frog en el centro, colillas y
+// Reglas de "Cazando Colillas": la rana de Frog en el centro, colillas y
 // vapeadores que vuelan alrededor con trayectorias curvas, y la lengua que
 // sale hacia donde se toca. Simulación entera a 60 ticks por segundo con 4
 // subpasos para la punta de la lengua, igual en el navegador y en Node. Todo

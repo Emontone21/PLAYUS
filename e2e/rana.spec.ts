@@ -1,5 +1,5 @@
 import { test, expect, type Browser } from "@playwright/test";
-import { botTrace, check, generateCourse, hasFreeMoment, lickBlocked, posAt, type LickEvent } from "../src/games/la-rana-caza-colillas/rules";
+import { botTrace, check, generateCourse, hasFreeMoment, lickBlocked, posAt, type LickEvent } from "../src/games/cazando-colillas/rules";
 import { createGroupWithGame } from "./helpers/group";
 import { startAndGetSeed } from "./helpers/piba";
 import { lickAt, playRana, snapOf } from "./helpers/rana";
@@ -30,7 +30,7 @@ function summary(seed: string) {
 }
 
 test("la generación, la geometría y la simulación dan exactamente lo mismo en el navegador y en Node", async ({ page }) => {
-  await page.goto("/dev/juego/la-rana-caza-colillas?seed=abc");
+  await page.goto("/dev/juego/cazando-colillas?seed=abc");
   await expect(page.getByTestId("rana-card")).toBeVisible();
   await page.waitForFunction(() => "__rana" in window);
   for (const seed of SEEDS) {
@@ -61,7 +61,7 @@ test("la generación, la geometría y la simulación dan exactamente lo mismo en
 
 test("la pantalla previa, el área, la herramienta, una lengua que no agarra nada y una que come", async ({ browser }) => {
   const a = await freshPage(browser);
-  await a.page.goto("/dev/juego/la-rana-caza-colillas?seed=abc&cajas=1");
+  await a.page.goto("/dev/juego/cazando-colillas?seed=abc&cajas=1");
   const card = a.page.getByTestId("rana-card");
   await expect(card).toContainText("comé");
   await expect(card).toContainText("ni loco");
@@ -91,7 +91,7 @@ test("la pantalla previa, el área, la herramienta, una lengua que no agarra nad
 
 test("en la ronda real: come las primeras colillas con los toques del test, agarra un vapeador y llega al ranking con el puntaje", async ({ browser }) => {
   const b = await freshPage(browser);
-  await createGroupWithGame(b.page, "Croac", "la rana caza colillas");
+  await createGroupWithGame(b.page, "Croac", "Cazando Colillas");
   await b.page.goto("/hoy/jugar");
   const seed = await startAndGetSeed(b.page);
   const played = await playRana(b.page, seed, 3);

@@ -21,7 +21,7 @@ import { ChinoDev } from "@/games/fumate-algo-chino/dev";
 import { ClaseDev } from "@/games/clase-con-el-bro/dev";
 import { HdpDev } from "@/games/hdp/dev";
 import { CruzaDev } from "@/games/cruza-con-el-chino/dev";
-import { RanaDev } from "@/games/la-rana-caza-colillas/dev";
+import { RanaDev } from "@/games/cazando-colillas/dev";
 import { LarryHdpDev } from "@/games/larry-en-la-hdp/dev";
 import { AfilaDev } from "@/games/big-bro-afila/dev";
 import { NachSaltaDev } from "@/games/nach-salta/dev";
@@ -69,7 +69,7 @@ export default async function DevGamePage({
         <AfilaDev seed={seed} from={Math.max(1, Math.min(8, Number(desde) || 1))} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "larry-en-la-hdp" ? (
         <LarryHdpDev seed={seed} from={Math.max(1, Math.min(30, Number(desde) || 1))} />
-      ) : game.id === "la-rana-caza-colillas" ? (
+      ) : game.id === "cazando-colillas" ? (
         <RanaDev seed={seed} from={[0, 20, 40, 55].includes(Number(desde)) ? Number(desde) : 0} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "cruza-con-el-chino" ? (
         <CruzaDev seed={seed} from={[0, 10, 30, 60].includes(Number(desde)) ? Number(desde) : 0} hitboxes={cajas === "1"} path={camino === "1"} slow={lento === "1"} />

@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
-import { botTrace, FIELD, type LickEvent } from "../../src/games/la-rana-caza-colillas/rules";
+import { botTrace, FIELD, type LickEvent } from "../../src/games/cazando-colillas/rules";
 
-// Juega "la rana caza colillas" desde el navegador: calcula en el test, con el
+// Juega "Cazando Colillas" desde el navegador: calcula en el test, con el
 // jugador automático de las reglas, los toques para comer las primeras
 // colillas y después uno que agarra un vapeador; mira el tick que el área
 // publica en su dataset y toca en el punto del campo correspondiente cuando

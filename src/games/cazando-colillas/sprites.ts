@@ -1,4 +1,4 @@
-// Pixel art de "la rana caza colillas": la rana de Frog (la grilla de la
+// Pixel art de "Cazando Colillas": la rana de Frog (la grilla de la
 // mascota, components/frog/frog-grid, pintada acá con la boca cerrada,
 // abierta o masticando, y en verde oscuro cuando tose), la colilla de la
 // moneda de la app (components/colilla) con alitas de mosca, el vapeador con

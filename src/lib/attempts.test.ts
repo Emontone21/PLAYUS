@@ -33,7 +33,7 @@ import { botTrace as larryHdpTrace } from "@/games/larry-en-la-hdp/rules";
 import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
 import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
 import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
-import { botTrace as ranaTrace } from "@/games/la-rana-caza-colillas/rules";
+import { botTrace as ranaTrace } from "@/games/cazando-colillas/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -335,7 +335,7 @@ function validResult(gameId: string, seed: string, n: number): { score: number; 
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
   }
-  if (gameId === "la-rana-caza-colillas") {
+  if (gameId === "cazando-colillas") {
     // come dos colillas y agarra el primer vapeador que pasa: según la semilla, eso puede tardar de 1 a 35 s, así que el intento de prueba dura lo que la partida más 500 ms
     const { events, result } = ranaTrace(seed, { reaction: 15, thenVapo: 2 });
     const endTick = events[events.length - 1]!.tick;

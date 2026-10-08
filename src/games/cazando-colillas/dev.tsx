@@ -4,13 +4,13 @@
 // trayectorias que vienen; cámara lenta a ×0,25; saltos a los 20, 40 y 55 s;
 // el jugador automático; y los sprites de la rana, la colilla y el vapeador.
 // Deja las reglas en window.__rana para el E2E.
-// /dev/juego/la-rana-caza-colillas?seed=…&cajas=1&lento=1&desde=40&auto=1
+// /dev/juego/cazando-colillas?seed=…&cajas=1&lento=1&desde=40&auto=1
 
 import * as React from "react";
 import { GameContainer } from "../container";
 import type { GameModule, GameProps } from "../types";
 import { SpriteSvg } from "../lib/sprite-svg";
-import { RanaGame, laRanaCazaColillas, toField, type RanaDevOptions } from "./index";
+import { RanaGame, cazandoColillas, toField, type RanaDevOptions } from "./index";
 import { botTrace, check, difficultyAt, generateCourse, hasFreeMoment, initialState, lickBlocked, posAt, simulate, step, validate } from "./rules";
 import { colillaSprite, frogSprite, vapoSprite } from "./sprites";
 
@@ -28,7 +28,7 @@ export function RanaDev({ seed, from = 0, debug = false, slow = false, auto = fa
     function DevRana(p: GameProps) {
       return <RanaGame {...p} dev={optsRef.current} />;
     }
-    return { ...laRanaCazaColillas, Component: DevRana };
+    return { ...cazandoColillas, Component: DevRana };
   }, []);
 
   React.useEffect(() => {

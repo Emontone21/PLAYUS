@@ -1,4 +1,4 @@
-// Dibujo de "la rana caza colillas" en un <canvas> chico (160 × 160)
+// Dibujo de "Cazando Colillas" en un <canvas> chico (160 × 160)
 // escalado entero: el estanque de noche (agua verde oscura con reflejos,
 // nenúfares alrededor), la rana de Frog sentada en un nenúfar en el centro,
 // la lengua rosa con la punta redonda, las colillas y los vapeadores con sus

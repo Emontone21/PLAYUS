@@ -21,13 +21,13 @@ import { bigBroAfila } from "./big-bro-afila";
 import { nachSalta } from "./nach-salta";
 import { laBolsitaDelJota } from "./la-bolsita-del-jota";
 import { cruzaConElChino } from "./cruza-con-el-chino";
-import { laRanaCazaColillas } from "./la-rana-caza-colillas";
+import { cazandoColillas } from "./cazando-colillas";
 
 // Registry. Agregar un juego = una línea acá. Los ids se ordenan
 // alfabéticamente para armar el mazo (decisión 6), así que el orden no importa.
 // Los juegos de relleno de la etapa 4 se borraron (decisión 114), y "Nach y
 // la roca" también (decisión 254).
-const ALL: GameModule[] = [pibaDelIpa, quedoReTarado, losDeseosDeLarry, remarVuelveACasa, laParrillaDelBro, pegandoleAlJota, caminandoPor18, rastitasRastotas, pisteandoElSunny, buscaLosParis, colgadoDel121, apilaLasBoludeces, laMayo, servilaJusta, fumateAlgoChino, claseConElBro, hdp, larryEnLaHdp, bigBroAfila, nachSalta, laBolsitaDelJota, cruzaConElChino, laRanaCazaColillas];
+const ALL: GameModule[] = [pibaDelIpa, quedoReTarado, losDeseosDeLarry, remarVuelveACasa, laParrillaDelBro, pegandoleAlJota, caminandoPor18, rastitasRastotas, pisteandoElSunny, buscaLosParis, colgadoDel121, apilaLasBoludeces, laMayo, servilaJusta, fumateAlgoChino, claseConElBro, hdp, larryEnLaHdp, bigBroAfila, nachSalta, laBolsitaDelJota, cruzaConElChino, cazandoColillas];
 
 export const GAMES: Readonly<Record<string, GameModule>> = Object.freeze(Object.fromEntries(ALL.map((g) => [g.id, g])));
 
