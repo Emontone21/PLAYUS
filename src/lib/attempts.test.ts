@@ -6,7 +6,7 @@ import { startAttempt, finishAttempt, AttemptError, attemptsUsed } from "./attem
 import { getGame } from "@/games";
 import { gameLimits } from "@/games/types";
 import { addDays, todayInTz } from "./time";
-import { attemptSeed } from "./deck";
+import { attemptSeed, roundSeed, seedProfile } from "./deck";
 import { seedPepper } from "./seed-pepper";
 import { legitTrace } from "@/games/piba-del-ipa/rules";
 import { humanTrace, scoreFor } from "@/games/quedo-re-tarado/rules";
@@ -34,6 +34,7 @@ import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
 import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
 import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
 import { botTrace as ranaTrace } from "@/games/cazando-colillas/rules";
+import { botTrace as tragoTrace, MODEL as tragoModel } from "@/games/dale-un-trago-al-pibe/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -129,7 +130,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     expect(s1.attemptsLeft).toBe(group.max_attempts - 1);
     // la semilla es por intento, no la de la ronda
     expect(s1.seed).not.toBe(round.seed);
-    expect(s1.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
+    expect(s1.seed).toBe(attemptSeed(round.seed, 1, seedPepper(), seedProfile(getGame(round.game_id)!, userA)));
 
     // "recargar": no se termina el intento 1 y se arranca otro
     const s2 = await startAttempt(admin, userA, round.id);
@@ -221,13 +222,16 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const round = await ensureRound(admin, g2, todayInTz(g2.timezone));
     const game = getGame(round.game_id)!;
     const limits = gameLimits(game);
+    process.stdout.write(`semillas: el juego del día del grupo de prueba es ${game.id}
+`);
 
-    // mismo número de intento, dos jugadores: misma semilla; y no es la de la ronda
+    // mismo número de intento, dos jugadores: misma semilla (salvo que el juego del día sea de semilla por jugador); y no es la de la ronda
     const c1 = await startAttempt(admin, userC, round.id);
     const d1 = await startAttempt(admin, userD, round.id);
-    expect(c1.seed).toBe(d1.seed);
+    if (game.seedScope === "player") expect(c1.seed).not.toBe(d1.seed);
+    else expect(c1.seed).toBe(d1.seed);
     expect(c1.seed).not.toBe(round.seed);
-    expect(c1.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
+    expect(c1.seed).toBe(attemptSeed(round.seed, 1, seedPepper(), seedProfile(game, userC)));
 
     // una traza armada con la semilla de la ronda no pasa validate (en un juego cuyo tablero depende de la semilla)
     const startedC1 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c1.attemptId).single()).data!.started_at);
@@ -241,7 +245,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const c2 = await startAttempt(admin, userC, round.id);
     expect(c2.attemptNumber).toBe(2);
     expect(c2.seed).not.toBe(c1.seed);
-    expect(c2.seed).toBe(attemptSeed(round.seed, 2, seedPepper()));
+    expect(c2.seed).toBe(attemptSeed(round.seed, 2, seedPepper(), seedProfile(game, userC)));
 
     // con la semilla del intento, el resultado se guarda
     const startedC2 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c2.attemptId).single()).data!.started_at);
@@ -254,6 +258,62 @@ describe.skipIf(!up)("intentos contra la base local", () => {
     const { data: a } = await admin.from("attempts").select("*").eq("id", c2.attemptId).single();
     expect(JSON.stringify(r)).not.toContain(c2.seed);
     expect(JSON.stringify(a)).not.toContain(c2.seed);
+  });
+
+  it("semilla por jugador (seedScope 'player'): dos jugadores del mismo grupo reciben semillas distintas, cada intento propio otra, validate usa la del jugador; con 'group' siguen recibiendo la misma", async () => {
+    const k = await keys();
+    const c = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const d = createClient<Database>(URL, k.anon, { auth: { persistSession: false } });
+    const userC = (await c.auth.signInAnonymously()).data.user!.id;
+    const userD = (await d.auth.signInAnonymously()).data.user!.id;
+    const { data: g3, error } = await c.rpc("create_group", { p_name: "test semilla por jugador" });
+    if (error) throw error;
+    const { error: jErr } = await d.rpc("join_group", { p_code: g3.invite_code });
+    if (jErr) throw jErr;
+    const round0 = await ensureRound(admin, g3, todayInTz(g3.timezone));
+    const setGame = async (gameId: string) => {
+      const seed = roundSeed(g3.id, round0.play_date, gameId);
+      const { error: uErr } = await admin.from("rounds").update({ game_id: gameId, seed }).eq("id", round0.id);
+      if (uErr) throw uErr;
+      return { ...round0, game_id: gameId, seed };
+    };
+
+    // 'player': el juego de los caños
+    const round = await setGame("dale-un-trago-al-pibe");
+    const game = getGame(round.game_id)!;
+    expect(game.seedScope).toBe("player");
+    const limits = gameLimits(game);
+    const c1 = await startAttempt(admin, userC, round.id);
+    const d1 = await startAttempt(admin, userD, round.id);
+    expect(c1.seed).not.toBe(d1.seed);
+    expect(c1.seed).toBe(attemptSeed(round.seed, 1, seedPepper(), userC));
+    expect(d1.seed).toBe(attemptSeed(round.seed, 1, seedPepper(), userD));
+    expect(c1.seed).not.toBe(attemptSeed(round.seed, 1, seedPepper()));
+    // una traza armada con la semilla del otro jugador, o con la del grupo, no pasa validate
+    const startedC1 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c1.attemptId).single()).data!.started_at);
+    const other = validResult(game.id, d1.seed, 5);
+    await expect(finishAttempt(admin, userC, c1.attemptId, other, { now: new Date(startedC1 + Math.max(limits.minDurationMs + 500, other.elapsedMs ?? 0)) })).rejects.toMatchObject({ code: "invalid_events" });
+    const c2 = await startAttempt(admin, userC, round.id);
+    expect(c2.seed).not.toBe(c1.seed);
+    expect(c2.seed).toBe(attemptSeed(round.seed, 2, seedPepper(), userC));
+    const startedC2 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c2.attemptId).single()).data!.started_at);
+    const grp = validResult(game.id, attemptSeed(round.seed, 2, seedPepper()), 5);
+    await expect(finishAttempt(admin, userC, c2.attemptId, grp, { now: new Date(startedC2 + Math.max(limits.minDurationMs + 500, grp.elapsedMs ?? 0)) })).rejects.toMatchObject({ code: "invalid_events" });
+    // con la semilla propia, se guarda
+    const c3 = await startAttempt(admin, userC, round.id);
+    const startedC3 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c3.attemptId).single()).data!.started_at);
+    const mine = validResult(game.id, c3.seed, 5);
+    const ok = await finishAttempt(admin, userC, c3.attemptId, mine, { now: new Date(startedC3 + Math.max(limits.minDurationMs + 500, mine.elapsedMs ?? 0)) });
+    expect(ok.score).toBeGreaterThan(0);
+
+    // 'group' (el default): la misma semilla para los dos, la de siempre
+    const roundG = await setGame("piba-del-ipa");
+    expect(getGame("piba-del-ipa")!.seedScope).toBeUndefined();
+    const d2 = await startAttempt(admin, userD, roundG.id);
+    expect(d2.attemptNumber).toBe(2);
+    expect(d2.seed).toBe(attemptSeed(roundG.seed, 2, seedPepper()));
+    const { data: fresh } = await admin.from("profiles").select("id").eq("id", userD).single();
+    expect(fresh).not.toBeNull();
   });
 
   it("sin SEED_PEPPER en producción, start falla claro y no consume el intento", async () => {
@@ -275,7 +335,7 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
     // con pepper, la misma llamada anda
     const ok = await startAttempt(admin, userE, round.id);
-    expect(ok.seed).toBe(attemptSeed(round.seed, 1, seedPepper()));
+    expect(ok.seed).toBe(attemptSeed(round.seed, 1, seedPepper(), seedProfile(getGame(round.game_id)!, userE)));
   });
 
   it("no deja jugar una ronda pasada", async () => {
@@ -335,6 +395,11 @@ function validResult(gameId: string, seed: string, n: number): { score: number; 
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
   }
+  if (gameId === "dale-un-trago-al-pibe") {
+    // resuelve un puzzle y deja derramar el segundo: el intento de prueba dura lo que la partida más 500 ms
+    const { events, run } = tragoTrace(seed, { ...tragoModel, spillAfter: 1 });
+    return { score: run.score, events, elapsedMs: run.endT + 500 };
+  }
   if (gameId === "cazando-colillas") {
     // come dos colillas y agarra el primer vapeador que pasa: según la semilla, eso puede tardar de 1 a 35 s, así que el intento de prueba dura lo que la partida más 500 ms
     const { events, result } = ranaTrace(seed, { reaction: 15, thenVapo: 2 });
@@ -367,9 +432,10 @@ function validResult(gameId: string, seed: string, n: number): { score: number; 
     return { score: state.total, events };
   }
   if (gameId === "fumate-algo-chino") {
-    // el jugador automático tira los tres al toque (unos 7 s); el intento de prueba dura minDurationMs + 500 ms
+    // el jugador automático tira los tres al toque (unos 7 s, según la semilla: con algunas más que minDurationMs + 500 ms, así que el intento de prueba dura lo que la partida más 500 ms)
     const { events, result } = chinoTrace(seed, { aimTicks: 20 });
-    return { score: result.best, events };
+    const endTick = (events[events.length - 1] as { tick: number }).tick;
+    return { score: result.best, events, elapsedMs: Math.floor((endTick * 1000) / 60) + 500 };
   }
   if (gameId === "servila-justa") {
     // el jugador perfecto sirve dos vasos y el cronómetro corta a los 10 s (tick 600): el intento de prueba dura minDurationMs + 500 ms

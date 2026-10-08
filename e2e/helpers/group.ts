@@ -38,6 +38,7 @@ const GAME_IDS: Record<string, string> = {
   "la bolsita del jota": "la-bolsita-del-jota",
   "Cruza con el chino": "cruza-con-el-chino",
   "Cazando Colillas": "cazando-colillas",
+  "Dale un trago al pibe": "dale-un-trago-al-pibe",
 };
 
 export async function createGroupWithGame(page: Page, name: string, gameName: string): Promise<string> {

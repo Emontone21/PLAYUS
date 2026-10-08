@@ -41,7 +41,18 @@ export function roundSeed(groupId: string, playDate: DateString, gameId: string)
  * cada intento propio es distinto. El pepper es un secreto del servidor: sin
  * él, la semilla de la ronda (legible vía RLS) alcanzaría para calcularla.
  * Solo la devuelve /start (decisiones 103 y 105).
+ *
+ * Con `profileId` (juegos con `seedScope: 'player'`, decisión 265) la semilla
+ * es hash(round.seed + ':' + attempt_number + ':' + profile_id + ':' + pepper):
+ * cada jugador recibe una distinta. Sin `profileId` la fórmula es la de
+ * siempre, así ningún juego existente cambia su semilla.
  */
-export function attemptSeed(roundSeed: string, attemptNumber: number, pepper: string): string {
+export function attemptSeed(roundSeed: string, attemptNumber: number, pepper: string, profileId?: string): string {
+  if (profileId !== undefined) return hashHex(`${roundSeed}:${attemptNumber}:${profileId}:${pepper}`);
   return hashHex(`${roundSeed}:${attemptNumber}:${pepper}`);
+}
+
+/** el profile_id que entra en la semilla según el alcance del juego (undefined con 'group') */
+export function seedProfile(game: { seedScope?: "group" | "player" }, profileId: string): string | undefined {
+  return game.seedScope === "player" ? profileId : undefined;
 }

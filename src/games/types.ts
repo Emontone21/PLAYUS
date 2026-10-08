@@ -63,6 +63,15 @@ export interface GameModule {
    * vertical. Default 'portrait'.
    */
   orientation?: Orientation;
+  /**
+   * de quién depende la semilla del intento. 'group' (default): todos los del
+   * grupo reciben la misma en el mismo número de intento. 'player': cada
+   * jugador recibe una distinta (el servidor suma su profile_id al hash en
+   * /start, /finish y validate; el juego sigue recibiendo solo una semilla).
+   * Con 'player' se resigna la igualdad exacta entre jugadores, así que el
+   * generador del juego tiene que controlar la dificultad (decisión 265).
+   */
+  seedScope?: "group" | "player";
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El

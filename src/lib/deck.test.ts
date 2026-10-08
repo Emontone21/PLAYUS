@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { attemptSeed, deckFor, gameForDay, roundSeed } from "./deck";
+import { attemptSeed, deckFor, gameForDay, roundSeed, seedProfile } from "./deck";
 
 const GAMES = ["tap-race", "reflejo", "memoria", "sopa", "puntería"];
 
@@ -88,6 +88,22 @@ describe("semilla por intento", () => {
     expect(attemptSeed(round, 2, p)).not.toBe(attemptSeed(roundSeed("g2", "2026-09-27", "reflejo"), 2, p));
     // con otro pepper, la misma ronda e intento dan otra semilla
     expect(attemptSeed(round, 1, "otro-pepper")).not.toBe(attemptSeed(round, 1, p));
+  });
+
+  it("la fórmula de siempre no cambió (valores fijados antes de la semilla por jugador), y con profile_id da otra semilla, distinta por jugador y por intento", () => {
+    expect(attemptSeed("5a38ebc0", 1, "pepper-de-prueba")).toBe("801c1e51");
+    expect(attemptSeed("5a38ebc0", 2, "pepper-de-prueba")).toBe("d97cb043");
+    const a = attemptSeed("5a38ebc0", 1, "pepper-de-prueba", "jugador-a");
+    const b = attemptSeed("5a38ebc0", 1, "pepper-de-prueba", "jugador-b");
+    expect(a).toMatch(/^[0-9a-f]{8}$/);
+    expect(a).not.toBe(b);
+    expect(a).not.toBe("801c1e51");
+    expect(attemptSeed("5a38ebc0", 2, "pepper-de-prueba", "jugador-a")).not.toBe(a);
+    expect(attemptSeed("5a38ebc0", 1, "pepper-de-prueba", "jugador-a")).toBe(a);
+    // el alcance: sin seedScope o con 'group', no entra el jugador; con 'player', sí
+    expect(seedProfile({}, "x")).toBeUndefined();
+    expect(seedProfile({ seedScope: "group" }, "x")).toBeUndefined();
+    expect(seedProfile({ seedScope: "player" }, "x")).toBe("x");
   });
 });
 

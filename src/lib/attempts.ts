@@ -3,7 +3,7 @@ import type { AttemptRow, GroupRow, RoundRow } from "@/lib/supabase/types";
 import { getGame } from "@/games";
 import { gameLimits, type GameResult } from "@/games/types";
 import { abandonStale, groupToday, rankedRound } from "./rounds";
-import { attemptSeed } from "./deck";
+import { attemptSeed, seedProfile } from "./deck";
 import { seedPepper, SeedPepperMissingError } from "./seed-pepper";
 import type { RankedEntry } from "./scoring";
 import type { DateString } from "./time";
@@ -122,7 +122,8 @@ export async function startAttempt(
       attemptNumber: data.attempt_number,
       attemptsLeft: group.max_attempts - data.attempt_number,
       // la semilla es por intento: misma para todos en el mismo número, distinta entre intentos propios
-      seed: attemptSeed(round.seed, data.attempt_number, pepper),
+      // (y con seedScope 'player', distinta por jugador: decisión 265)
+      seed: attemptSeed(round.seed, data.attempt_number, pepper, seedProfile(game, userId)),
       gameId: round.game_id,
       durationMs: game.durationMs,
     };
@@ -179,7 +180,7 @@ export async function finishAttempt(
   if (result.score < limits.minScore || result.score > limits.maxScore) {
     throw await reject("implausible_score", "no pudimos validar este puntaje. el intento cuenta igual.");
   }
-  if (game.validate && !(await game.validate(result, attemptSeed(round.seed, attempt.attempt_number, readPepper()), { elapsedMs }))) {
+  if (game.validate && !(await game.validate(result, attemptSeed(round.seed, attempt.attempt_number, readPepper(), seedProfile(game, attempt.profile_id)), { elapsedMs }))) {
     throw await reject("invalid_events", "no pudimos validar esta partida. el intento cuenta igual.");
   }
 

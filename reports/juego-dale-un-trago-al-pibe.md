@@ -1,0 +1,35 @@
+# Juego nuevo: Dale un trago al pibe
+
+Publicado en producción (https://playus-lake.vercel.app) el 2026-10-08.
+
+## Qué es
+
+Un juego de cañerías: arriba la damajuana "Vinaken del pari", abajo el pibe rasta con la boca abierta, y en el medio una grilla de caños girados al azar. Tocar un caño lo gira 90°; cuando se acaba el tiempo del puzzle (o al tocar la damajuana, apostando) el vino corre por los caños: si llega a la boca, el puzzle cuenta (100 puntos más 10 por cada segundo que sobró) y viene el siguiente, más difícil; si se derrama, se termina. 150 segundos; gana el que suma más puntos.
+
+Es el **primer juego con semilla por jugador**: cada integrante del grupo recibe sus propios puzzles, de dificultad controlada, para que nadie pueda pasarle la solución a otro.
+
+- Extensión del contrato (`seedScope?: 'group' | 'player'`, decisión 265): con `'player'`, `/start` calcula la semilla como `hash(round.seed + ':' + attempt_number + ':' + profile_id + ':' + SEED_PEPPER)` y `/finish` y `validate` usan esa misma; el juego sigue recibiendo solo una semilla. Sin `profile_id` la fórmula es byte a byte la de siempre: un test fija dos valores calculados antes del cambio, y ningún juego existente cambia su semilla. Documentado en `src/games/README.md` (campo y sección "Semilla por jugador", con el aviso de que `'player'` resigna la igualdad exacta entre jugadores y obliga a controlar la dificultad).
+- Módulo `src/games/dale-un-trago-al-pibe/` (`rules.ts` fichas, generación por tabla con solución única, flujo del vino en ms, traza y `validate`; `sprites.ts`, `draw.ts`, `index.tsx`, `dev.tsx`). Decisiones 265 a 268.
+- Generación (`pipePuzzles`): por puzzle, un camino al azar de la entrada a la salida con el largo de su fila, fichas recta/curva según los lados y, desde el 4, T con la boca extra hacia un señuelo que hay que cerrar; las vueltas necesarias se eligen dentro del rango de la fila y se reparten (ninguna ficha del camino empieza bien, ninguna T empieza tapada); solución única comprobada con una búsqueda que deja girar cada ficha (si los señuelos arman otra ruta igual de corta, se cambia una ficha y se vuelve a comprobar). Tabla: 4 × 5 / 6–7 / 2–3 / 7–9 / 25 s; 5 × 6 / 8–10 / 3–5 / 10–13 / 22 s; 5 × 7 / 10–12 / 5–7 / 13–17 / 20 s; 6 × 7 / 12–14 / 6–8 / 16–20 / 17 s; 6 × 8 / 14–16 / 7–9 / 19–23 / 16 s bajando 1 s por puzzle hasta 12. Un puzzle se genera en menos de 0,1 ms.
+- Flujo: 350 ms por ficha al principio, 250 desde el puzzle 11; mientras el vino no llegó a una ficha se puede girar (también delante del vino); una con vino no gira. Derrama al borde, contra una ficha que no conecta, por una salida de T sin destino, o si el vino se encuentra consigo mismo.
+- Calibración: el jugador modelo (3 s mirando, 750 ms por toque, 700 ms hasta la damajuana) resuelve 8 puzzles de mediana (p10 6, unos 1.300 puntos); el rápido, 11; dejar que se acabe el tiempo da 500. Cota de plausibilidad 6.510 (el mejor caso imaginable).
+- Traza `{ t, puzzle, type: 'rotate', cell }` / `{ t, puzzle, type: 'pour' }`; `validate` rearma los puzzles con la semilla del jugador y rechaza puntajes inflados, giros sobre fichas con vino o casillas inexistentes, eventos después del derrame, puzzles no consecutivos, dos `pour` por puzzle, intervalos menores a 60 ms, tiempos fuera de orden o pasados de 150 s, y duración incoherente.
+- Arte: canvas escalado entero (fichas de 60 px en 360 px de ancho con 6 columnas: el mínimo de 64 no entra, anotado en la decisión 268; 80 px con 4 columnas), damajuana de vidrio verde con esterilla y etiqueta (que se da vuelta y descorcha al largar el vino, con reloj de arena y segundos al lado, y tiembla en los últimos 3 s), caños grises con contorno sobre baldosas, vino bordó continuo, y el pibe rasta original (gorro tejido a rayas, rastas, barba, remera holgada) esperando, tomando, con "¡salud!" y empapado y triste. "¡se derramó todo!" al derramarse; "+100" y el bonus al resolver. Con reducir movimiento, sin temblor, chorros ni giros animados.
+- Control: toques de un dedo, `touch-action: manipulation`, sin selección ni menú contextual. Arriba, el puntaje grande y "puzzle N".
+- Herramienta `/dev/juego/dale-un-trago-al-pibe?seed=…&solucion=1&lento=1&desde=N`: solución, métricas de cada puzzle, saltar a cualquier puzzle, distribución de dificultad en 50 semillas, caras del pibe (404 en producción salvo para el admin).
+
+## Comprobaciones
+
+- `vitest`: 16 tests del juego (fichas; `pipePuzzles` determinística; en 10.000 semillas los puzzles 1 a 12 y en 1.000 hasta el 20: solución única, todos los rangos, ninguna ficha del camino bien puesta, ninguna T tapada, el camino resuelto llega a la boca, y la dificultad pareja (media a menos de 1 del medio del rango, desvío menor a 1,5, y el total de vueltas de los 12 primeros a menos del 8 % de la media en 9.997 de 10.000 semillas); flujo: velocidad, ficha con vino no gira, borde abierto, ficha que no conecta y salida de T derraman, T bien tapada no, tiempo agotado; puntaje: 100 por puzzle, bonus solo con la damajuana, derrame termina, cota; `validate` acepta partidas reales y rechaza cada caso pedido, incluidas las trazas con la semilla de otro jugador y la del grupo; calibración; control y arte). Semilla por jugador: `deck.test.ts` (valores fijados, `seedProfile`) y en `attempts.test.ts` contra la base local (dos jugadores reciben semillas distintas iguales a la fórmula con `profile_id`, cada intento propio otra, `validate` rechaza la traza del otro jugador y la de la semilla del grupo, y con un juego `'group'` siguen recibiendo la misma). Suite completa en verde (447 tests); `eslint`, `tsc` y `next build` limpios.
+- E2E local (`e2e/trago.spec.ts`, 3 tests): puzzles, giros necesarios y partida del modelo idénticos en navegador y Node en 5 semillas; previa (damajuana, caño girando con el dedo, el pibe), herramienta (métricas, distribución, caras), área (`touch-action`, `user-select`), los giros justos resuelven, la entrada con vino ya no gira, el puzzle se resuelve con bonus; ronda real con dos jugadores del mismo grupo que reciben semillas y puzzles distintos, y una partida que resuelve dos puzzles con los giros calculados en el test, deja derramar el tercero y llega al ranking con el puntaje, la traza reproducida en Node y rechazada con la semilla del otro jugador.
+- E2E en producción: ver abajo.
+
+## Capturas
+
+- `reports/dale-un-trago-al-pibe/previa.png`: la pantalla previa.
+- `reports/dale-un-trago-al-pibe/a-medio-resolver.png`: un puzzle a medio resolver.
+- `reports/dale-un-trago-al-pibe/vino-corriendo.png`: el vino corriendo, la damajuana dada vuelta.
+- `reports/dale-un-trago-al-pibe/tomando.png`: el pibe tomando, "+100", "+230 de bonus" y "¡salud!".
+- `reports/dale-un-trago-al-pibe/derrame.png`: el derrame, "¡se derramó todo!" y el pibe empapado.
+- `reports/dale-un-trago-al-pibe/jugador-a.png` y `jugador-b.png`: dos jugadores con puzzles distintos en la misma ronda.
+- `reports/dale-un-trago-al-pibe/sprites.png`: las caras del pibe y la damajuana en la herramienta.
