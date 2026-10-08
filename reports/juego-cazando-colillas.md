@@ -21,6 +21,10 @@ La rana de Frog en el centro de un estanque de noche. Alrededor vuelan colillas 
 - El test de intentos contra la base local ahora hace durar el intento de prueba lo que dura la partida del jugador automático cuando el juego lo pide (acá el primer vapeador puede tardar de 1 a 35 s según la semilla).
 - E2E local (`e2e/rana.spec.ts`, 3 tests en 31 s): generación, geometría, momentos libres, caminos bloqueados y partidas del modelo idénticos en navegador y Node en 6 semillas; previa con "comé" y "ni loco", herramienta con sus 8 sprites, área (`touch-action`, `user-select`), un lengüetazo al vacío que vuelve sin penalizar y uno que come; ronda real que come las primeras colillas con los toques del jugador justo calculados en el test, agarra un vapeador, ve "¡puaj, un vapo!" y llega al ranking con el puntaje, con la traza reproducida en Node.
 
+- E2E en producción (`SUPABASE_CLI=supabase@2.119.0 E2E_BASE_URL=https://playus-lake.vercel.app npx playwright test e2e/rana.spec.ts -g "ronda real"`): en verde (35 s) contra el deploy `playus-d9q9srpgj`: grupo nuevo con el juego del día puesto en la base, las primeras colillas comidas con los toques del jugador justo, un vapeador agarrado, el puntaje en el ranking y la traza reproducida en Node.
+- `/dev/juego/cazando-colillas` responde 404 en producción sin sesión de admin.
+- Juego de hoy (2026-10-08) en todos los grupos de producción: puesto con `admin_set_today_game` (una transacción por grupo, registro en `admin_actions`), 14 grupos, 13 rondas creadas y 1 cambiada (1 intento borrado, en Elgurpe); verificado en la base: 15 rondas de hoy con `cazando-colillas` (las 14 más la del grupo del E2E), la semilla de la fórmula.
+
 ## Capturas
 
 - `reports/cazando-colillas/previa.png`: la pantalla previa.
