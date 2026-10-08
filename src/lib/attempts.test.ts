@@ -33,6 +33,7 @@ import { botTrace as larryHdpTrace } from "@/games/larry-en-la-hdp/rules";
 import { botTrace as afilaTrace } from "@/games/big-bro-afila/rules";
 import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
 import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
+import { botTrace as ranaTrace } from "@/games/la-rana-caza-colillas/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -187,18 +188,19 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
     const s = await startAttempt(admin, userA, round.id); // el 3º de A
     const startedAt = Date.parse((await admin.from("attempts").select("started_at").eq("id", s.attemptId).single()).data!.started_at);
-    const now = new Date(startedAt + limits.minDurationMs + 500);
+    const r7 = validResult(game.id, s.seed, 7);
+    const now = new Date(startedAt + Math.max(limits.minDurationMs + 500, r7.elapsedMs ?? 0));
 
-    await expect(finishAttempt(admin, userB, s.attemptId, validResult(game.id, s.seed, 7), { now })).rejects.toMatchObject({
+    await expect(finishAttempt(admin, userB, s.attemptId, r7, { now })).rejects.toMatchObject({
       code: "not_yours",
     });
 
-    const ok = await finishAttempt(admin, userA, s.attemptId, validResult(game.id, s.seed, 7), { now });
+    const ok = await finishAttempt(admin, userA, s.attemptId, r7, { now });
     expect(ok.score).toBeGreaterThan(0);
     const { data: saved } = await admin.from("attempts").select("status, score").eq("id", s.attemptId).single();
     expect(saved).toMatchObject({ status: "completed", score: ok.score });
 
-    await expect(finishAttempt(admin, userA, s.attemptId, validResult(game.id, s.seed, 7), { now })).rejects.toMatchObject({
+    await expect(finishAttempt(admin, userA, s.attemptId, r7, { now })).rejects.toMatchObject({
       code: "already_finished",
     });
     await expect(startAttempt(admin, userA, round.id)).rejects.toMatchObject({ code: "no_attempts_left" });
@@ -243,7 +245,8 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
     // con la semilla del intento, el resultado se guarda
     const startedC2 = Date.parse((await admin.from("attempts").select("started_at").eq("id", c2.attemptId).single()).data!.started_at);
-    const ok = await finishAttempt(admin, userC, c2.attemptId, validResult(game.id, c2.seed, 5), { now: new Date(startedC2 + limits.minDurationMs + 500) });
+    const r5 = validResult(game.id, c2.seed, 5);
+    const ok = await finishAttempt(admin, userC, c2.attemptId, r5, { now: new Date(startedC2 + Math.max(limits.minDurationMs + 500, r5.elapsedMs ?? 0)) });
     expect(ok.score).toBeGreaterThan(0);
 
     // la semilla del intento no está guardada en ningún lado: sin iniciarlo no hay de dónde leerla
@@ -309,7 +312,8 @@ describe.skipIf(!up)("intentos contra la base local", () => {
 
 // Un resultado que pasa validate() del juego de la ronda.
 let torreR: Rapier | null = null;
-function validResult(gameId: string, seed: string, n: number) {
+/** un resultado válido para el juego; `elapsedMs`, si viene, es lo que tiene que durar el intento de prueba (cuando la partida puede ser más larga que minDurationMs + 500 ms) */
+function validResult(gameId: string, seed: string, n: number): { score: number; events: unknown[]; elapsedMs?: number } {
   if (gameId === "piba-del-ipa") return { score: n, events: legitTrace(seed, n) };
   if (gameId === "quedo-re-tarado") {
     const events = humanTrace(200);
@@ -330,6 +334,12 @@ function validResult(gameId: string, seed: string, n: number) {
     // acierta la primera ronda apenas termina la mezcla (unos 3 s) y erra la segunda en cuanto puede: el intento de prueba dura minDurationMs + 500 ms (3,5 s)
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
+  }
+  if (gameId === "la-rana-caza-colillas") {
+    // come dos colillas y agarra el primer vapeador que pasa: según la semilla, eso puede tardar de 1 a 35 s, así que el intento de prueba dura lo que la partida más 500 ms
+    const { events, result } = ranaTrace(seed, { reaction: 15, thenVapo: 2 });
+    const endTick = events[events.length - 1]!.tick;
+    return { score: result.score, events, elapsedMs: Math.floor((endTick * 1000) / 60) + 500 };
   }
   if (gameId === "cruza-con-el-chino") {
     // cruza el primer bloque y se queda en la calle siguiente hasta que lo atropellan (unos segundos)
