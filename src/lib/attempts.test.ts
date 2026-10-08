@@ -35,6 +35,7 @@ import { botTrace as nachSaltaTrace } from "@/games/nach-salta/rules";
 import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
 import { botTrace as ranaTrace } from "@/games/cazando-colillas/rules";
 import { botTrace as tragoTrace, MODEL as tragoModel } from "@/games/dale-un-trago-al-pibe/rules";
+import { botTrace as sacaTrace, MODEL as sacaModel } from "@/games/saca-el-sunny/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -278,7 +279,8 @@ describe.skipIf(!up)("intentos contra la base local", () => {
       return { ...round0, game_id: gameId, seed };
     };
 
-    // 'player': el juego de los caños
+    // 'player': el juego de los caños (el de los autos, "saca-el-sunny", usa la misma extensión)
+    expect(getGame("saca-el-sunny")!.seedScope).toBe("player");
     const round = await setGame("dale-un-trago-al-pibe");
     const game = getGame(round.game_id)!;
     expect(game.seedScope).toBe("player");
@@ -394,6 +396,11 @@ function validResult(gameId: string, seed: string, n: number): { score: number; 
     // acierta la primera ronda apenas termina la mezcla (unos 3 s) y erra la segunda en cuanto puede: el intento de prueba dura minDurationMs + 500 ms (3,5 s)
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
+  }
+  if (gameId === "saca-el-sunny") {
+    // saca un sunny y espera a que cierre: la partida dura siempre 120 s, así que el intento de prueba también
+    const { events, run } = sacaTrace(seed, { ...sacaModel, solveOnly: 1 });
+    return { score: run.score, events, elapsedMs: 120_000 + 500 };
   }
   if (gameId === "dale-un-trago-al-pibe") {
     // resuelve un puzzle y deja derramar el segundo: el intento de prueba dura lo que la partida más 500 ms

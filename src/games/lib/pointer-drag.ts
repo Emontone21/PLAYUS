@@ -20,12 +20,15 @@ export interface DragHandlers<E extends Element = HTMLDivElement> {
 export function singlePointerDrag<T, E extends Element = HTMLDivElement>(
   toValue: (clientX: number, clientY: number) => T,
   onValue: (value: T) => void,
+  /** opcional: cuando el dedo se levanta (o el arrastre se cancela), con el último valor */
+  onEnd?: (value: T) => void,
 ): DragHandlers<E> {
   let pointer: number | null = null;
   const up = (e: React.PointerEvent<E>) => {
     if (e.pointerId !== pointer) return;
     pointer = null;
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    onEnd?.(toValue(e.clientX, e.clientY));
   };
   return {
     onPointerDown(e) {

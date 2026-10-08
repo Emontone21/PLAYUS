@@ -38,6 +38,7 @@ const FONT: Record<string, string[]> = {
   R: ["KKK", "K.K", "KKK", "KK.", "K.K"],
   I: ["KKK", ".K.", ".K.", ".K.", "KKK"],
   "!": [".K.", ".K.", ".K.", "...", ".K."],
+  ":": ["...", ".K.", "...", ".K.", "..."],
   b: ["K..", "K..", "KKK", "K.K", "KKK"],
   d: ["..K", "..K", "KKK", "K.K", "KKK"],
   g: ["KKK", "K.K", "KKK", "..K", "KKK"],
