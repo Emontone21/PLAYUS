@@ -43,5 +43,7 @@ A pedido del dueño ("la pantalla de juego quedó demasiado chica"), el estacion
 
 - Antes: `reports/saca-el-sunny/tamano-antes-360x640.png`, `tamano-antes-390x844.png` y `tamano-antes-412x915.png` (en la herramienta, con la página corrida hasta el área de juego).
 - Después: `reports/saca-el-sunny/tamano-despues-360x640.png`, `tamano-despues-390x844.png` y `tamano-despues-412x915.png`.
-- Comprobado: los 14 tests del juego y la suite completa (461) en verde, `eslint`, `tsc` y `next build` limpios, y los 3 E2E del juego en local. En producción: ver abajo.
+- Comprobado: los 14 tests del juego y la suite completa (461) en verde, `eslint`, `tsc` y `next build` limpios, y los 3 E2E del juego en local. En producción (deploy `playus-bnh6t3ic7`): `/dev/juego/saca-el-sunny` da 404, la ronda real pasa (dos jugadores con estacionamientos distintos, 300 puntos en el ranking) y en `/hoy/jugar` a 360×640 el canvas mide 360×480 en x 0, casillas de 60 px, el botón termina en 634 y la página no se desplaza (640/640).
+
+![En producción, 360×640](saca-el-sunny/tamano-produccion-360x640.png)
 
