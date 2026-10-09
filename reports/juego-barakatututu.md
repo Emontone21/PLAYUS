@@ -20,7 +20,9 @@ El negro toto toca un patrón de candombe en su tambor y hay que repetirlo tocan
 
 - `vitest`: 13 tests del juego (biblioteca; `candombeRounds` determinística y la tabla en 1.000 semillas; ventanas: 84 bien y 86 error, de más y faltó; corrección: 40 ms consistentes dan 40 y el patrón atrasado pasa, tope ±60, mediana; reglas: tramos, toques fuera de turno ignorados, pasar suma 1, errar termina, cierre a los 180 s y cota; `validate` acepta partidas reales y rechaza cada caso pedido; calibración; arte). Suite completa en verde; `eslint`, `tsc` y `next build` limpios.
 - E2E local (`e2e/baraka.spec.ts`, 3 tests): patrones y partida del modelo idénticos en navegador y Node en 5 semillas; previa, herramienta, área (`touch-action`), la cuenta con la barra espaciadora (sin repetir al mantenerla) y un toque fuera de turno ignorado; ronda real que hace la cuenta, pasa tres rondas con los toques calculados en el test desde `candombeRounds`, erra la cuarta con un golpe de más y llega al ranking con puntaje 3, la traza reproducida en Node.
-- E2E en producción: ver abajo.
+- E2E en producción (`SUPABASE_CLI=supabase@2.119.0 E2E_BASE_URL=https://playus-lake.vercel.app npx playwright test e2e/baraka.spec.ts -g "ronda real"`): en verde (59 s) contra el deploy `playus-iaklbyt3d`: grupo nuevo con el juego del día puesto en la base, la cuenta de ajuste, tres rondas pasadas con los toques del test, la cuarta errada, puntaje 3 en el ranking y la traza reproducida en Node.
+- `/dev/juego/barakatututu` responde 404 en producción sin sesión de admin.
+- Juego de hoy (2026-10-09) en todos los grupos de producción: puesto con `admin_set_today_game` (una transacción por grupo, registro en `admin_actions`), 21 grupos, 1 ronda cambiada (1 intento borrado, en "asd") y 20 creadas; verificado en la base: 22 rondas de hoy con `barakatututu` (las 21 más la del grupo del E2E de producción, con su intento), la semilla de la fórmula.
 
 ## Capturas
 
