@@ -108,7 +108,7 @@ Pedido del dueño: estaba muy fácil y la pantalla quedó chica. Decisiones 276 
 - **De borde a borde:** el contrato suma `fullBleed?: boolean` (el contenedor le saca al área los márgenes laterales de la página; el cronómetro y los carteles quedan donde están), documentado en el README junto al `fullscreen` de "Saca el Sunny". Nach salta lo declara: el canvas se escala al ancho con fracción, la vista pasa a 240 × 160 unidades con The Nach a un 20 % del borde (19,2 m de calle adelante), el piso más abajo y más cielo arriba. En 360 px el canvas mide 360 × 240; en escritorio sigue en la columna de 480.
 - Comprobado: suite completa, `eslint`, `tsc` y `next build` limpios; E2E local de Nach salta en verde (3 tests); en 360 px el canvas arranca en x = 0 y mide 360 px de ancho.
 - Capturas: `reports/nach-salta/nuevo-10s.png`, `nuevo-30s.png` y `nuevo-60s.png` (el jugador automático perfecto a los 10, 30 y 60 s) y `borde-a-borde-360.png` (la ronda real en un teléfono de 360 px).
-- Publicación: como cambia `simulate`, una partida empezada antes no validaría; se publica pasada la medianoche de Montevideo y solo si ese día no le toca Nach salta a ningún grupo.
+- Publicación: como cambia `simulate`, una partida empezada antes no validaría; el plan era publicar pasada la medianoche, pero el usuario pidió publicar en el día. Publicado el 2026-10-09 a la tarde (deploy `playus-6ib55i0v7`): `/dev/juego/nach-salta` da 404 en producción y el E2E de la ronda real en producción pasó (37 s). Juego de hoy puesto con `admin_set_today_game` en los 2 grupos de producción (2 rondas cambiadas, 3 intentos de prueba borrados); verificado en la base: todas las rondas de hoy con `nach-salta`.
 
 ## Capturas
 
