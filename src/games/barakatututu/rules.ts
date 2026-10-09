@@ -5,7 +5,7 @@
 // del compás. Los patrones salen de la semilla del intento (`candombeRounds`)
 // encadenando frases de una biblioteca escrita a mano, SIMPLIFICACIONES
 // INSPIRADAS en los toques del candombe (la madera, el chico, el repique y el
-// piano), no transcripciones exactas (decisión 272). La partida es una
+// piano), no transcripciones exactas (decisión 273). La partida es una
 // máquina de estados en ms desde onReady, la misma en el cliente y en
 // `validate`, que rearma los patrones, el horario de cada tramo y la
 // corrección por dispositivo, y juzga cada golpe igual. Sin DOM.
@@ -418,7 +418,7 @@ export interface BotOptions {
   untilMs?: number;
 }
 
-/** el jugador modelo (decisión 273): 25 ms de demora del dispositivo, ±55 ms de desvío que crece 4 ms por ronda */
+/** el jugador modelo (decisión 274): 25 ms de demora del dispositivo, ±55 ms de desvío que crece 4 ms por ronda */
 export const MODEL: BotOptions = { device: 25, jitter: 55 };
 
 export function botTrace(seed: string, opts: BotOptions = {}): { events: BeatEvent[]; run: Run } {

@@ -67,7 +67,7 @@ export default async function DevGamePage({
       ) : game.id === "la-bolsita-del-jota" ? (
         <BolsitaDev seed={seed} from={[1, 6, 10, 15].includes(Number(desde)) ? Number(desde) : 1} xray={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "nach-salta" ? (
-        <NachSaltaDev seed={seed} from={[0, 150, 400, 800].includes(Number(desde)) ? Number(desde) : 0} hitboxes={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
+        <NachSaltaDev seed={seed} from={[0, 150, 300, 800].includes(Number(desde)) ? Number(desde) : 0} hitboxes={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "big-bro-afila" ? (
         <AfilaDev seed={seed} from={Math.max(1, Math.min(8, Number(desde) || 1))} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "larry-en-la-hdp" ? (

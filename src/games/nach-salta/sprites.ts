@@ -8,11 +8,11 @@ import { buildSprite as build, OUTLINE, type Sprite } from "../lib/sprites";
 export type { Sprite };
 const K = OUTLINE;
 
-/** la vista: 192 × 128 unidades de 100 mm; The Nach a un cuarto del ancho y el piso */
-export const FIELD_W = 192;
-export const FIELD_H = 128;
+/** la vista: 240 × 160 unidades de 100 mm, de borde a borde; The Nach a un 20 % del ancho (se ven 19,2 m hacia adelante) y el piso abajo, con cielo para las tres alturas */
+export const FIELD_W = 240;
+export const FIELD_H = 160;
 export const NACH_X = 48;
-export const GROUND_Y = 108;
+export const GROUND_Y = 136;
 export const MM_PER_UNIT = 100;
 
 /** el cartel de neón colgado (14 × 7): una tabla oscura con dos tubos */

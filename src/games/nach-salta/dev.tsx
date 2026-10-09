@@ -5,7 +5,7 @@
 // automático justo juega hasta ahí); el jugador automático con demora
 // configurable; y los sprites nuevos de The Nach de costado. Deja las reglas
 // en window.__nachsalta para el E2E.
-// /dev/juego/nach-salta?seed=…&cajas=1&lento=1&desde=400&auto=1
+// /dev/juego/nach-salta?seed=…&cajas=1&lento=1&desde=300&auto=1
 
 import * as React from "react";
 import { GameContainer } from "../container";
@@ -16,7 +16,7 @@ import { NachSaltaGame, nachSalta, type NachSaltaDevOptions } from "./index";
 import { botTrace, check, generateCourse, LONG, SHORT, simulate, tickAtDist, validate } from "./rules";
 import { cartelSprite, palomaSprite, shoeSprite } from "./sprites";
 
-const JUMPS = [0, 150, 400, 800] as const;
+const JUMPS = [0, 150, 300, 800] as const;
 
 export function NachSaltaDev({ seed, from = 0, hitboxes = false, slow = false, auto = false }: { seed: string; from?: number; hitboxes?: boolean; slow?: boolean; auto?: boolean }) {
   const [opts, setOpts] = React.useState({ hitboxes, slow, auto, reaction: 15 });

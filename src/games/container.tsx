@@ -217,6 +217,8 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
     const rotated = frame.rotated;
     // de borde a borde: fija sobre la ventana, en la columna de la app, sin que la página se desplace
     const full = !rotated && !!game.fullscreen;
+    // de borde a borde en el ancho: el área se come los márgenes laterales de la página (px-5), lo demás queda donde está
+    const bleed = !rotated && !full && !!game.fullBleed;
     const RotationContext = rotationContext();
     return (
       <RotationContext.Provider value={frame}>
@@ -232,6 +234,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
           data-testid="game-playing"
           data-rotated={rotated ? "1" : "0"}
           data-fullscreen={full ? "1" : "0"}
+          data-full-bleed={bleed ? "1" : "0"}
         >
           <header className={`flex items-baseline justify-between ${full ? "px-3" : ""}`}>
             <span className="display text-lg">{game.name}</span>
@@ -240,7 +243,7 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
             </span>
           </header>
           {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
-          <div className={`flex flex-1 flex-col overflow-hidden [&>*]:min-h-0 [&>*]:flex-1 ${full ? "min-h-0" : rotated ? "min-h-0 rounded-lg" : "min-h-[60dvh] rounded-lg"}`}>
+          <div className={`flex flex-1 flex-col overflow-hidden [&>*]:min-h-0 [&>*]:flex-1 ${full ? "min-h-0" : rotated ? "min-h-0 rounded-lg" : bleed ? "-mx-5 min-h-[60dvh]" : "min-h-[60dvh] rounded-lg"}`} data-testid="game-area">
             <Game seed={activeSeed ?? ""} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
           </div>
           {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}

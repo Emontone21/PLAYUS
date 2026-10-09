@@ -44,6 +44,8 @@ Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `qu
 | `validate?(result, seed, meta?)` | chequeo propio sobre `events`. Devolvé `false` para rechazar (puede devolver una promesa: el servidor la espera). El servidor lo llama después de las cotas, con la **semilla del intento** (la misma que recibió tu componente) y `meta.elapsedMs`, la duración real del intento medida en el servidor (desde `/start`, con la cuenta regresiva). |
 | `orientation?` | `'landscape'` si se juega con el teléfono de costado (fumate algo chino). Default `'portrait'`. Ver "Juegos en horizontal". |
 | `seedScope?` | `'group'` (default): todos los del grupo reciben la misma semilla en el mismo número de intento, como siempre. `'player'`: cada jugador recibe una semilla distinta (`/start` suma su `profile_id` al hash, y `/finish` y `validate` usan esa misma; el cliente no manda nada). Ver "Semilla por jugador". |
+| `fullscreen?` | `true` si mientras se juega el área ocupa la ventana entera, fija sobre todo lo demás, sin la marca ni la barra de pestañas (Saca el Sunny). Default `false`. |
+| `fullBleed?` | `true` si el área de juego tiene que ocupar todo el ancho del teléfono, sin los márgenes laterales de la página: el contenedor le saca los márgenes a esa área y el cronómetro y los carteles quedan donde están (Nach salta). En escritorio sigue dentro de la columna de 480 px. Default `false`. Ver "De borde a borde". |
 | `recomputeScore?(result, seed)` | opcional: el puntaje recalculado desde `events` con la semilla, o `null`. Solo lo muestra el panel de admin al probar un juego; no decide nada. |
 | `Component` | el juego. Recibe `GameProps`. |
 | `Intro?` | opcional: un bloque extra para la pantalla previa, debajo de las instrucciones (la piba muestra la ficha "así es ella"; el tarado, la cara del intento). Recibe `seed`. |
@@ -54,6 +56,10 @@ Los juegos que hay son `piba-del-ipa` (el ejemplo de referencia, ver abajo), `qu
 ### Semilla por jugador
 
 Con `seedScope: 'player'` (Dale un trago al pibe y Saca el Sunny, decisión 265) la semilla del intento es `hash(round.seed + ':' + attempt_number + ':' + profile_id + ':' + SEED_PEPPER)` en vez de `hash(round.seed + ':' + attempt_number + ':' + SEED_PEPPER)`. Sirve para que nadie pueda pasarle la solución a otro: cada integrante ve otro tablero. El juego no sabe nada del usuario: recibe una semilla, como siempre, y `validate` recibe esa misma (el servidor conoce el `profile_id` del intento). Lo que se resigna es la igualdad exacta entre jugadores: dos personas del mismo grupo ya no juegan lo mismo, así que el generador del juego **tiene que controlar la dificultad** (rangos por tabla, descarte de lo que se sale, y un test que mida que la dificultad es pareja entre muchas semillas). Ningún juego con `'group'` (o sin `seedScope`) cambia su semilla.
+
+### De borde a borde
+
+Dos campos para los juegos que necesitan más lugar. `fullBleed: true` (Nach salta, decisión 277) le saca al área de juego los márgenes laterales de la página (`px-5`) con un margen negativo: el área va de borde a borde del teléfono y el resto (el cronómetro, el nombre, los carteles del contenedor) queda en su lugar, en flujo; el juego tiene que escalar su canvas al ancho que le den (con fracción si hace falta, con `image-rendering: pixelated`). `fullscreen: true` (Saca el Sunny, decisión 272) va más lejos: fija el área sobre la ventana entera, sin la marca ni la barra de pestañas, y la página no se desplaza. En escritorio los dos siguen dentro de la columna de 480 px. El área lleva `data-full-bleed` y la sección `data-fullscreen`, que el E2E puede mirar.
 
 ### Juegos en horizontal
 

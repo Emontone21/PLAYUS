@@ -95,6 +95,21 @@ Se puso "Nach salta" como juego de hoy (2026-10-06, hora de Montevideo) en los 1
 - `src/lib/attempts.test.ts` falla de forma intermitente según qué juego le asigna el mazo al grupo del test: las trazas de prueba de "fumate algo chino" (dura más que el intento simulado) y, a veces, "buscá los Paris" o "pisteando el sunny" (puntaje 0). No es de "Nach salta"; quedó como tarea aparte.
 - `src/lib/admin.test.ts` falla en la base local con "URI too long": la lista de grupos del panel de admin arma una consulta con todos los ids, y la base local tiene unos 450 grupos de tests. Es un límite real del panel con muchos grupos; quedó como tarea aparte.
 
+## Cambios del 2026-10-09: más difícil y de borde a borde
+
+Pedido del dueño: estaba muy fácil y la pantalla quedó chica. Decisiones 276 y 277.
+
+- **Velocidad continua, sin mesetas:** 10 m/s al arrancar, 20 a los 30 s, 28 a los 60 s y después despacio hasta 32 m/s a los 120 s (antes 9 → 22 a los 90 s). Cota: 2.966 m.
+- **Espacio entre obstáculos al azar con mínimo según la velocidad:** cada grupo se ubica por el tick en que llega, nunca antes del tiempo de reacción (600 ms a 10 m/s bajando a 450 ms desde los 28 m/s) ni antes de que termine el salto por el anterior (desde el despegue más tardío que lo pasa) más el despegue que pide este; lo alto nunca con un salto en el aire, y nada que haga despegar debajo de lo alto. Más un extra al azar de 0–40 ticks que baja a 0–14 a velocidad alta.
+- **Grupos de 2 o 3 rocas juntas, de distinto tamaño, desde los 150 m**, mientras el salto largo las pase enteras a la velocidad del momento. Reemplazan al par de antes.
+- **Lo del aire desde los 300 m (antes 400), a tres alturas:** bajo (se salta como a una chica), a la altura de la cabeza (hay que agacharse) y alto (no molesta parado ni agachado; saltando debajo, choca). Las dos mitades y "¡ahora agachate!" pasan a los 300 m.
+- **Justicia:** el jugador automático con 250 ms llega a los 600 m en 1.000 de 1.000 semillas; el perfecto nunca choca en 200: no hay combinaciones imposibles a la velocidad del momento (el test de generación comprueba cada condición de espacio en 1.000 semillas).
+- **Calibración:** el jugador modelo dura p25/mediana/p75 21/28/38 s (antes 33/41/55), 408 m de mediana. Los carteles "Nach no caigas en la roca" y "no denuevo nach" siguen igual, y la primera roca sigue sin aparecer antes de los 2,5 s.
+- **De borde a borde:** el contrato suma `fullBleed?: boolean` (el contenedor le saca al área los márgenes laterales de la página; el cronómetro y los carteles quedan donde están), documentado en el README junto al `fullscreen` de "Saca el Sunny". Nach salta lo declara: el canvas se escala al ancho con fracción, la vista pasa a 240 × 160 unidades con The Nach a un 20 % del borde (19,2 m de calle adelante), el piso más abajo y más cielo arriba. En 360 px el canvas mide 360 × 240; en escritorio sigue en la columna de 480.
+- Comprobado: suite completa, `eslint`, `tsc` y `next build` limpios; E2E local de Nach salta en verde (3 tests); en 360 px el canvas arranca en x = 0 y mide 360 px de ancho.
+- Capturas: `reports/nach-salta/nuevo-10s.png`, `nuevo-30s.png` y `nuevo-60s.png` (el jugador automático perfecto a los 10, 30 y 60 s) y `borde-a-borde-360.png` (la ronda real en un teléfono de 360 px).
+- Publicación: como cambia `simulate`, una partida empezada antes no validaría; se publica pasada la medianoche de Montevideo y solo si ese día no le toca Nach salta a ningún grupo.
+
 ## Capturas
 
 - `reports/nach-salta/previa.png`: la pantalla previa: The Nach corriendo con una roca adelante, y las instrucciones.

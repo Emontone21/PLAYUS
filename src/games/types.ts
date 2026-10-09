@@ -80,6 +80,14 @@ export interface GameModule {
    * Default false.
    */
   fullscreen?: boolean;
+  /**
+   * true si el área de juego tiene que ocupar todo el ancho de la pantalla
+   * del teléfono, sin los márgenes laterales de la página; el cronómetro y
+   * los carteles del contenedor quedan donde están, en flujo (a diferencia
+   * de `fullscreen`, que fija el área sobre la ventana entera). En
+   * escritorio sigue dentro de la columna de 480 px. Default false.
+   */
+  fullBleed?: boolean;
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El

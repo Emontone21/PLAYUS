@@ -1,6 +1,6 @@
 // "Nach salta": The Nach corre solo hacia la derecha, visto de costado, por
 // una calle de noche, cada vez más rápido. Hay que saltar las rocas (tocar
-// es un salto corto; mantener, uno alto y largo) y, desde los 400 m,
+// es un salto corto; mantener, uno alto y largo) y, desde los 300 m,
 // agacharse ante lo que está en el aire. Si choca, se termina. El puntaje son
 // los metros.
 //
@@ -14,7 +14,7 @@
 import * as React from "react";
 import type { GameModule, GameProps, GameResult } from "../types";
 import { createTickClock } from "../lib/tick-clock";
-import { integerScale, sizeCanvas } from "../lib/canvas-scale";
+import { sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { composeSprite } from "../lib/sprites";
 import { nachSideSprite, rockSprite } from "../lib/nach";
@@ -72,7 +72,7 @@ export function signsAt(s: SimState): { start: boolean; duck: boolean; crash: bo
   };
 }
 
-/** qué hace un toque en la x relativa `fx` (0 a 1) del área: antes de los 400 m todo salta */
+/** qué hace un toque en la x relativa `fx` (0 a 1) del área: antes de los 300 m todo salta */
 export function zoneFor(s: SimState, fx: number): "jump" | "duck" {
   return splitActive(s) && fx < 0.5 ? "duck" : "jump";
 }
@@ -104,7 +104,12 @@ export function NachSaltaGame({ seed, onReady, onFinish, onProgress, dev }: Game
   React.useEffect(() => {
     const area = areaRef.current;
     if (!area) return;
-    const measure = () => setK(integerScale(area.clientWidth, area.clientHeight, window.devicePixelRatio || 1, FIELD_W, FIELD_H));
+    // de borde a borde: el canvas se escala al ancho que le dan (con fracción), sin pasarse del alto
+    const measure = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const h = area.clientHeight > 0 ? area.clientHeight : Number.MAX_SAFE_INTEGER;
+      setK(Math.max(0.5, Math.min((area.clientWidth * dpr) / FIELD_W, (h * dpr) / FIELD_H)));
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(area);
@@ -252,7 +257,7 @@ export function NachSaltaGame({ seed, onReady, onFinish, onProgress, dev }: Game
   const outline = { textShadow: "0 3px 0 var(--contorno), 3px 0 0 var(--contorno), -3px 0 0 var(--contorno), 0 -3px 0 var(--contorno), 3px 3px 0 var(--contorno), -3px 3px 0 var(--contorno), 3px -3px 0 var(--contorno), -3px -3px 0 var(--contorno)" };
   return (
     <div ref={rootRef} className="flex h-full w-full select-none flex-col gap-1" data-testid="nachsalta-area" data-end={hud.end ? "1" : ""}>
-      <div className="flex items-baseline gap-1 px-1">
+      <div className="flex items-baseline gap-1 px-5">
         <span className="display text-5xl text-tinta" style={{ fontVariantNumeric: "tabular-nums" }} data-testid="nachsalta-meters" aria-live="off">
           {hud.meters}
         </span>
@@ -271,7 +276,7 @@ export function NachSaltaGame({ seed, onReady, onFinish, onProgress, dev }: Game
         data-testid="nachsalta-field"
       >
         <div className="pointer-events-none relative">
-          <canvas ref={canvasRef} className="block [image-rendering:pixelated]" style={{ borderRadius: 8 }} role="img" aria-label="The Nach corriendo de costado por una calle de noche con neones" data-testid="nachsalta-canvas" />
+          <canvas ref={canvasRef} className="block [image-rendering:pixelated]" role="img" aria-label="The Nach corriendo de costado por una calle de noche con neones" data-testid="nachsalta-canvas" />
         </div>
         {hud.start ? (
           <p className="nach-bounce display pointer-events-none absolute text-center text-3xl text-luciernaga" style={{ left: "50%", top: "4%", width: "92%", ...outline }} data-testid="nachsalta-start">
@@ -288,7 +293,7 @@ export function NachSaltaGame({ seed, onReady, onFinish, onProgress, dev }: Game
             {SIGNS.crash}
           </p>
         ) : null}
-        {/* las marcas de las dos mitades, desde los 400 m */}
+        {/* las marcas de las dos mitades, desde los 300 m */}
         {hud.split ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-1 flex justify-between px-6 text-3xl text-tinta-suave/60" data-testid="nachsalta-split" aria-hidden>
             <span>↓</span>
@@ -353,6 +358,7 @@ export const nachSalta: GameModule = {
   durationMs: DURATION_MS,
   // chocar lo antes posible: la primera roca llega después de los 2,5 s, y la caída se ve 1 s
   minDurationMs: 3_000,
+  fullBleed: true,
   scoring: "high",
   unit: "m",
   minPlausibleScore: 0,
