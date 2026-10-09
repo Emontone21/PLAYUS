@@ -40,6 +40,7 @@ const GAME_IDS: Record<string, string> = {
   "Cazando Colillas": "cazando-colillas",
   "Dale un trago al pibe": "dale-un-trago-al-pibe",
   "Saca el Sunny": "saca-el-sunny",
+  Barakatututu: "barakatututu",
 };
 
 export async function createGroupWithGame(page: Page, name: string, gameName: string): Promise<string> {

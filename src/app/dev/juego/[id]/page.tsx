@@ -24,6 +24,7 @@ import { CruzaDev } from "@/games/cruza-con-el-chino/dev";
 import { RanaDev } from "@/games/cazando-colillas/dev";
 import { TragoDev } from "@/games/dale-un-trago-al-pibe/dev";
 import { SacaSunnyDev } from "@/games/saca-el-sunny/dev";
+import { BarakaDev } from "@/games/barakatututu/dev";
 import { LarryHdpDev } from "@/games/larry-en-la-hdp/dev";
 import { AfilaDev } from "@/games/big-bro-afila/dev";
 import { NachSaltaDev } from "@/games/nach-salta/dev";
@@ -71,6 +72,8 @@ export default async function DevGamePage({
         <AfilaDev seed={seed} from={Math.max(1, Math.min(8, Number(desde) || 1))} debug={cajas === "1"} slow={lento === "1"} auto={auto === "1"} />
       ) : game.id === "larry-en-la-hdp" ? (
         <LarryHdpDev seed={seed} from={Math.max(1, Math.min(30, Number(desde) || 1))} />
+      ) : game.id === "barakatututu" ? (
+        <BarakaDev seed={seed} from={[1, 6, 9, 13].includes(Number(desde)) ? Number(desde) : 1} windows={cajas === "1"} slow={lento === "1"} />
       ) : game.id === "saca-el-sunny" ? (
         <SacaSunnyDev seed={seed} from={Math.max(1, Math.min(10, Number(desde) || 1))} hint={solucion === "1"} slow={lento === "1"} startS={Math.max(0, Math.min(119, Number(cierre) || 0))} />
       ) : game.id === "dale-un-trago-al-pibe" ? (

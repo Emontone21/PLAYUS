@@ -36,6 +36,7 @@ import { botTrace as cruzaTrace } from "@/games/cruza-con-el-chino/rules";
 import { botTrace as ranaTrace } from "@/games/cazando-colillas/rules";
 import { botTrace as tragoTrace, MODEL as tragoModel } from "@/games/dale-un-trago-al-pibe/rules";
 import { botTrace as sacaTrace, MODEL as sacaModel } from "@/games/saca-el-sunny/rules";
+import { botTrace as barakaTrace, MODEL as barakaModel } from "@/games/barakatututu/rules";
 import { botTrace as bolsitaTrace } from "@/games/la-bolsita-del-jota/rules";
 import { parseAvatar } from "@/avatar/schema";
 import { mulberry32 } from "@/lib/rng";
@@ -396,6 +397,11 @@ function validResult(gameId: string, seed: string, n: number): { score: number; 
     // acierta la primera ronda apenas termina la mezcla (unos 3 s) y erra la segunda en cuanto puede: el intento de prueba dura minDurationMs + 500 ms (3,5 s)
     const { events, run } = bolsitaTrace(seed, { react: [0, 0], failRounds: [2], stopAtRound: 2 });
     return { score: run.score, events };
+  }
+  if (gameId === "barakatututu") {
+    // hace la cuenta, pasa una ronda y erra la segunda (unos 10 s): el intento de prueba dura lo que la partida más 500 ms
+    const { events, run } = barakaTrace(seed, { ...barakaModel, failAt: 1 });
+    return { score: run.score, events, elapsedMs: run.endT + 500 };
   }
   if (gameId === "saca-el-sunny") {
     // saca un sunny y espera a que cierre: la partida dura siempre 120 s, así que el intento de prueba también
