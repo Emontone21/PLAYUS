@@ -13,8 +13,8 @@ const K = OUTLINE;
 
 /** cada casilla mide 20 unidades */
 export const CELL = 20;
-/** la franja de arriba: la calle, el cartel y la hdp */
-export const TOP = 60;
+/** la franja de arriba: la calle, el cartel y la hdp (más baja que la primera versión, para que el estacionamiento sea lo más grande posible) */
+export const TOP = 40;
 
 export const COLORS = {
   noche: "#141A22",

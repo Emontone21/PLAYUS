@@ -72,6 +72,14 @@ export interface GameModule {
    * generador del juego tiene que controlar la dificultad (decisión 265).
    */
   seedScope?: "group" | "player";
+  /**
+   * true si mientras se juega el área ocupa la ventana entera, de borde a
+   * borde (sin la marca, los márgenes de la página ni la barra de pestañas),
+   * fija para que la página no se desplace. Lo usan los juegos que necesitan
+   * todo el lugar posible (ej. el estacionamiento de "Saca el Sunny").
+   * Default false.
+   */
+  fullscreen?: boolean;
   Component: React.ComponentType<GameProps>;
   /**
    * bloque extra para la pantalla previa (ej. la ficha "así es ella"). El

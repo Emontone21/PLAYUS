@@ -30,3 +30,18 @@ Un Rush Hour: el sunny rojo está estacionado en Aguada, trabado entre autos neg
 - `reports/saca-el-sunny/saliendo.png`: el sunny saliendo con "+150".
 - `reports/saca-el-sunny/cierre-cerca.png`: los últimos 15 s, el neón titilando y Big Bro bajando la persiana.
 - `reports/saca-el-sunny/cerro.png`: el final "cerró la hdp".
+
+## De borde a borde (2026-10-09)
+
+A pedido del dueño ("la pantalla de juego quedó demasiado chica"), el estacionamiento ocupa ahora todo el ancho y el alto disponibles (decisión 272): el contenedor tiene una opción nueva `fullscreen`, el canvas se escala con fracción hasta los bordes y la franja de la calle es más baja. La simulación, las reglas y `validate` no cambiaron.
+
+| pantalla | casilla antes | casilla después | se desplazaba antes | después |
+|---|---|---|---|---|
+| 360 × 640 | 40 px | **60 px** | sí | no |
+| 390 × 844 | 53 px | **65 px** | sí | no |
+| 412 × 915 | 60 px | **69 px** | sí | no |
+
+- Antes: `reports/saca-el-sunny/tamano-antes-360x640.png`, `tamano-antes-390x844.png` y `tamano-antes-412x915.png` (en la herramienta, con la página corrida hasta el área de juego).
+- Después: `reports/saca-el-sunny/tamano-despues-360x640.png`, `tamano-despues-390x844.png` y `tamano-despues-412x915.png`.
+- Comprobado: los 14 tests del juego y la suite completa (461) en verde, `eslint`, `tsc` y `next build` limpios, y los 3 E2E del juego en local. En producción: ver abajo.
+

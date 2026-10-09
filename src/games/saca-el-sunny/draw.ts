@@ -18,6 +18,10 @@ export const W = SIZE * CELL;
 export const H = TOP + SIZE * CELL;
 /** el sunny sale manejando durante esto; después sube el estacionamiento siguiente hasta NEXT_MS */
 export const LEAVE_MS = 600;
+/** el alto de la vereda, abajo de la franja de la calle */
+const VEREDA = 6;
+/** dónde empieza la pared de la hdp */
+const PARED_X = 36;
 /** en los últimos… el neón titila y Big Bro baja la persiana */
 export const CLOSING_MS = 15_000;
 
@@ -78,33 +82,36 @@ function paintStreet(ctx: CanvasRenderingContext2D, run: Run, o: DrawOptions): v
   const t = o.t;
   rect(ctx, COLORS.noche, 0, 0, W, TOP);
   // la pared de la hdp, a la derecha
-  rect(ctx, COLORS.pared, 58, 4, W - 58, TOP - 4);
-  for (let y = 8; y < TOP; y += 6) rect(ctx, COLORS.paredLinea, 58, y, W - 58, 1);
+  rect(ctx, COLORS.pared, PARED_X, 4, W - PARED_X, TOP - 4);
+  for (let y = 8; y < TOP; y += 6) rect(ctx, COLORS.paredLinea, PARED_X, y, W - PARED_X, 1);
   // la vereda
-  rect(ctx, COLORS.vereda, 0, TOP - 8, W, 8);
-  rect(ctx, COLORS.veredaLinea, 0, TOP - 8, W, 1);
-  for (let x = 6; x < W; x += 12) rect(ctx, COLORS.veredaLinea, x, TOP - 7, 1, 7);
-  // el cartel de calle
-  blit(ctx, "sunny:aguada", streetSignSprite(), 6, TOP - 8 - 30);
+  rect(ctx, COLORS.vereda, 0, TOP - VEREDA, W, VEREDA);
+  rect(ctx, COLORS.veredaLinea, 0, TOP - VEREDA, W, 1);
+  for (let x = 6; x < W; x += 12) rect(ctx, COLORS.veredaLinea, x, TOP - VEREDA + 1, 1, VEREDA - 1);
+  // el cartel de calle, parado en la vereda
+  const sign = streetSignSprite();
+  blit(ctx, "sunny:aguada", sign, 2, TOP - VEREDA - sign.h);
   // el neón: titila en los últimos 15 s y se apaga al cerrar
   const left = DURATION_MS - t;
   const closing = left <= CLOSING_MS;
   const on = run.phase === "over" ? false : !closing || o.reduced ? true : Math.floor(t / 90) % 7 !== 3;
   const { w: nw, h: nh } = neonSignSize(1);
-  const nx = W - nw - 6;
-  if (on) paintNeonSign(ctx, nx, 6, 1, false);
+  const nx = W - nw - 4;
+  const ny = 3;
+  if (on) paintNeonSign(ctx, nx, ny, 1, false);
   else {
-    rect(ctx, KITCHEN.board, nx, 6, nw, nh);
-    rect(ctx, "#3A3F4C", nx + 9, 10, 11, 7);
+    rect(ctx, KITCHEN.board, nx, ny, nw, nh);
+    rect(ctx, "#3A3F4C", nx + 9, ny + 4, 11, 7);
   }
   // "cierra en m:ss"
   const label = textSprite(run.phase === "over" ? "cerro" : `cierra en ${mmss(left)}`, closing && on ? KITCHEN.neon : KITCHEN.neonSoft);
-  blit(ctx, `sunny:cierra:${run.phase === "over" ? "x" : mmss(left)}:${closing && on ? 1 : 0}`, label, nx + nw - label.w, 6 + nh + 2);
+  blit(ctx, `sunny:cierra:${run.phase === "over" ? "x" : mmss(left)}:${closing && on ? 1 : 0}`, label, nx + nw - label.w, ny + nh + 2);
   // la puerta, con la persiana y Big Bro
-  const dx = 64;
-  const dy = 30;
-  const dw = 24;
-  const dh = TOP - 8 - dy;
+  // la puerta entre el cartel de calle y el "cierra en", sin pisar ninguno
+  const dx = PARED_X + 1;
+  const dy = 12;
+  const dw = 22;
+  const dh = TOP - VEREDA - dy;
   rect(ctx, "#15161B", dx, dy, dw, dh);
   rect(ctx, "#3A3440", dx - 1, dy - 1, dw + 2, 1);
   rect(ctx, "#3A3440", dx - 1, dy, 1, dh);
@@ -112,7 +119,7 @@ function paintStreet(ctx: CanvasRenderingContext2D, run: Run, o: DrawOptions): v
   const shutter = run.phase === "over" ? 1 : closing ? Math.min(0.55, ((CLOSING_MS - left) / CLOSING_MS) * 0.55) : 0;
   if (closing || run.phase === "over") {
     const bro = bigBroSprite("tira");
-    if (run.phase !== "over") blit(ctx, "sunny:bro", bro, dx + 1, dy + dh - 18, 22, 18);
+    if (run.phase !== "over") blit(ctx, "sunny:bro", bro, dx, dy + dh - 18, 22, 18);
   }
   if (shutter > 0) {
     const sh = Math.round(dh * shutter);

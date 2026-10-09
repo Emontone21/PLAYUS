@@ -14,14 +14,13 @@
 
 import * as React from "react";
 import type { GameModule, GameProps, GameResult } from "../types";
-import { integerScale, sizeCanvas } from "../lib/canvas-scale";
 import { SpriteSvg } from "../lib/sprite-svg";
 import { singlePointerDrag } from "../lib/pointer-drag";
 import { neonSprite, KITCHEN } from "../lib/hdp-kitchen";
 import { bigBroSprite } from "../lib/big-bro";
 import { carAtCell, cellAt, drawScene, H, W, type Drag } from "./draw";
 import { advance, check, DURATION_MS, legalRange, MAX_SCORE, move, newRun, puzzleAt, reset, solve, validate, type Move, type ParkingEvent, type Run } from "./rules";
-import { carSprite, CELL, sunnySprite, swipeArrowSprite } from "./sprites";
+import { carSprite, CELL, COLORS, sunnySprite, swipeArrowSprite } from "./sprites";
 
 export const CLOSED_SIGN = "cerró la hdp";
 
@@ -36,6 +35,11 @@ export interface SunnyDevOptions {
 }
 
 type Hud = { score: number; solved: number; moves: number; puzzle: number; phase: Run["phase"]; gain: Run["lastGain"] };
+
+/** cuántos px de CSS por unidad entran en un lugar de `width` × `height` (el estacionamiento entero, sin deformarse) */
+export function fitScale(width: number, height: number): number {
+  return Math.max(0.5, Math.min(width / W, height / H));
+}
 
 /** de la pantalla a las unidades de la vista */
 export function toView(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }): { x: number; y: number } {
@@ -59,7 +63,8 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
   const devRef = React.useRef(dev);
   devRef.current = dev;
   const gameRef = React.useRef<Game | null>(null);
-  const [k, setK] = React.useState(1);
+  /** s: px de CSS por unidad (con fracción, para llenar el lugar); k: px del dispositivo por unidad (entero, para el pixel art) */
+  const [fit, setFit] = React.useState({ s: 1, k: 1 });
   const [hud, setHud] = React.useState<Hud>({ score: 0, solved: 0, moves: 0, puzzle: 1, phase: "playing", gain: null });
   const firstPuzzle = dev?.firstPuzzle ?? 1;
 
@@ -74,8 +79,11 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
   React.useEffect(() => {
     const area = areaRef.current;
     if (!area) return;
-    // el alto que entra: el del área, y nunca más que la ventana (la herramienta no limita el área)
-    const measure = () => setK(integerScale(area.clientWidth, Math.min(area.clientHeight > 0 ? area.clientHeight : Number.MAX_SAFE_INTEGER, Math.max(240, window.innerHeight - 170)), window.devicePixelRatio || 1, W, H));
+    // de borde a borde: el estacionamiento llena el ancho o el alto disponible, el que se acabe primero (decisión 272)
+    const measure = () => {
+      const s = fitScale(area.clientWidth, area.clientHeight);
+      setFit((f) => (f.s === s ? f : { s, k: Math.max(1, Math.floor(s * (window.devicePixelRatio || 1))) }));
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(area);
@@ -84,9 +92,13 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
   React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    sizeCanvas(canvas, W, H, k, window.devicePixelRatio || 1);
-    kRef.current = k;
-  }, [k]);
+    // el canvas se pinta a k px del dispositivo por unidad y se estira a s px de CSS (sin suavizado)
+    canvas.width = W * fit.k;
+    canvas.height = H * fit.k;
+    canvas.style.width = `${W * fit.s}px`;
+    canvas.style.height = `${H * fit.s}px`;
+    kRef.current = fit.k;
+  }, [fit]);
 
   // la solución óptima desde donde está el estacionamiento (herramienta): el primer paso, recalculado cuando cambia la posición
   const nextHint = React.useCallback((g: Game): Move | null => {
@@ -203,7 +215,7 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
 
   return (
     <div ref={rootRef} className="flex h-full w-full select-none flex-col gap-1" data-testid="saca-area" data-phase={hud.phase}>
-      <div className="flex items-end justify-between px-1">
+      <div className="flex items-end justify-between px-3">
         <span className="display text-4xl text-tinta" style={{ fontVariantNumeric: "tabular-nums" }} data-testid="saca-score" aria-live="off">
           {hud.score}
         </span>
@@ -213,14 +225,14 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
       </div>
       <div
         ref={areaRef}
-        className="flex min-h-0 flex-1 items-start justify-center"
-        style={{ touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
+        className="flex min-h-0 flex-1 items-end justify-center overflow-hidden"
+        style={{ background: COLORS.noche, touchAction: "none", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
         {...drag}
         onContextMenu={(e) => e.preventDefault()}
         data-testid="saca-field"
       >
         <div className="relative">
-          <canvas ref={canvasRef} className="pointer-events-none block [image-rendering:pixelated]" style={{ borderRadius: 8 }} aria-label="el estacionamiento de Aguada visto desde arriba, con el sunny rojo entre autos negros y la hdp al fondo" role="img" data-testid="saca-canvas" />
+          <canvas ref={canvasRef} className="pointer-events-none block [image-rendering:pixelated]" aria-label="el estacionamiento de Aguada visto desde arriba, con el sunny rojo entre autos negros y la hdp al fondo" role="img" data-testid="saca-canvas" />
           {hud.gain ? (
             <div className="pointer-events-none absolute inset-x-0 top-[45%] flex flex-col items-center gap-1" data-testid="saca-gain">
               <span className="speech display text-2xl" style={{ padding: "4px 10px" }}>
@@ -243,7 +255,7 @@ export function SacaSunnyGame({ seed, onReady, onFinish, onProgress, dev }: Game
           ) : null}
         </div>
       </div>
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between px-3">
         <span className="text-sm text-tinta-media" data-testid="saca-moves">
           {hud.moves === 1 ? "1 movimiento" : `${hud.moves} movimientos`} · estacionamiento {hud.puzzle}
         </span>
@@ -312,6 +324,8 @@ export const sacaElSunny: GameModule = {
   tagline: "antes de que cierre la hdp.",
   howTo: ["deslizá los autos negros para abrirle paso al sunny", "cada auto se mueve solo en su dirección", "sacá todos los que puedas antes de que cierre la hdp: menos movimientos, más puntos"],
   seedScope: "player",
+  // el estacionamiento de borde a borde, sin la marca ni la barra de pestañas (decisión 272)
+  fullscreen: true,
   durationMs: DURATION_MS,
   scoring: "high",
   minPlausibleScore: 0,

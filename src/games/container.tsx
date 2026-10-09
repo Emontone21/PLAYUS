@@ -215,23 +215,32 @@ export function GameContainer({ game, seed, onStart, onSubmit, onDone, note, war
   if (state.step === "loading" || state.step === "playing") {
     // rotado: el área ocupa la ventana entera, girada 90°, por encima de todo lo demás
     const rotated = frame.rotated;
+    // de borde a borde: fija sobre la ventana, en la columna de la app, sin que la página se desplace
+    const full = !rotated && !!game.fullscreen;
     const RotationContext = rotationContext();
     return (
       <RotationContext.Provider value={frame}>
         <section
-          className={rotated ? "fixed left-0 top-0 z-40 flex flex-col gap-2 overflow-hidden bg-fondo p-3" : "flex min-h-[80dvh] flex-col gap-3"}
+          className={
+            rotated
+              ? "fixed left-0 top-0 z-40 flex flex-col gap-2 overflow-hidden bg-fondo p-3"
+              : full
+                ? "fixed inset-y-0 left-1/2 z-40 flex w-full max-w-[480px] -translate-x-1/2 flex-col gap-1 overflow-hidden bg-fondo pb-[max(env(safe-area-inset-bottom),6px)] pt-[max(env(safe-area-inset-top),6px)]"
+                : "flex min-h-[80dvh] flex-col gap-3"
+          }
           style={rotated ? rotatedStyle(frame) : undefined}
           data-testid="game-playing"
           data-rotated={rotated ? "1" : "0"}
+          data-fullscreen={full ? "1" : "0"}
         >
-          <header className="flex items-baseline justify-between">
+          <header className={`flex items-baseline justify-between ${full ? "px-3" : ""}`}>
             <span className="display text-lg">{game.name}</span>
             <span className="display text-4xl" data-testid="game-timer" aria-live="off">
               {formatSeconds(timeLeftMs)}
             </span>
           </header>
           {/* el hijo (la raíz del juego) se estira a todo el alto disponible */}
-          <div className={`flex flex-1 flex-col overflow-hidden rounded-lg [&>*]:min-h-0 [&>*]:flex-1 ${rotated ? "min-h-0" : "min-h-[60dvh]"}`}>
+          <div className={`flex flex-1 flex-col overflow-hidden [&>*]:min-h-0 [&>*]:flex-1 ${full ? "min-h-0" : rotated ? "min-h-0 rounded-lg" : "min-h-[60dvh] rounded-lg"}`}>
             <Game seed={activeSeed ?? ""} onReady={onReady} onFinish={onFinish} onProgress={onProgress} />
           </div>
           {state.step === "loading" ? <p className="eyebrow">cargando…</p> : null}
