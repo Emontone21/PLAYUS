@@ -64,8 +64,9 @@ begin
   update public.profiles set avatar = '{"base":1,"skin":"#E0AC69","hair":5,"hairColor":"#B55239","eyes":3,"mouth":2,"accessory":1,"bg":"#26244A"}' where id = c_tomi;
 
   -- grupo e integrantes -------------------------------------------------------
-  insert into public.groups (id, name, invite_code, created_by, timezone, max_attempts, created_at)
-  values (c_group, 'los del barrio', 'JUEGA7', c_vale, c_tz, 3, now() - interval '7 days')
+  -- marcado "de prueba": el panel de admin lo puede limpiar con todo lo suyo
+  insert into public.groups (id, name, invite_code, created_by, timezone, max_attempts, created_at, is_test)
+  values (c_group, 'los del barrio', 'JUEGA7', c_vale, c_tz, 3, now() - interval '7 days', true)
   on conflict (id) do nothing;
 
   insert into public.group_members (group_id, profile_id, role, nickname, joined_at)

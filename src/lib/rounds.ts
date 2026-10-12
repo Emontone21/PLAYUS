@@ -1,7 +1,7 @@
 import type { AdminClient } from "@/lib/supabase/admin";
 import type { GroupRow, RoundRow, SeasonRow } from "@/lib/supabase/types";
-import { GAME_IDS } from "@/games";
 import { gameForDay, roundSeed } from "./deck";
+import { enabledGameIds } from "./game-settings";
 import { bestScores, champion, POINTS_RULES, rankRound, rulesForSeason, standings, type PointsRules } from "./scoring";
 import { addDays, daysBetween, todayInTz, type DateString } from "./time";
 import { getGame } from "@/games";
@@ -135,7 +135,9 @@ export async function ensureRound(admin: AdminClient, group: GroupRow, today: Da
 
   const season = await ensureSeason(admin, group, today);
   const dayIndex = Math.max(0, daysBetween(season.starts_on, today));
-  const gameId = gameForDay(group.id, season.number, dayIndex, GAME_IDS);
+  // solo los juegos en rotación (decisión 281): apagar o prender uno cambia el
+  // mazo desde la próxima ronda que se cree, nunca una ronda que ya existe
+  const gameId = gameForDay(group.id, season.number, dayIndex, await enabledGameIds(admin));
   const seed = roundSeed(group.id, today, gameId);
 
   const { error } = await admin

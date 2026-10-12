@@ -17,8 +17,8 @@ function randomSeed(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export function AdminPlay({ games }: { games: GameInfo[] }) {
-  const [gameId, setGameId] = useState<string | null>(null);
+export function AdminPlay({ games, initialGameId = null }: { games: GameInfo[]; initialGameId?: string | null }) {
+  const [gameId, setGameId] = useState<string | null>(initialGameId);
   const [seed, setSeed] = useState(randomSeed);
   const [attemptNo, setAttemptNo] = useState(1);
   const [run, setRun] = useState(0);

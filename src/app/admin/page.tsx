@@ -9,9 +9,10 @@ import { GroupList } from "./group-list";
 
 export const dynamic = "force-dynamic";
 
-// /admin: todos los grupos con su día de hoy (en su zona horaria), el juego
-// de hoy, los intentos que lleva y un selector para cambiarlo; abajo, los
-// últimos 20 cambios.
+// /admin (pestaña hoy): todos los grupos con su día de hoy (en su zona
+// horaria), el juego de hoy, los intentos que lleva y un selector para
+// cambiarlo; abajo, los últimos 20 cambios del juego de hoy (el registro
+// entero está en la pestaña registro).
 export default async function AdminPage() {
   if (!(await currentAdmin())) notFound();
   const admin = createAdminClient();
@@ -29,7 +30,7 @@ export default async function AdminPage() {
         <GroupList groups={groups} games={games} />
       </section>
       <section className="flex flex-col gap-3" data-testid="admin-actions">
-        <h2 className="display text-xl text-tinta">últimos cambios</h2>
+        <h2 className="display text-xl text-tinta">últimos cambios del juego de hoy</h2>
         {actions.length === 0 ? (
           <p className="text-sm text-tinta-suave">todavía no hubo cambios.</p>
         ) : (

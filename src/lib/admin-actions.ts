@@ -3,6 +3,7 @@ import type { AdminActionRow, GroupRow, RoundRow } from "@/lib/supabase/types";
 import { GAME_IDS, getGame } from "@/games";
 import { gameLimits, type GameResult } from "@/games/types";
 import { gameForDay, roundSeed } from "./deck";
+import { enabledGameIds } from "./game-settings";
 import { ensureSeason, groupToday } from "./rounds";
 import { daysBetween, type DateString } from "./time";
 
@@ -18,6 +19,8 @@ export interface GroupOverview {
   name: string;
   inviteCode: string;
   timezone: string;
+  /** marcado "de prueba": se puede limpiar con todo lo suyo */
+  isTest: boolean;
   members: number;
   /** la fecha de hoy del grupo, en su zona horaria */
   today: DateString;
@@ -77,6 +80,7 @@ export async function loadGroupsOverview(admin: AdminClient, fakeToday?: DateStr
       name: g.name,
       inviteCode: g.invite_code,
       timezone: g.timezone,
+      isTest: g.is_test,
       members: memberCount.get(g.id) ?? 0,
       today: todayOf.get(g.id)!,
       round: r ? { id: r.id, gameId: r.game_id, gameName: getGame(r.game_id)?.name ?? r.game_id } : null,
@@ -105,10 +109,10 @@ export class AdminActionError extends Error {
   }
 }
 
-/** el juego que le toca a ese día según el mazo de la temporada */
-export function deckGameFor(group: GroupRow, season: { number: number; starts_on: string }, today: DateString): string {
+/** el juego que le toca a ese día según el mazo de la temporada (con los juegos en rotación) */
+export function deckGameFor(group: GroupRow, season: { number: number; starts_on: string }, today: DateString, gameIds: readonly string[] = GAME_IDS): string {
   const dayIndex = Math.max(0, daysBetween(season.starts_on, today));
-  return gameForDay(group.id, season.number, dayIndex, GAME_IDS);
+  return gameForDay(group.id, season.number, dayIndex, gameIds);
 }
 
 /**
@@ -126,7 +130,7 @@ export async function setTodayGame(
   const today = groupToday(group, opts.fakeToday);
   const season = await ensureSeason(admin, group, today);
   const reset = opts.gameId === DECK;
-  const toGameId = reset ? deckGameFor(group, season, today) : opts.gameId;
+  const toGameId = reset ? deckGameFor(group, season, today, await enabledGameIds(admin)) : opts.gameId;
   if (!getGame(toGameId)) throw new AdminActionError(400, "unknown_game", "ese juego no está en el registro.");
   const seed = roundSeed(group.id, today, toGameId);
   const action = reset ? "reset_to_deck" : "set_game";
@@ -145,15 +149,18 @@ export async function setTodayGame(
   return { roundId: row.o_round_id, playDate: today, fromGameId: row.o_from_game_id, toGameId, deletedAttempts: row.o_deleted, action };
 }
 
-/** los últimos cambios, con el nombre del grupo */
-export async function recentAdminActions(admin: AdminClient, limit = 20): Promise<(AdminActionRow & { groupName: string })[]> {
-  const { data, error } = await admin.from("admin_actions").select("*").order("created_at", { ascending: false }).limit(limit);
+/** un cambio del juego de hoy (set_game o reset_to_deck), con los campos que esas acciones siempre tienen */
+export type GameChangeRow = AdminActionRow & { group_id: string; play_date: string; to_game_id: string; groupName: string };
+
+/** los últimos cambios del juego de hoy, con el nombre del grupo */
+export async function recentAdminActions(admin: AdminClient, limit = 20): Promise<GameChangeRow[]> {
+  const { data, error } = await admin.from("admin_actions").select("*").in("action", ["set_game", "reset_to_deck"]).order("created_at", { ascending: false }).limit(limit);
   if (error) throw new Error(`admin_actions: ${error.message}`);
-  const rows = data ?? [];
+  const rows = (data ?? []).filter((r): r is AdminActionRow & { group_id: string; play_date: string; to_game_id: string } => !!r.group_id && !!r.play_date && !!r.to_game_id);
   const ids = [...new Set(rows.map((r) => r.group_id))];
   const { data: groups } = ids.length ? await admin.from("groups").select("id, name").in("id", ids) : { data: [] };
   const names = new Map((groups ?? []).map((g) => [g.id, g.name]));
-  return rows.map((r) => ({ ...r, groupName: names.get(r.group_id) ?? "(grupo borrado)" }));
+  return rows.map((r) => ({ ...r, groupName: names.get(r.group_id) ?? r.target ?? "(grupo borrado)" }));
 }
 
 // ---------------------------------------------------------------------------

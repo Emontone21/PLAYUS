@@ -51,3 +51,8 @@ export function cityFromTimezone(tz: string): string {
   const last = tz.split("/").pop() ?? tz;
   return last.replaceAll("_", " ");
 }
+
+/** "12/10/26 14:05" en la hora de Montevideo, para el panel de admin */
+export function formatDateTime(iso: string, tz = "America/Montevideo"): string {
+  return new Date(iso).toLocaleString("es-UY", { timeZone: tz, dateStyle: "short", timeStyle: "short" });
+}

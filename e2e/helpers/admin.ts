@@ -51,3 +51,13 @@ export async function loginAsAdmin(context: BrowserContext, baseURL = "http://12
   await context.addCookies(chunks.map((c) => ({ ...c, domain: u.hostname, path: "/", httpOnly: false, secure: false, sameSite: "Lax" as const })));
   return data.user.id;
 }
+
+/** el grupo con ese código y su temporada vigente, leídos con la clave de servicio del stack local */
+export async function localGroupSeason(inviteCode: string): Promise<{ id: string; name: string; timezone: string; season: { number: number; starts_on: string } | null }> {
+  const { url, service } = env();
+  const admin = createClient(url, service, { auth: { persistSession: false } });
+  const g = await admin.from("groups").select("id, name, timezone").eq("invite_code", inviteCode).single();
+  if (g.error || !g.data) throw new Error(`grupo ${inviteCode}: ${g.error?.message ?? "no está"}`);
+  const s = await admin.from("seasons").select("number, starts_on").eq("group_id", g.data.id).is("closed_at", null).order("number", { ascending: false }).limit(1);
+  return { ...(g.data as { id: string; name: string; timezone: string }), season: (s.data?.[0] as { number: number; starts_on: string } | undefined) ?? null };
+}

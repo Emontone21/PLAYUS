@@ -39,6 +39,9 @@ src/
   lib/deck.ts, scoring.ts   mazo por temporada y puntos 10/7/5/3/1 (puros, con tests)
   lib/rounds.ts, attempts.ts  rondas y temporadas perezosas; start/finish antitrampas
   lib/push.ts, push-client.ts, reminders.ts  Web Push: envío (VAPID), suscripción y recordatorios
+  lib/admin*.ts, game-settings.ts  panel de admin: quién es admin, el juego de hoy, la administración general, los avisos y los juegos en rotación
+  app/admin/                panel de admin (hoy, grupos, usuarios, juegos, avisos, registro) y /admin/jugar
+  app/api/admin/            set-game, validate y [action] (las acciones del panel, solo para el admin)
   components/install-card.tsx, push-card.tsx  instalar la app y activar avisos
 public/icons, screenshots   íconos (normal y maskable) y capturas del manifest
   components/               avatar, formulario de alta, invitar, barra, estadísticas
@@ -54,6 +57,9 @@ supabase/
     20260924000003_rpc.sql      create_group, join_group, round_participants
     20260924000004_push.sql     push_subscriptions, group_reminders, pg_cron
     20260927000005_reminders_vault.sql  call_reminders lee la URL y el secreto de Vault
+    20260927000006_invite_preview.sql   vista previa de la invitación
+    20261004000007_admin.sql    admin_actions y admin_set_today_game (panel de admin)
+    20261012000008_admin_general.sql  is_test, game_settings, el registro ampliado y las funciones admin_* del panel
   seed.sql                  grupo de prueba con 4 integrantes falsos y puntajes
   tests/                    tests pgTAP de esquema y políticas
 scripts/
@@ -88,7 +94,16 @@ Para probar un juego suelto: `http://localhost:3000/dev/juego/piba-del-ipa?seed=
 
 ## Panel de admin
 
-Un panel privado para el dueño del proyecto en `/admin` (decisiones 236 a 238): cambiar el juego de hoy de cualquier grupo (con aviso y doble confirmación si ya hay intentos, que se borran y vuelven a estar disponibles) y probar cualquier juego con cualquier semilla en `/admin/jugar`, sin gastar intentos ni tocar rankings, viendo si el servidor valida la partida. Cada cambio queda en `admin_actions`. En producción, las herramientas de desarrollo `/dev/juego/{id}` también son solo para el admin.
+Un panel privado para el dueño del proyecto en `/admin` (decisiones 236 a 238 y 278 a 283), con pestañas, pensado para usarlo desde el teléfono:
+
+- **hoy**: cambiar el juego de hoy de cualquier grupo (con aviso y doble confirmación si ya hay intentos, que se borran y vuelven a estar disponibles).
+- **grupos**: la lista con la marca "de prueba", integrantes, temporada y su día, juego de hoy y última actividad, con búsqueda por nombre o código; el detalle de cada grupo (integrantes con rol, ingreso, email y partidas de la temporada; sacar a alguien, cambiar el dueño, reiniciar la temporada, borrar el grupo) y "limpiar datos de prueba" (todos los grupos marcados y los usuarios que quedan sin grupo).
+- **usuarios**: la lista con email o "anónimo", grupos, alta y última partida, filtros (sin grupo, anónimos, con email) y búsqueda; el detalle con sus grupos y el botón de borrar; y borrar a todos los que no tienen grupo.
+- **juegos**: cada juego del registro con el interruptor "en rotación" (el mazo reparte solo los habilitados, desde la próxima ronda; tiene que quedar al menos uno) y los links a probar (`/admin/jugar`, sin gastar intentos ni tocar rankings) y a las herramientas.
+- **avisos**: una notificación de prueba solo al admin y anuncios de hasta 120 caracteres a todos los que tienen avisos activados o a un grupo, con vista previa y un límite de uno cada 10 minutos.
+- **registro**: las últimas 100 acciones de `admin_actions`, con el detalle.
+
+Toda acción destructiva muestra primero qué se va a borrar, con cantidades, y pide escribir una palabra (o el nombre del grupo) para habilitar el botón. Al admin no se lo puede borrar, y el panel avisa siempre que algo toca un grupo no marcado como de prueba. Cada acción corre en el servidor con la clave de servicio, en una sola transacción, y queda en el registro. En producción, las herramientas de desarrollo `/dev/juego/{id}` también son solo para el admin.
 
 Para activarlo:
 
@@ -102,7 +117,7 @@ Para activarlo:
    (y lo mismo con `preview`). En local, en `.env.local`.
 3. Volvé a publicar (`npx vercel deploy --prod --yes`): las variables se leen al desplegar.
 
-Sin permiso, `/admin` responde 404 y `/api/admin/*` 403, siempre comprobado en el servidor. La entrada es el link "panel de admin" al final de Perfil, que solo ve el admin.
+Sin permiso, `/admin/*` responde 404 y `/api/admin/*` 403, siempre comprobado en el servidor. La entrada es el link "panel de admin" al final de Perfil, que solo ve el admin.
 
 ## PWA y notificaciones
 
